@@ -1,5 +1,7 @@
 # EDINET API Tools :jp:
 
+A practical toolkit for analyzing Japanese financial disclosures programmatically.
+
 This project provides a set of tools for interacting with Japan's [EDINET](https://disclosure2.edinet-fsa.go.jp/) (Electronic Disclosure for Investors Network) API v2. It focuses on downloading, processing, and performing **structured analysis** of financial disclosure documents using the `llm` library.
 
 Leverage the power of Large Language Models to extract specific, structured insights from unstructured financial text.
@@ -11,6 +13,7 @@ Leverage the power of Large Language Models to extract specific, structured insi
 - 🧹 Clean and process text data from financial disclosures
 - 📊 Structured Analysis: Analyze processed disclosure data using LLMs (via the `llm` library) to extract information conforming to predefined schemas.
 - 🤖 Flexible LLM Backend: Use any LLM supported by the `llm` library (OpenAI, Claude, Gemini, local models, etc.) by changing configuration.
+- ✅ **Well Tested**: Comprehensive test suite with pytest
 - 🪵 Detailed Logging: Provides visibility into the data fetching, processing, and analysis steps.
 
 ## Requirements
@@ -65,8 +68,8 @@ Leverage the power of Large Language Models to extract specific, structured insi
         # If using other models via llm plugins, check their documentation.
         # Example for OpenAI:
         OPENAI_API_KEY=<your_openai_api_key>
-        LLM_MODEL=gpt-4o # Or 'claude-3.5-sonnet', 'gemini-2.5-flash-04-17', etc.
-        LLM_FALLBACK_MODEL=gpt-4-turbo # Optional: A model to try if LLM_MODEL fails
+        LLM_MODEL=gpt-5-mini # Or 'claude-3.5-sonnet', 'gemini-2.5-flash-04-17', etc.
+        LLM_FALLBACK_MODEL=claude-4-sonnet # Optional: A model to try if LLM_MODEL fails
 
         # If using Azure OpenAI:
         # AZURE_OPENAI_API_KEY=<your_azure_openai_api_key>
@@ -104,11 +107,33 @@ This will:
 -   `logging_config.py`: Sets up basic logging for the application.
 -   `demo.py`: Demonstration script showing the tool's capabilities and orchestrating the workflow.
 
+## Testing
+
+Run the test suite to verify everything works:
+
+```bash
+pytest
+```
+
+Or run specific test categories:
+```bash
+pytest -m unit        # Unit tests only
+pytest -m integration # Integration tests only
+```
+
 ## Customization
 
 -   **Analysis Tools:** Modify `llm_analysis_tools.py` to create new analysis tools. Define a Pydantic schema for the desired output, create a class inheriting from `BasePromptTool`, implement `create_prompt` and `format_to_text`, and add your new tool to the `TOOL_MAP`.
 -   **Document Processing:** Add new classes inheriting from `BaseDocumentProcessor` in `document_processors.py` to handle specific document types (beyond 160 and 180). Add your processor to the `processor_map` in `document_processors.process_raw_csv_data`.
 -   **Supported Document Types:** Update the `SUPPORTED_DOC_TYPES` dictionary in `config.py`.
+
+## Contributing
+
+This project welcomes contributions. Please ensure tests pass before submitting PRs:
+
+```bash
+pytest
+```
 
 ## Disclaimer
 

@@ -15,8 +15,8 @@ EDINET_API_KEY = os.environ.get('EDINET_API_KEY')
 LLM_API_KEY = os.environ.get('LLM_API_KEY') or os.environ.get('OPENAI_API_KEY')
 
 # Specify default LLM model names
-LLM_MODEL = os.environ.get('LLM_MODEL', 'gpt-4o') # Default to gpt-4o, can be overridden
-LLM_FALLBACK_MODEL = os.environ.get('LLM_FALLBACK_MODEL', 'gpt-4-turbo') # Fallback model
+LLM_MODEL = os.environ.get('LLM_MODEL', 'gpt-5-mini') # Default to gpt-5-mini, can be overridden
+LLM_FALLBACK_MODEL = os.environ.get('LLM_FALLBACK_MODEL', 'claude-4-sonnet') # Fallback model
 
 AZURE_OPENAI_API_KEY = os.environ.get('AZURE_OPENAI_API_KEY')
 AZURE_OPENAI_ENDPOINT = os.environ.get('AZURE_OPENAI_ENDPOINT')
