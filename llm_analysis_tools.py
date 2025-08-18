@@ -82,7 +82,8 @@ class BasePromptTool:
             response = model.prompt(
                 prompt_text,
                 schema=self.schema_class,
-                system="You are a helpful financial analyst. Follow the schema provided precisely. Respond ONLY with valid JSON that conforms to the provided schema."
+                system="You are a helpful financial analyst. Follow the schema provided precisely. Respond ONLY with valid JSON that conforms to the provided schema.",
+                stream=False
             )
 
             try:
