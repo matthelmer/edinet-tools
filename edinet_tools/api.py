@@ -8,7 +8,7 @@ import logging
 import time
 from typing import List, Dict, Union
 
-from config import EDINET_API_KEY, SUPPORTED_DOC_TYPES
+from .config import EDINET_API_KEY, SUPPORTED_DOC_TYPES
 
 # Use module-specific logger
 logger = logging.getLogger(__name__)
@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 def fetch_documents_list(date: Union[str, datetime.date],
                          type: int = 2,
                          max_retries: int = 3,
-                         delay_seconds: int = 5) -> Dict:
+                         delay_seconds: int = 5,
+                         api_key: str = None) -> Dict:
     """
     Retrieve disclosure documents from EDINET API for a specified date with retries.
     """
@@ -37,7 +38,7 @@ def fetch_documents_list(date: Union[str, datetime.date],
     params = {
         "date": date_str,
         "type": type,   # '1' is metadata only; '2' is metadata and results
-        "Subscription-Key": EDINET_API_KEY,
+        "Subscription-Key": api_key or EDINET_API_KEY,
     }
     query_string = urllib.parse.urlencode(params)
     full_url = f"{url}?{query_string}"
@@ -90,14 +91,14 @@ def fetch_documents_list(date: Union[str, datetime.date],
     raise Exception("Failed to fetch documents after multiple retries.")
 
 
-def fetch_document(doc_id: str, max_retries: int = 3, delay_seconds: int = 5) -> bytes:
+def fetch_document(doc_id: str, max_retries: int = 3, delay_seconds: int = 5, api_key: str = None) -> bytes:
     """
     Retrieve a specific document from EDINET API with retries and return raw bytes.
     """
-    url = f'https://api.edinet-fsa.go.jp/api/v2/documents/{doc_id}'
+    url = f'https://disclosure.edinet-fsa.go.jp/api/v2/documents/{doc_id}'
     params = {
       "type": 5,  # '5' for CSV
-      "Subscription-Key": EDINET_API_KEY,
+      "Subscription-Key": api_key or EDINET_API_KEY,
     }
     query_string = urllib.parse.urlencode(params)
     full_url = f'{url}?{query_string}'

@@ -8,7 +8,7 @@ import zipfile
 import logging
 from typing import List, Dict, Any, Optional
 
-from document_processors import process_raw_csv_data
+from .processors import process_raw_csv_data
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +129,7 @@ def process_zip_file(path_to_zip_file: str, doc_id: str, doc_type_code: str) -> 
                  return None
 
             # Dispatch raw data to appropriate document processor
-            structured_data = process_raw_csv_data(raw_csv_data, doc_id, doc_type_code)
+            structured_data = process_raw_csv_data(raw_csv_data, doc_id, doc_type_code, temp_dir)
 
             if structured_data:
                  logger.info(f"Successfully processed structured data for {os.path.basename(path_to_zip_file)}")

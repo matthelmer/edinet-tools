@@ -150,8 +150,8 @@ def set_test_env_vars():
     test_env_vars = {
         'EDINET_API_KEY': 'test-api-key',
         'LLM_API_KEY': 'test-llm-key',
-        'LLM_MODEL': 'gpt-5-mini',
-        'LLM_FALLBACK_MODEL': 'claude-4-sonnet'
+        'LLM_MODEL': 'claude-4-sonnet',
+        'LLM_FALLBACK_MODEL': 'gpt-5-mini'
     }
 
     # Store original values and set test values
@@ -167,3 +167,24 @@ def set_test_env_vars():
             os.environ.pop(key, None)
         else:
             os.environ[key] = original_value
+
+
+@pytest.fixture
+def sample_xbrl_financial_metrics():
+    """Sample processed XBRL financial metrics for testing."""
+    return {
+        'has_xbrl_data': True,
+        'metrics_count': 4,
+        'financial_metrics': {
+            'revenue_ifrs': {
+                'current': 1000000000.0,
+                'prior': 800000000.0,
+                'element_name': 'jpcrp_cor:RevenueIFRSSummaryOfBusinessResults'
+            },
+            'revenue_jgaap': {
+                'current': 500000000.0,  # Converted from thousands
+                'prior': 400000000.0,    # Converted from thousands  
+                'element_name': 'jpcrp_cor:NetSalesSummaryOfBusinessResults'
+            }
+        }
+    }

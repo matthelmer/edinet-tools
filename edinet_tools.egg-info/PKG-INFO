@@ -1,3 +1,47 @@
+Metadata-Version: 2.4
+Name: edinet-tools
+Version: 0.1.0
+Summary: Python package for accessing Japanese corporate financial data from EDINET
+Author: Matt Helmer
+License: MIT
+Project-URL: Homepage, https://github.com/matthelmer/edinet-api-tools
+Project-URL: Repository, https://github.com/matthelmer/edinet-api-tools
+Project-URL: Bug Reports, https://github.com/matthelmer/edinet-api-tools/issues
+Keywords: finance,japan,edinet,financial-data,xbrl,corporate-filings
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Financial and Insurance Industry
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Office/Business :: Financial
+Classifier: Topic :: Scientific/Engineering :: Information Analysis
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: pandas>=1.3.0
+Requires-Dist: python-dateutil>=2.8.0
+Requires-Dist: chardet>=5.0.0
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: llm>=0.10.0
+Requires-Dist: pydantic>=2.0.0
+Provides-Extra: analysis
+Requires-Dist: matplotlib>=3.3.0; extra == "analysis"
+Requires-Dist: plotly>=5.0.0; extra == "analysis"
+Provides-Extra: dev
+Requires-Dist: pytest>=6.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=2.0.0; extra == "dev"
+Requires-Dist: black>=22.0.0; extra == "dev"
+Requires-Dist: flake8>=4.0.0; extra == "dev"
+Requires-Dist: mypy>=0.910; extra == "dev"
+Requires-Dist: sphinx>=4.0.0; extra == "dev"
+Requires-Dist: sphinx-rtd-theme>=1.0.0; extra == "dev"
+Dynamic: license-file
+
 # EDINET Tools
 
 > **Access Japanese corporate financial data with confidence**

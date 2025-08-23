@@ -2,6 +2,7 @@
 import pandas as pd
 import logging
 from typing import List, Dict, Any, Optional
+from .parser import extract_xbrl_financial_data
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ StructuredDocumentData = Dict[str, Any]
 class BaseDocumentProcessor:
     """Base class for document specific data extraction."""
 
-    def __init__(self, raw_csv_data: List[Dict[str, Any]], doc_id: str, doc_type_code: str):
+    def __init__(self, raw_csv_data: List[Dict[str, Any]], doc_id: str, doc_type_code: str, zip_extract_path: str = None):
         """
         Initialize with raw data from CSV files and document metadata.
 
@@ -20,10 +21,12 @@ class BaseDocumentProcessor:
             raw_csv_data: List of dictionaries, each containing 'filename' and 'data' (list of rows/dicts).
             doc_id: EDINET document ID.
             doc_type_code: EDINET document type code.
+            zip_extract_path: Path to extracted ZIP contents for XBRL processing.
         """
         self.raw_csv_data = raw_csv_data
         self.doc_id = doc_id
         self.doc_type_code = doc_type_code
+        self.zip_extract_path = zip_extract_path
         # Combine all rows from all CSVs for easier querying
         self.all_records = self._combine_raw_data()
 
@@ -44,7 +47,7 @@ class BaseDocumentProcessor:
                 if context_filter is None or (record.get('コンテキストID') and context_filter in record['コンテキストID']):
                     value = record.get('値')
                     # Clean the text values
-                    from utils import clean_text # Avoid circular import by importing here
+                    from .utils import clean_text # Avoid circular import by importing here
                     return clean_text(value)
         return None
 
@@ -88,7 +91,7 @@ class BaseDocumentProcessor:
 
     def _get_common_metadata(self) -> Dict[str, Optional[str]]:
          """Extract common metadata available in many filings."""
-         from utils import clean_text # Avoid circular import
+         from .utils import clean_text # Avoid circular import
          metadata = {}
          id_to_key = {
             'jpdei_cor:EDINETCodeDEI': 'edinet_code',
@@ -154,27 +157,52 @@ class SemiAnnualReportProcessor(BaseDocumentProcessor):
         logger.debug(f"Processing Semi-Annual Report (doc_id: {self.doc_id})")
         structured_data = self._get_common_metadata()
 
-        # --- Extract Key Financial Metrics (as key_facts) ---
-        key_metrics_map = {
-            'jpcrp_cor:OperatingRevenue1SummaryOfBusinessResults': 'OperatingRevenue', # 営業収益
-            'jpcrp_cor:OrdinaryIncome': 'OrdinaryIncome', # 経常利益
-            'jppfs_cor:ProfitLossAttributableToOwnersOfParent': 'NetIncome', # 親会社株主に帰属する当期純利益
-            'jpcrp_cor:BasicEarningsLossPerShareSummaryOfBusinessResults': 'EPS', # 1株当たり当期純利益
-            'jpcrp_cor:NetAssetsSummaryOfBusinessResults': 'NetAssets', # 純資産額
-            'jpcrp_cor:TotalAssetsSummaryOfBusinessResults': 'TotalAssets', # 総資産額
-            'jpcrp_cor:CashAndCashEquivalentsSummaryOfBusinessResults': 'CashAndCashEquivalents', # 現金及び現金同等物
-        }
-        key_facts = {}
-        for xbrl_id, fact_key in key_metrics_map.items():
-            current_value = self.get_value_by_id(xbrl_id, context_filter='Current') # Look for Current* contexts
-            prior_value = self.get_value_by_id(xbrl_id, context_filter='Prior') # Look for Prior* contexts
+        # --- Extract XBRL Financial Metrics (Enhanced approach) ---
+        xbrl_data = {}
+        if self.zip_extract_path:
+            try:
+                xbrl_data = extract_xbrl_financial_data(self.zip_extract_path)
+                logger.debug(f"Extracted XBRL data with {len(xbrl_data.get('financial_metrics', {}))} metrics")
+            except Exception as e:
+                logger.warning(f"Error extracting XBRL data for {self.doc_id}: {e}")
+                xbrl_data = {'has_xbrl_data': False}
 
-            if current_value is not None or prior_value is not None:
-                 key_facts[fact_key] = {
-                     'current': current_value,
-                     'prior': prior_value,
-                     # Could add simple % change calculation here
-                 }
+        # --- Extract Key Financial Metrics (as key_facts) ---
+        # Use XBRL data if available (more accurate), otherwise fallback to CSV approach
+        if xbrl_data.get('has_xbrl_data', False) and xbrl_data.get('financial_metrics'):
+            # Use enhanced XBRL financial metrics
+            key_facts = xbrl_data['financial_metrics'].copy()
+            logger.debug(f"Using XBRL financial metrics: {list(key_facts.keys())}")
+        else:
+            # Fallback to legacy CSV-based approach
+            logger.debug("XBRL data not available, using legacy CSV approach")
+            key_metrics_map = {
+                'jpcrp_cor:OperatingRevenue1SummaryOfBusinessResults': 'OperatingRevenue', # 営業収益
+                'jpcrp_cor:OrdinaryIncome': 'OrdinaryIncome', # 経常利益
+                'jppfs_cor:ProfitLossAttributableToOwnersOfParent': 'NetIncome', # 親会社株主に帰属する当期純利益
+                'jpcrp_cor:BasicEarningsLossPerShareSummaryOfBusinessResults': 'EPS', # 1株当たり当期純利益
+                'jpcrp_cor:NetAssetsSummaryOfBusinessResults': 'NetAssets', # 純資産額
+                'jpcrp_cor:TotalAssetsSummaryOfBusinessResults': 'TotalAssets', # 総資産額
+                'jpcrp_cor:CashAndCashEquivalentsSummaryOfBusinessResults': 'CashAndCashEquivalents', # 現金及び現金同等物
+            }
+            key_facts = {}
+            for xbrl_id, fact_key in key_metrics_map.items():
+                current_value = self.get_value_by_id(xbrl_id, context_filter='Current') # Look for Current* contexts
+                prior_value = self.get_value_by_id(xbrl_id, context_filter='Prior') # Look for Prior* contexts
+
+                if current_value is not None or prior_value is not None:
+                     key_facts[fact_key] = {
+                         'current': current_value,
+                         'prior': prior_value,
+                     }
+
+        # Add XBRL metadata to structured data
+        if xbrl_data.get('has_xbrl_data', False):
+            structured_data['xbrl_metrics_count'] = xbrl_data.get('metrics_count', 0)
+            structured_data['has_enhanced_financials'] = True
+        else:
+            structured_data['has_enhanced_financials'] = False
+
         structured_data['key_facts'] = key_facts
 
         # --- Extract Key Tables (e.g., Financial Statements) ---
@@ -216,7 +244,7 @@ class SemiAnnualReportProcessor(BaseDocumentProcessor):
                 })
         # Fallback to include all text blocks if specific ones aren't found (less structured)
         if not structured_data['text_blocks']:
-             logger.warning(f"Specific text blocks not found for {self.doc_id}, including all text blocks.")
+             logger.info(f"Using generic text block extraction for {self.doc_id} (document may be investment trust or non-standard format).")
              structured_data['text_blocks'] = self.get_all_text_blocks()
 
 
@@ -242,7 +270,7 @@ class GenericReportProcessor(BaseDocumentProcessor):
 
 
 # Dispatcher Function
-def process_raw_csv_data(raw_csv_data: List[Dict[str, Any]], doc_id: str, doc_type_code: str) -> Optional[StructuredDocumentData]:
+def process_raw_csv_data(raw_csv_data: List[Dict[str, Any]], doc_id: str, doc_type_code: str, zip_extract_path: str = None) -> Optional[StructuredDocumentData]:
     """
     Dispatches raw CSV data to the appropriate document processor.
 
@@ -250,6 +278,7 @@ def process_raw_csv_data(raw_csv_data: List[Dict[str, Any]], doc_id: str, doc_ty
         raw_csv_data: List of dictionaries from reading CSV files.
         doc_id: EDINET document ID.
         doc_type_code: EDINET document type code.
+        zip_extract_path: Path to extracted ZIP contents for XBRL processing.
 
     Returns:
         Structured dictionary of the document's data, or None if processing failed.
@@ -265,9 +294,8 @@ def process_raw_csv_data(raw_csv_data: List[Dict[str, Any]], doc_id: str, doc_ty
     logger.debug(f"Using processor {processor_class.__name__} for document type {doc_type_code} (doc_id: {doc_id})")
 
     try:
-        processor = processor_class(raw_csv_data, doc_id, doc_type_code)
+        processor = processor_class(raw_csv_data, doc_id, doc_type_code, zip_extract_path)
         return processor.process()
     except Exception as e:
         logger.error(f"Error during processing with {processor_class.__name__} for document {doc_id}: {e}")
-        # traceback.print_exc() # Uncomment for debugging
         return None
