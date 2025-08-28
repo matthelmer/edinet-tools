@@ -12,6 +12,11 @@ venv
 *.csv
 *.zip
 
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
 # Ignore all .md files except README.md
 *.md
 !README.md

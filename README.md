@@ -1,6 +1,6 @@
 # EDINET Tools
 
-> **Access Japanese corporate financial data with confidence**
+> **Access Japanese corporate disclosure data**
 
 A Python package for Japan's [EDINET](https://disclosure2.edinet-fsa.go.jp/) disclosure system. Clean API, comprehensive testing, and optional LLM-powered analysis.
 
@@ -17,9 +17,9 @@ A Python package for Japan's [EDINET](https://disclosure2.edinet-fsa.go.jp/) dis
 - Handle Japanese text encoding automatically
 
 **Optional AI Analysis**
-- Generate executive summaries from financial documents  
+- Generate executive summaries from financial documents
 - One-line insights for quick analysis
-- Support for Claude, GPT, and other LLM providers
+- Support for Anthropic, OpenAI, and other LLM providers
 
 ## Installation
 
@@ -57,6 +57,20 @@ filings = client.get_recent_filings(days_back=7)
 
 # Download and analyze a filing (requires LLM API key)
 structured_data = client.download_filing(filings[0]['docID'], extract_data=True)
+
+# Batch processing with graceful error handling
+results = client.download_filings_batch([f['docID'] for f in filings[:5]])
+successful = [r for r in results if r is not None]
+print(f"Successfully processed {len(successful)}/{len(results)} documents")
+
+# Graceful single document processing (skip errors)
+for filing in filings:
+    data = client.download_filing(filing['docID'], raise_on_error=False)
+    if data:
+        summary = analyze_document_data(data, 'one_line_summary')
+        print(f"• {summary}")
+    else:
+        print(f"• Skipped {filing['docID']} - not available")
 ```
 
 ## Configuration
@@ -111,10 +125,10 @@ This demonstrates:
 Run the comprehensive test suite:
 
 ```bash
-python test_runner.py --all         # Full test suite (94 tests)
-python test_runner.py --unit        # Unit tests only
-python test_runner.py --integration # Integration tests only
-python test_runner.py --smoke       # Quick validation
+python test_runner.py --all         # Full test suite (198 tests)
+python test_runner.py --unit        # Unit tests only (~172 tests, <30s)
+python test_runner.py --integration # Integration tests only (~24 tests, requires API key)
+python test_runner.py --smoke       # Quick validation (3 tests, <5s)
 ```
 
 ## LLM Analysis
@@ -132,6 +146,42 @@ insights = analyze_document_data(structured_data, 'one_line_summary')
 ```
 
 **Models**: Claude-4-Sonnet, GPT-5-Mini, GPT-4o, and more via the `llm` library.
+
+## Error Handling
+
+The library provides flexible error handling for both single and batch document processing:
+
+```python
+# Traditional approach (raises exceptions)
+try:
+    data = client.download_filing("S100ABC1")
+    process(data)
+except DocumentNotFoundError:
+    print("Document not found")
+except APIError:
+    print("API request failed")
+
+# Graceful approach (returns None on error)
+data = client.download_filing("S100ABC1", raise_on_error=False)
+if data:
+    process(data)
+else:
+    print("Document not available")
+
+# Batch processing (graceful by default)
+results = client.download_filings_batch(doc_ids)
+for i, (doc_id, data) in enumerate(zip(doc_ids, results)):
+    if data:
+        print(f"✅ {doc_id}: Success")
+    else:
+        print(f"⚠️  {doc_id}: Skipped")
+
+# Batch processing (fail-fast mode)
+try:
+    results = client.download_filings_batch(doc_ids, raise_on_error=True)
+except DocumentNotFoundError as e:
+    print(f"Batch failed: {e}")
+```
 
 ## Contributing
 

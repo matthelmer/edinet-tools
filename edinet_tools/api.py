@@ -248,13 +248,14 @@ def get_documents_for_date_range(start_date: datetime.date,
                                  edinet_codes: List[str] = [],
                                  doc_type_codes: List[str] = [],
                                  excluded_doc_type_codes: List[str] = [],
-                                 require_sec_code: bool = True) -> List[Dict]:
+                                 require_sec_code: bool = True,
+                                 api_key: str = None) -> List[Dict]:
     """Retrieve and filter documents for a date range."""
     matching_docs = []
     current_date = start_date
     while current_date <= end_date:
         try:
-            docs_res = fetch_documents_list(date=current_date)
+            docs_res = fetch_documents_list(date=current_date, api_key=api_key)
             if docs_res and docs_res.get('results'):
                 logger.info(f"Found {len(docs_res['results'])} documents on EDINET for {current_date}.")
                 filtered_docs = filter_documents(

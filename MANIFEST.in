@@ -1,0 +1,33 @@
+# Include essential files
+include README.md
+include LICENSE
+include pyproject.toml
+
+# Include data files needed by the package
+recursive-include edinet_tools/data *.csv
+
+# Exclude all other .md files
+exclude *.md
+include README.md
+
+# Exclude development and test files
+exclude test_runner.py
+exclude demo.py
+exclude pytest.ini
+recursive-exclude test *
+recursive-exclude downloads *
+recursive-exclude venv *
+recursive-exclude dist *
+recursive-exclude *.egg-info *
+
+# Exclude configuration files
+exclude .env
+exclude .env.*
+
+# Exclude development artifacts
+exclude .DS_Store
+exclude *.pyc
+exclude *.pyo
+exclude *.pyd
+exclude __pycache__
+exclude .python-version

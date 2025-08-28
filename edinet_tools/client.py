@@ -4,6 +4,7 @@ Main EDINET Client class providing a clean, developer-friendly interface.
 
 import os
 import datetime
+import json
 from typing import List, Dict, Any, Optional, Union
 import logging
 
@@ -169,7 +170,8 @@ class EdinetClient:
     def download_filing(self, 
                        doc_id: str,
                        extract_data: bool = True,
-                       doc_type_code: Optional[str] = None) -> Optional[Dict[str, Any]]:
+                       doc_type_code: Optional[str] = None,
+                       raise_on_error: bool = True) -> Optional[Dict[str, Any]]:
         """
         Download and optionally process a specific filing.
         
@@ -177,13 +179,59 @@ class EdinetClient:
             doc_id: EDINET document ID
             extract_data: Whether to extract and process structured data
             doc_type_code: Optional document type code if known
+            raise_on_error: If False, return None on error instead of raising exception
             
         Returns:
             Processed document data if extract_data=True, None otherwise
+            
+        Raises:
+            DocumentNotFoundError: When document doesn't exist (if raise_on_error=True)
+            APIError: When API request fails (if raise_on_error=True)
+            ProcessingError: When document processing fails (if raise_on_error=True)
+            
+        Examples:
+            # Single document (raises exceptions)
+            try:
+                data = client.download_filing("S100ABC1")
+            except DocumentNotFoundError:
+                print("Document not found")
+                
+            # Batch processing (graceful)
+            for doc_id in doc_ids:
+                data = client.download_filing(doc_id, raise_on_error=False)
+                if data:
+                    process(data)
+                    
+            # Or use the batch convenience method
+            results = client.download_filings_batch(doc_ids)
+            successful_data = [r for r in results if r is not None]
         """
         try:
             # Download the document
             doc_response = fetch_document(doc_id, api_key=self.api_key)
+            
+            # Check if the response is actually a JSON error instead of a ZIP file
+            if self._is_json_error_response(doc_response):
+                error_data = json.loads(doc_response.decode('utf-8'))
+                error_message = error_data.get('metadata', {}).get('message', 'Unknown error')
+                status = error_data.get('metadata', {}).get('status', 'Unknown')
+                
+                logger.error(f"API returned error for document {doc_id}: {status} - {error_message}")
+                
+                if not raise_on_error:
+                    return None
+                
+                if status == '404' or 'not found' in error_message.lower():
+                    raise DocumentNotFoundError(doc_id)
+                else:
+                    raise APIError(f"API error for document {doc_id}: {status} - {error_message}")
+            
+            # Check if response looks like a ZIP file
+            if not self._is_zip_response(doc_response):
+                logger.error(f"Document {doc_id} response does not appear to be a valid ZIP file")
+                if not raise_on_error:
+                    return None
+                raise ProcessingError(f"Invalid response format for document {doc_id}", doc_id, "Response is not a ZIP file")
             
             # Save to downloads directory
             filename = f"{doc_id}.zip"
@@ -199,14 +247,92 @@ class EdinetClient:
             
             return None
             
+        except (DocumentNotFoundError, APIError, ProcessingError):
+            # Re-raise these specific exceptions without wrapping
+            if raise_on_error:
+                raise
+            else:
+                return None
         except Exception as e:
             logger.error(f"Error downloading filing {doc_id}: {e}")
+            if not raise_on_error:
+                return None
             if "404" in str(e) or "not found" in str(e).lower():
                 raise DocumentNotFoundError(doc_id)
             elif "401" in str(e) or "unauthorized" in str(e).lower():
                 raise AuthenticationError()
             else:
                 raise APIError(f"Failed to download filing {doc_id}: {e}")
+    
+    def download_filings_batch(self, 
+                              doc_ids: List[str],
+                              extract_data: bool = True,
+                              doc_type_code: Optional[str] = None,
+                              raise_on_error: bool = False) -> List[Optional[Dict[str, Any]]]:
+        """
+        Download multiple filings with configurable error handling.
+        
+        This is a convenience method for batch processing. By default, it uses
+        graceful error handling (raise_on_error=False) to skip problematic documents,
+        but can be configured to fail fast if needed.
+        
+        Args:
+            doc_ids: List of EDINET document IDs
+            extract_data: Whether to extract and process structured data
+            doc_type_code: Optional document type code if known
+            raise_on_error: If True, stop on first error; if False, skip failed documents (default)
+            
+        Returns:
+            List of processed data (or None if failed) in same order as input doc_ids
+            
+        Examples:
+            # Graceful batch processing (default)
+            >>> results = client.download_filings_batch(["S100ABC1", "S100XYZ2"])
+            >>> successful = [r for r in results if r is not None]
+            
+            # Fail-fast batch processing
+            >>> try:
+            ...     results = client.download_filings_batch(doc_ids, raise_on_error=True)
+            ... except DocumentNotFoundError:
+            ...     print("Batch failed on first error")
+        """
+        results = []
+        total = len(doc_ids)
+        
+        logger.info(f"Starting batch download of {total} documents")
+        
+        for i, doc_id in enumerate(doc_ids, 1):
+            logger.debug(f"Processing document {i}/{total}: {doc_id}")
+            
+            # Use the specified error handling mode
+            result = self.download_filing(
+                doc_id, 
+                extract_data=extract_data, 
+                doc_type_code=doc_type_code,
+                raise_on_error=raise_on_error
+            )
+            results.append(result)
+        
+        successful_count = sum(1 for v in results if v is not None)
+        logger.info(f"Batch download completed: {successful_count}/{total} documents successful")
+        
+        return results
+    
+    def _is_json_error_response(self, response_bytes: bytes) -> bool:
+        """Check if response is a JSON error message."""
+        try:
+            # Try to decode as UTF-8 and parse as JSON
+            response_text = response_bytes.decode('utf-8')
+            data = json.loads(response_text)
+            # Check if it has the error structure
+            return 'metadata' in data and 'status' in data.get('metadata', {})
+        except (UnicodeDecodeError, json.JSONDecodeError, AttributeError):
+            return False
+    
+    def _is_zip_response(self, response_bytes: bytes) -> bool:
+        """Check if response appears to be a ZIP file."""
+        # ZIP files start with 'PK' (0x504b)
+        return len(response_bytes) > 2 and response_bytes[:2] == b'PK'
     
     def extract_filing_data(self, zip_path: str, doc_type_code: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """

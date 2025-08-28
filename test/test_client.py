@@ -242,8 +242,8 @@ class TestMockAPI:
     @patch('edinet_tools.client.fetch_document')
     def test_download_filing_success(self, mock_fetch):
         """Test successful filing download."""
-        # Mock file content - return bytes directly
-        mock_fetch.return_value = b"fake_zip_content"
+        # Mock file content - return bytes that look like a ZIP file (starts with PK)
+        mock_fetch.return_value = b"PK\x03\x04fake_zip_content"
         
         # Mock file processing to avoid actual file operations
         with patch.object(self.client, 'extract_filing_data') as mock_extract:
@@ -263,6 +263,113 @@ class TestMockAPI:
             self.client.download_filing("S100NOTFOUND")
         
         assert "S100NOTFOUND" in str(exc_info.value)
+    
+    @patch('edinet_tools.client.fetch_document')
+    def test_download_filing_not_found_graceful(self, mock_fetch):
+        """Test filing download with document not found - graceful mode."""
+        # Mock JSON error response like EDINET API returns
+        json_error = b'{"metadata": {"title": "API", "status": "404", "message": "Not Found"}}'
+        mock_fetch.return_value = json_error
+        
+        # Should return None instead of raising exception
+        result = self.client.download_filing("S100NOTFOUND", raise_on_error=False)
+        
+        assert result is None
+        mock_fetch.assert_called_once()
+    
+    @patch('edinet_tools.client.fetch_document')
+    def test_batch_filing_download_graceful(self, mock_fetch):
+        """Test batch filing download with mixed success/failure - graceful mode."""
+        def mock_fetch_side_effect(doc_id, **kwargs):
+            if doc_id == "S100VALID":
+                return b"PK\x03\x04fake_zip_content"  # Valid ZIP file signature
+            else:
+                # Return JSON error for invalid doc IDs
+                return b'{"metadata": {"title": "API", "status": "404", "message": "Not Found"}}'
+        
+        mock_fetch.side_effect = mock_fetch_side_effect
+        
+        # Simulate batch processing like user would do
+        doc_ids = ["S100VALID", "S100INVALID", "S100VALID"]
+        results = []
+        
+        with patch.object(self.client, 'extract_filing_data') as mock_extract:
+            mock_extract.return_value = {'company': 'Test Company'}
+            
+            for doc_id in doc_ids:
+                data = self.client.download_filing(doc_id, raise_on_error=False)
+                results.append(data)
+        
+        # Should have 2 successful results and 1 None (skipped)
+        assert len(results) == 3
+        assert results[0] == {'company': 'Test Company'}  # Success
+        assert results[1] is None  # Failed gracefully
+        assert results[2] == {'company': 'Test Company'}  # Success
+        
+        # Should have called fetch_document 3 times
+        assert mock_fetch.call_count == 3
+    
+    @patch('edinet_tools.client.fetch_document')
+    def test_download_filings_batch_convenience_method(self, mock_fetch):
+        """Test the new batch download convenience method."""
+        def mock_fetch_side_effect(doc_id, **kwargs):
+            if doc_id in ["S100VALID1", "S100VALID2"]:
+                return b"PK\x03\x04fake_zip_content"  # Valid ZIP file signature
+            else:
+                # Return JSON error for invalid doc IDs
+                return b'{"metadata": {"title": "API", "status": "404", "message": "Not Found"}}'
+        
+        mock_fetch.side_effect = mock_fetch_side_effect
+        
+        # Test batch processing with mixed results
+        doc_ids = ["S100VALID1", "S100INVALID", "S100VALID2"]
+        
+        with patch.object(self.client, 'extract_filing_data') as mock_extract:
+            mock_extract.return_value = {'company': 'Test Company'}
+            
+            # Call the new batch method
+            results = self.client.download_filings_batch(doc_ids)
+        
+        # Check results structure - should be a list in same order as input
+        assert len(results) == 3
+        assert isinstance(results, list)
+        
+        # Check success/failure patterns in order
+        assert results[0] == {'company': 'Test Company'}  # S100VALID1 - Success
+        assert results[1] is None  # S100INVALID - Failed gracefully  
+        assert results[2] == {'company': 'Test Company'}  # S100VALID2 - Success
+        
+        # Should have called fetch_document 3 times
+        assert mock_fetch.call_count == 3
+        
+        # Test convenience filtering
+        successful = [r for r in results if r is not None]
+        assert len(successful) == 2
+    
+    @patch('edinet_tools.client.fetch_document')
+    def test_download_filings_batch_with_raise_on_error_true(self, mock_fetch):
+        """Test batch method with raise_on_error=True (fail fast behavior)."""
+        def mock_fetch_side_effect(doc_id, **kwargs):
+            if doc_id == "S100VALID":
+                return b"PK\x03\x04fake_zip_content"  # Valid ZIP file signature
+            else:
+                # Return JSON error for invalid doc IDs
+                return b'{"metadata": {"title": "API", "status": "404", "message": "Not Found"}}'
+        
+        mock_fetch.side_effect = mock_fetch_side_effect
+        
+        # Test batch processing that should fail on first error
+        doc_ids = ["S100VALID", "S100INVALID", "S100VALID"]
+        
+        with patch.object(self.client, 'extract_filing_data') as mock_extract:
+            mock_extract.return_value = {'company': 'Test Company'}
+            
+            # This should raise an exception on the second document
+            with pytest.raises(DocumentNotFoundError):
+                self.client.download_filings_batch(doc_ids, raise_on_error=True)
+        
+        # Should have only called fetch_document twice (stopped on error)
+        assert mock_fetch.call_count == 2
 
 
 if __name__ == "__main__":

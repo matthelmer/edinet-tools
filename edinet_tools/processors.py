@@ -69,14 +69,14 @@ class BaseDocumentProcessor:
             if element_id and 'TextBlock' in element_id and value:
                 text_blocks.append({
                     'id': element_id,
-                    'title': item_name,
+                    'title': item_name or element_id,  # Ensure title is not None
                     'content': value # Keep original value before cleaning for LLM to process
                 })
             # Include report submission reason which may not have "TextBlock" in the ID
-            elif element_id and ('ReasonForFiling' in element_id or '提出理由' in item_name) and value:
+            elif element_id and value and (('ReasonForFiling' in element_id) or (item_name and '提出理由' in item_name)):
                  text_blocks.append({
                     'id': element_id,
-                    'title': item_name,
+                    'title': item_name or element_id,  # Ensure title is not None
                     'content': value # Keep original value before cleaning for LLM to process
                 })
 
@@ -252,6 +252,188 @@ class SemiAnnualReportProcessor(BaseDocumentProcessor):
         return structured_data if structured_data else None
 
 
+class SecuritiesReportProcessor(BaseDocumentProcessor):
+    """Processor for Securities Reports (doc_type_code '120')."""
+
+    def process(self) -> Optional[StructuredDocumentData]:
+        """Extract key data points, tables, and text blocks for Securities Reports."""
+        logger.debug(f"Processing Securities Report (doc_id: {self.doc_id})")
+        structured_data = self._get_common_metadata()
+
+        # Securities Reports have rich financial data and comprehensive disclosures
+        # Extract key financial metrics first
+        key_facts = self._extract_financial_metrics()
+        
+        # Extract business and operational information
+        key_facts.update(self._extract_business_facts())
+        
+        structured_data['key_facts'] = key_facts
+
+        # Extract financial statement tables
+        structured_data['financial_tables'] = self._extract_financial_tables()
+
+        # Categorize and extract all text blocks
+        structured_data['text_blocks'] = self._categorize_text_blocks()
+
+        logger.debug(f"Finished processing Securities Report {self.doc_id}. Extracted {len(key_facts)} key facts, {len(structured_data['financial_tables'])} financial tables, and {len(structured_data['text_blocks'])} text blocks.")
+        return structured_data if structured_data else None
+
+    def _extract_financial_metrics(self) -> Dict[str, Any]:
+        """Extract common financial metrics from Securities Reports."""
+        financial_metrics = {}
+        
+        # Common financial metrics across industries
+        common_metrics = {
+            # Revenue/Income Statement
+            'jpcrp_cor:NetSales': 'net_sales',
+            'jpcrp_cor:OperatingRevenue1': 'operating_revenue', 
+            'jpcrp_cor:OperatingIncome': 'operating_income',
+            'jpcrp_cor:OrdinaryIncome': 'ordinary_income',
+            'jpcrp_cor:NetIncome': 'net_income',
+            'jppfs_cor:ProfitLossAttributableToOwnersOfParent': 'net_income_attributable_to_owners',
+            
+            # Balance Sheet  
+            'jpcrp_cor:TotalAssets': 'total_assets',
+            'jpcrp_cor:NetAssets': 'net_assets', 
+            'jpcrp_cor:TotalEquity': 'total_equity',
+            
+            # Per Share Data
+            'jpcrp_cor:BasicEarningsLossPerShare': 'earnings_per_share',
+            'jpcrp_cor:BookValuePerShare': 'book_value_per_share',
+            
+            # Cash Flow
+            'jpcrp_cor:CashFlowsFromOperatingActivities': 'operating_cash_flow',
+            'jpcrp_cor:CashFlowsFromInvestmentActivities': 'investing_cash_flow',
+            'jpcrp_cor:CashFlowsFromFinancingActivities': 'financing_cash_flow',
+        }
+        
+        # Extract metrics with current/prior period context if available
+        for xbrl_id, metric_key in common_metrics.items():
+            current_value = self.get_value_by_id(xbrl_id, context_filter='Current')
+            prior_value = self.get_value_by_id(xbrl_id, context_filter='Prior')
+            
+            # If no context-specific value, try without filter
+            if current_value is None and prior_value is None:
+                any_value = self.get_value_by_id(xbrl_id)
+                if any_value is not None:
+                    financial_metrics[metric_key] = any_value
+            else:
+                if current_value is not None or prior_value is not None:
+                    financial_metrics[metric_key] = {
+                        'current': current_value,
+                        'prior': prior_value
+                    }
+        
+        return financial_metrics
+
+    def _extract_business_facts(self) -> Dict[str, Any]:
+        """Extract business and operational facts specific to Securities Reports."""
+        business_facts = {}
+        
+        # Key business information elements
+        business_elements = {
+            'jpcrp_cor:NumberOfEmployees': 'employee_count',
+            'jpcrp_cor:AverageAnnualSalary': 'average_annual_salary', 
+            'jpcrp_cor:NumberOfSharesIssuedAndOutstanding': 'shares_outstanding',
+            'jpcrp_cor:FiscalYearEnd': 'fiscal_year_end',
+            'jpcrp_cor:AccountingStandardsFollowedInPreparationOfFinancialStatements': 'accounting_standards',
+        }
+        
+        for xbrl_id, fact_key in business_elements.items():
+            value = self.get_value_by_id(xbrl_id)
+            if value is not None:
+                business_facts[fact_key] = value
+                
+        return business_facts
+
+    def _extract_financial_tables(self) -> List[Dict[str, Any]]:
+        """Extract structured financial statement tables."""
+        financial_tables = []
+        
+        # Key financial statement table patterns
+        table_elements = {
+            'jpcrp_cor:ConsolidatedStatementsOfIncome': 'Consolidated Income Statement',
+            'jpcrp_cor:ConsolidatedBalanceSheets': 'Consolidated Balance Sheet', 
+            'jpcrp_cor:ConsolidatedStatementsOfCashFlows': 'Consolidated Cash Flow Statement',
+            'jpcrp_cor:ConsolidatedStatementsOfEquity': 'Consolidated Statement of Equity',
+            'jpcrp_cor:SegmentInformation': 'Segment Information',
+        }
+        
+        for xbrl_id, table_title in table_elements.items():
+            table_content = self.get_value_by_id(xbrl_id)
+            if table_content:
+                financial_tables.append({
+                    'id': xbrl_id,
+                    'title': table_title,
+                    'content': table_content
+                })
+        
+        return financial_tables
+
+    def _categorize_text_blocks(self) -> List[Dict[str, Any]]:
+        """Categorize and extract all text blocks, ensuring no data loss."""
+        all_blocks = self.get_all_text_blocks()
+        
+        # Add categorization to help with analysis
+        for block in all_blocks:
+            element_id = block.get('id', '')
+            block['category'] = self._categorize_element(element_id)
+            
+        return all_blocks
+
+    def _categorize_element(self, element_id: str) -> str:
+        """Categorize XBRL elements by business area."""
+        if not element_id:
+            return 'unknown'
+            
+        # Business area categorization
+        if any(keyword in element_id.lower() for keyword in ['business', 'segment', 'product', 'service']):
+            return 'business_overview'
+        elif any(keyword in element_id.lower() for keyword in ['risk', 'uncertainty', 'contingency']):
+            return 'risk_factors'  
+        elif any(keyword in element_id.lower() for keyword in ['management', 'analysis', 'md&a', 'financial_position']):
+            return 'management_analysis'
+        elif any(keyword in element_id.lower() for keyword in ['corporate', 'governance', 'director', 'officer']):
+            return 'corporate_governance'
+        elif any(keyword in element_id.lower() for keyword in ['shareholder', 'dividend', 'stock']):
+            return 'shareholder_information'
+        elif any(keyword in element_id.lower() for keyword in ['accounting', 'policy', 'standard', 'method']):
+            return 'accounting_information'
+        else:
+            return 'other'
+
+
+class InternalControlReportProcessor(BaseDocumentProcessor):
+    """Processor for Internal Control Reports (doc_type_code '235')."""
+
+    def process(self) -> Optional[StructuredDocumentData]:
+        """Extract key data points and text blocks for Internal Control Reports."""
+        logger.debug(f"Processing Internal Control Report (doc_id: {self.doc_id})")
+        structured_data = self._get_common_metadata()
+
+        # Internal Control Reports have specific compliance information
+        key_facts = {}
+        
+        # Key internal control elements
+        control_elements = {
+            'jpcrp_cor:InternalControlAssessmentResult': 'assessment_result',
+            'jpcrp_cor:MaterialWeaknessInInternalControl': 'material_weakness',
+            'jpcrp_cor:RemediationOfMaterialWeakness': 'remediation_actions',
+        }
+        
+        for xbrl_id, fact_key in control_elements.items():
+            value = self.get_value_by_id(xbrl_id)
+            if value is not None:
+                key_facts[fact_key] = value
+
+        structured_data['key_facts'] = key_facts
+        structured_data['financial_tables'] = []  # Internal control reports don't have financial tables
+        structured_data['text_blocks'] = self.get_all_text_blocks()
+
+        logger.debug(f"Finished processing Internal Control Report {self.doc_id}. Extracted {len(key_facts)} key facts and {len(structured_data['text_blocks'])} text blocks.")
+        return structured_data if structured_data else None
+
+
 class GenericReportProcessor(BaseDocumentProcessor):
     """Processor for other document types (default)."""
 
@@ -286,6 +468,8 @@ def process_raw_csv_data(raw_csv_data: List[Dict[str, Any]], doc_id: str, doc_ty
     processor_map = {
         '180': ExtraordinaryReportProcessor,
         '160': SemiAnnualReportProcessor,
+        '120': SecuritiesReportProcessor,
+        '235': InternalControlReportProcessor,
         # Add other specific processors here
     }
     default_processor = GenericReportProcessor

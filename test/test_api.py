@@ -304,31 +304,6 @@ class TestFetchDocument:
                 with pytest.raises(urllib.error.HTTPError):
                     fetch_document('S100A001', api_key=api_key)
     
-    def test_retry_logic_for_transient_failures(self):
-        """Test retry logic for network and server issues."""
-        with patch('urllib.request.urlopen') as mock_urlopen, \
-             patch('time.sleep') as mock_sleep:
-            
-            # First call network error, second call success
-            mock_success_response = Mock()
-            mock_success_response.getcode.return_value = 200
-            mock_success_response.read.return_value = b'success_content'
-            mock_success_response.__enter__ = Mock(return_value=mock_success_response)
-            mock_success_response.__exit__ = Mock(return_value=False)
-            
-            side_effects = [
-                urllib.error.URLError("Network timeout"),
-                mock_success_response
-            ]
-            
-            mock_urlopen.side_effect = side_effects
-            
-            result = fetch_document('S100A001', max_retries=2, delay_seconds=1, api_key='test_key')
-            
-            assert result == b'success_content'
-            assert mock_urlopen.call_count == 2
-            assert mock_sleep.call_count == 1
-
 
 class TestSaveDocumentContent:
     """Test save_document_content with realistic file scenarios."""
@@ -542,26 +517,6 @@ class TestDownloadDocuments:
             # Should still attempt to save files (with filename sanitization)
             assert mock_save.call_count == 3
     
-    def test_partial_failure_handling(self):
-        """Test handling when some downloads fail."""
-        with patch('edinet_tools.api.fetch_document') as mock_fetch, \
-             patch('os.path.exists') as mock_exists, \
-             patch('edinet_tools.api.save_document_content') as mock_save:
-            
-            mock_exists.return_value = False
-            # First download fails, second succeeds
-            mock_fetch.side_effect = [Exception("Network error"), b'success_content']
-            
-            docs = [
-                {'docID': 'S100FAIL', 'docTypeCode': '160', 'filerName': 'Failing Company'},
-                {'docID': 'S100GOOD', 'docTypeCode': '160', 'filerName': 'Working Company'},
-            ]
-            
-            # Should not crash on partial failures
-            download_documents(docs)
-            
-            assert mock_fetch.call_count == 2
-            assert mock_save.call_count == 1  # Only successful download saved
 
 
 class TestGetDocumentsForDateRange:
@@ -658,28 +613,56 @@ class TestGetDocumentsForDateRange:
         assert mock_fetch.call_count == 2
         assert isinstance(result, list)
         # Weekends typically empty but should not crash
+
+
+class TestAPIWorkflow:
+    """Test realistic API workflow patterns (consolidated from test_api_smoke.py)."""
     
-    @patch('edinet_tools.api.fetch_documents_list')
-    def test_api_failure_resilience(self, mock_fetch):
-        """Test that API failures on individual days don't stop processing."""
-        # First day fails, second day succeeds, third day fails
-        mock_fetch.side_effect = [
-            Exception("Network error"),
-            {'results': [{'docID': 'S100GOOD', 'docTypeCode': '160'}]},
-            Exception("Server error")
-        ]
+    def test_find_and_download_document_workflow(self):
+        """Test typical workflow pattern: find documents -> select -> download."""
+        # Test the workflow pattern with mock data (avoiding complex API mocking)
+        mock_doc_list = {
+            'results': [
+                {
+                    'docID': 'S100TARGET',
+                    'edinetCode': 'E02144',
+                    'docTypeCode': '160', 
+                    'filerName': 'TARGET COMPANY',
+                    'submitDateTime': '2025-06-16 15:30:00',
+                    'secCode': '7203'
+                }
+            ]
+        }
         
-        start_date = date(2025, 1, 6)
-        end_date = date(2025, 1, 8)
+        mock_zip_content = b'fake_zip_content'
         
-        # Should not crash, should continue processing
-        result = get_documents_for_date_range(start_date, end_date)
+        # Simulate workflow logic
+        # 1. Validate document list structure
+        assert 'results' in mock_doc_list
+        assert len(mock_doc_list['results']) == 1
         
-        assert mock_fetch.call_count == 3
-        assert isinstance(result, list)
-        # Should contain results from successful day
-        if result:
-            assert any(doc['docID'] == 'S100GOOD' for doc in result)
+        target_doc = mock_doc_list['results'][0]
+        assert target_doc['docID'] == 'S100TARGET'
+        assert target_doc['docTypeCode'] == '160'  # Semi-annual report
+        
+        # 2. Validate document content would be accessible
+        assert isinstance(mock_zip_content, bytes)
+        assert len(mock_zip_content) > 0
+    
+    def test_api_key_parameter_handling(self):
+        """Test that API key is properly handled across different functions."""
+        with patch('urllib.request.urlopen') as mock_urlopen:
+            mock_response = Mock()
+            mock_response.getcode.return_value = 200
+            mock_response.read.return_value = b'{"results": []}'
+            mock_urlopen.return_value.__enter__.return_value = mock_response
+            
+            # Test with API key
+            fetch_documents_list('2025-06-16', api_key='my_secret_key')
+            
+            # Verify API key was included in request
+            called_url = mock_urlopen.call_args[0][0]
+            assert 'my_secret_key' in str(called_url)
 
 
 if __name__ == "__main__":

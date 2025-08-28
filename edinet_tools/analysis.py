@@ -32,8 +32,8 @@ class ExecutiveSummary(BaseModel):
         if isinstance(v, str):
             # Split string by bullet points or line breaks and clean up
             import re
-            # Split by common bullet patterns: •, -, *, or numbered items
-            lines = re.split(r'[•\-\*]|\d+\.', v)
+            # Split by bullet patterns at start of lines: \n- or \n• or \n* or \n1.
+            lines = re.split(r'\n\s*[•\-\*]|\n\s*\d+\.', v)
             # Clean up each line and filter out empty ones
             highlights = []
             for line in lines:
@@ -315,7 +315,13 @@ class ExecutiveSummaryTool(BasePromptTool):
         if schema_object.key_highlights:
             text += "Key Highlights:\n"
             for highlight in schema_object.key_highlights:
-                text += f"- {highlight}\n"
+                # Clean up any existing bullet characters from the highlight
+                clean_highlight = highlight.strip()
+                if clean_highlight.startswith('•'):
+                    clean_highlight = clean_highlight[1:].strip()
+                if clean_highlight.startswith('-'):
+                    clean_highlight = clean_highlight[1:].strip()
+                text += f"• {clean_highlight}\n"
             text += "\n"
         if schema_object.potential_impact_rationale:
             # Format potential impact separately

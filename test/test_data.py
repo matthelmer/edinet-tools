@@ -189,6 +189,64 @@ class TestEdgeCases:
         assert len(results_mixed) > 0
 
 
+class TestCSVDataIntegrity:
+    """Test CSV data file integrity and structure."""
+    
+    @pytest.mark.slow
+    def test_edinet_codes_csv_integrity(self):
+        """Ensure EDINET codes CSV has expected structure and key companies."""
+        from edinet_tools.data_loader import get_data_loader
+        
+        # Load the raw company data
+        data_loader = get_data_loader()
+        companies = data_loader.get_companies()
+        
+        # Structure validation
+        assert len(companies) > 10000, f"Expected >10k companies, got {len(companies)}"
+        
+        # Check that we have essential data fields
+        sample_company = companies[0] if companies else {}
+        required_fields = ['edinet_code', 'name_en', 'name_ja', 'ticker']
+        
+        for field in required_fields:
+            assert field in sample_company, f"Missing required field: {field}"
+        
+        # Spot check that Toyota Motor Corporation exists
+        toyota_found = any(
+            company.get('name_en', '').upper().find('TOYOTA MOTOR CORPORATION') >= 0 
+            for company in companies
+        )
+        assert toyota_found, "Toyota Motor Corporation not found in company data"
+        
+        # Validate Toyota's specific data
+        toyota_companies = [
+            company for company in companies 
+            if 'TOYOTA MOTOR CORPORATION' in company.get('name_en', '').upper()
+        ]
+        assert len(toyota_companies) > 0, "No Toyota Motor Corporation entries found"
+        
+        # Check Toyota's EDINET code matches expected
+        toyota_main = next(
+            (company for company in toyota_companies 
+             if company.get('ticker') in ['7203', '72030']), 
+            None
+        )
+        assert toyota_main is not None, "Toyota Motor Corporation with ticker 7203 not found"
+        assert toyota_main['edinet_code'] == 'E02144', f"Expected Toyota EDINET code E02144, got {toyota_main['edinet_code']}"
+    
+    @pytest.mark.slow
+    def test_company_translations_csv_loadable(self):
+        """Test that corporate entity translations CSV loads without errors."""
+        from edinet_tools.data_loader import get_data_loader
+        
+        data_loader = get_data_loader()
+        # This should not raise an exception
+        translations = data_loader.load_translations()
+        
+        assert isinstance(translations, dict), "Translations should be a dictionary"
+        assert len(translations) > 0, "Translations dictionary should not be empty"
+
+
 if __name__ == "__main__":
     # Run tests if pytest is available
     try:

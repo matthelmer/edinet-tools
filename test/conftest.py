@@ -144,15 +144,21 @@ def mock_edinet_api_response():
     }
 
 @pytest.fixture(autouse=True)
-def set_test_env_vars():
+def set_test_env_vars(request):
     """Set test environment variables."""
+    # Skip API key override for integration tests
+    is_integration_test = request.node.get_closest_marker('integration') is not None
+    
     original_env = {}
     test_env_vars = {
-        'EDINET_API_KEY': 'test-api-key',
         'LLM_API_KEY': 'test-llm-key',
         'LLM_MODEL': 'claude-4-sonnet',
         'LLM_FALLBACK_MODEL': 'gpt-5-mini'
     }
+    
+    # Only override API key for non-integration tests
+    if not is_integration_test:
+        test_env_vars['EDINET_API_KEY'] = 'test-api-key'
 
     # Store original values and set test values
     for key, value in test_env_vars.items():
