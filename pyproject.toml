@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edinet-tools"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
     {name = "Matt Helmer"},
 ]
 description = "Python package for accessing Japanese corporate financial data from EDINET"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 3 - Alpha",
