@@ -1,10 +1,14 @@
 """
 Main EDINET Client class providing a clean, developer-friendly interface.
+
+Note: For v0.2+, prefer using module-level functions (e.g., edinet.entity(),
+edinet.documents(), doc.parse()) instead of EdinetClient methods directly.
 """
 
 import os
 import datetime
 import json
+import warnings
 from typing import List, Dict, Any, Optional, Union
 import logging
 
@@ -41,11 +45,22 @@ class EdinetClient:
     def __init__(self, api_key: Optional[str] = None, download_dir: str = "./downloads"):
         """
         Initialize EDINET client.
-        
+
         Args:
             api_key: EDINET API key. If None, will look for EDINET_API_KEY environment variable.
             download_dir: Directory to store downloaded documents.
+
+        .. deprecated:: 0.2.0
+            Use module-level functions instead: edinet.configure(), edinet.entity(),
+            edinet.documents(). See migration guide in README.
         """
+        warnings.warn(
+            "EdinetClient is deprecated. Use module-level functions instead: "
+            "edinet.configure(), edinet.entity(), edinet.documents(). "
+            "See migration guide in README.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         self.api_key = api_key or os.getenv('EDINET_API_KEY')
         if not self.api_key:
             raise ConfigurationError(
@@ -90,19 +105,27 @@ class EdinetClient:
             else:
                 raise APIError(f"Failed to fetch documents for {date}: {e}")
     
-    def get_recent_filings(self, 
+    def get_recent_filings(self,
                           days_back: int = 7,
                           doc_types: Optional[List[str]] = None) -> List[Dict[str, Any]]:
         """
         Get recent filings across all companies.
-        
+
         Args:
             days_back: Number of days to look back
             doc_types: List of document types to include (e.g., ['160', '180'])
-            
+
         Returns:
             List of recent filing metadata
+
+        .. deprecated:: 0.2.0
+            Use edinet.documents(date) for specific dates instead.
         """
+        warnings.warn(
+            "get_recent_filings() is deprecated. Use edinet.documents(date) instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         all_filings = []
         end_date = datetime.date.today()
         
@@ -125,21 +148,32 @@ class EdinetClient:
         all_filings.sort(key=lambda x: x.get('submitDateTime') or '', reverse=True)
         return all_filings
     
-    def get_company_filings(self, 
+    def get_company_filings(self,
                            company_identifier: str,
                            days_back: int = 30,
                            doc_types: Optional[List[str]] = None) -> List[Dict[str, Any]]:
         """
         Get recent filings for a specific company.
-        
+
         Args:
             company_identifier: Company ticker (e.g., "7203") or EDINET code (e.g., "E02144")
             days_back: Number of days to look back
             doc_types: List of document types to include
-            
+
         Returns:
             List of company's recent filings
+
+        .. deprecated:: 0.2.0
+            Use entity.documents() instead:
+            company = edinet.entity("7203")
+            docs = company.documents(days=30)
         """
+        warnings.warn(
+            "get_company_filings() is deprecated. Use entity.documents() instead: "
+            "company = edinet.entity('7203'); docs = company.documents(days=30)",
+            DeprecationWarning,
+            stacklevel=2
+        )
         # TODO: Implement ticker to EDINET code lookup
         edinet_code = self._resolve_company_identifier(company_identifier)
         
@@ -154,58 +188,155 @@ class EdinetClient:
     def search_companies(self, query: str) -> List[Dict[str, Any]]:
         """
         Search for companies by name or ticker.
-        
+
         Args:
             query: Search term (company name in Japanese/English or ticker)
-            
+
         Returns:
             List of matching companies with metadata
+
+        .. deprecated:: 0.2.0
+            Use edinet.search() instead.
         """
+        warnings.warn(
+            "search_companies() is deprecated. Use edinet.search() instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         try:
             return search_companies_data(query)
         except Exception as e:
             logger.error(f"Error searching companies: {e}")
             return []
     
-    def download_filing(self, 
+    def download_filing_raw(self, doc_id: str, raise_on_error: bool = True) -> Optional[bytes]:
+        """
+        Download a filing and return raw ZIP bytes without processing or saving to disk.
+
+        This is useful for:
+        - Storing ZIPs in S3 or other cloud storage
+        - In-memory processing without disk I/O
+        - Streaming to other systems
+
+        Args:
+            doc_id: EDINET document ID
+            raise_on_error: If False, return None on error instead of raising exception
+
+        Returns:
+            Raw ZIP file bytes, or None if raise_on_error=False and an error occurred
+
+        Raises:
+            DocumentNotFoundError: When document doesn't exist (if raise_on_error=True)
+            APIError: When API request fails (if raise_on_error=True)
+
+        Example:
+            >>> zip_bytes = client.download_filing_raw("S100ABC1")
+            >>> s3_client.put_object(Bucket='my-bucket', Key='filings/S100ABC1.zip', Body=zip_bytes)
+
+        .. deprecated:: 0.2.0
+            Use doc.fetch() instead:
+            doc = company.documents()[0]
+            content = doc.fetch()
+        """
+        warnings.warn(
+            "download_filing_raw() is deprecated. Use doc.fetch() instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        try:
+            doc_response = fetch_document(doc_id, api_key=self.api_key)
+
+            # Check if the response is actually a JSON error instead of a ZIP file
+            if self._is_json_error_response(doc_response):
+                error_data = json.loads(doc_response.decode('utf-8'))
+                error_message = error_data.get('metadata', {}).get('message', 'Unknown error')
+                status = error_data.get('metadata', {}).get('status', 'Unknown')
+
+                logger.error(f"API returned error for document {doc_id}: {status} - {error_message}")
+
+                if not raise_on_error:
+                    return None
+
+                if status == '404' or 'not found' in error_message.lower():
+                    raise DocumentNotFoundError(doc_id)
+                else:
+                    raise APIError(f"API error for document {doc_id}: {status} - {error_message}")
+
+            # Check if response looks like a ZIP file
+            if not self._is_zip_response(doc_response):
+                logger.error(f"Document {doc_id} response does not appear to be a valid ZIP file")
+                if not raise_on_error:
+                    return None
+                raise ProcessingError(f"Invalid response format for document {doc_id}", doc_id, "Response is not a ZIP file")
+
+            logger.info(f"Downloaded {doc_id} raw bytes ({len(doc_response)} bytes)")
+            return doc_response
+
+        except (DocumentNotFoundError, APIError, ProcessingError):
+            if raise_on_error:
+                raise
+            return None
+        except Exception as e:
+            logger.error(f"Error downloading filing {doc_id}: {e}")
+            if not raise_on_error:
+                return None
+            if "404" in str(e) or "not found" in str(e).lower():
+                raise DocumentNotFoundError(doc_id)
+            elif "401" in str(e) or "unauthorized" in str(e).lower():
+                raise AuthenticationError()
+            else:
+                raise APIError(f"Failed to download filing {doc_id}: {e}")
+
+    def download_filing(self,
                        doc_id: str,
                        extract_data: bool = True,
                        doc_type_code: Optional[str] = None,
                        raise_on_error: bool = True) -> Optional[Dict[str, Any]]:
         """
         Download and optionally process a specific filing.
-        
+
         Args:
             doc_id: EDINET document ID
             extract_data: Whether to extract and process structured data
             doc_type_code: Optional document type code if known
             raise_on_error: If False, return None on error instead of raising exception
-            
+
         Returns:
             Processed document data if extract_data=True, None otherwise
-            
+
         Raises:
             DocumentNotFoundError: When document doesn't exist (if raise_on_error=True)
             APIError: When API request fails (if raise_on_error=True)
             ProcessingError: When document processing fails (if raise_on_error=True)
-            
+
         Examples:
             # Single document (raises exceptions)
             try:
                 data = client.download_filing("S100ABC1")
             except DocumentNotFoundError:
                 print("Document not found")
-                
+
             # Batch processing (graceful)
             for doc_id in doc_ids:
                 data = client.download_filing(doc_id, raise_on_error=False)
                 if data:
                     process(data)
-                    
+
             # Or use the batch convenience method
             results = client.download_filings_batch(doc_ids)
             successful_data = [r for r in results if r is not None]
+
+        .. deprecated:: 0.2.0
+            Use doc.fetch() + doc.parse() instead:
+            doc = company.documents()[0]
+            content = doc.fetch()  # raw bytes
+            report = doc.parse()   # parsed report
         """
+        warnings.warn(
+            "download_filing() is deprecated. Use doc.fetch() + doc.parse() instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         try:
             # Download the document
             doc_response = fetch_document(doc_id, api_key=self.api_key)
@@ -264,38 +395,48 @@ class EdinetClient:
             else:
                 raise APIError(f"Failed to download filing {doc_id}: {e}")
     
-    def download_filings_batch(self, 
+    def download_filings_batch(self,
                               doc_ids: List[str],
                               extract_data: bool = True,
                               doc_type_code: Optional[str] = None,
                               raise_on_error: bool = False) -> List[Optional[Dict[str, Any]]]:
         """
         Download multiple filings with configurable error handling.
-        
+
         This is a convenience method for batch processing. By default, it uses
         graceful error handling (raise_on_error=False) to skip problematic documents,
         but can be configured to fail fast if needed.
-        
+
         Args:
             doc_ids: List of EDINET document IDs
             extract_data: Whether to extract and process structured data
             doc_type_code: Optional document type code if known
             raise_on_error: If True, stop on first error; if False, skip failed documents (default)
-            
+
         Returns:
             List of processed data (or None if failed) in same order as input doc_ids
-            
+
         Examples:
             # Graceful batch processing (default)
             >>> results = client.download_filings_batch(["S100ABC1", "S100XYZ2"])
             >>> successful = [r for r in results if r is not None]
-            
+
             # Fail-fast batch processing
             >>> try:
             ...     results = client.download_filings_batch(doc_ids, raise_on_error=True)
             ... except DocumentNotFoundError:
             ...     print("Batch failed on first error")
+
+        .. deprecated:: 0.2.0
+            Loop over doc.fetch() instead:
+            for doc in company.documents():
+                content = doc.fetch()
         """
+        warnings.warn(
+            "download_filings_batch() is deprecated. Loop over doc.fetch() instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         results = []
         total = len(doc_ids)
         

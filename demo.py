@@ -1,155 +1,190 @@
 #!/usr/bin/env python3
 """
-EDINET Tools Demo - Japanese Financial Data Analysis
+EDINET Tools Quick Start
 
-Demonstrates key capabilities: company lookup, document processing, and AI analysis.
+Get Japanese corporate filings in 3 lines of code.
 """
 
 import os
-import edinet_tools
-from edinet_tools.analysis import analyze_document_data
+from datetime import date
+import edinet_tools  # This loads .env automatically
 
 
-def demo_company_intelligence():
-    """Demonstrate company intelligence features."""
-    print("EDINET Tools Demo - Japanese Financial Data Analysis")
-    print("11,079+ companies | Live documents | LLM analysis")
-    
-    print("\nCompany Intelligence")
-    print("  Search across Japanese companies:")
-    
-    companies = edinet_tools.search_companies("Mitsubishi", limit=3)
-    for company in companies[:3]:
-        ticker = company['ticker']
-        edinet_code = edinet_tools.ticker_to_edinet(ticker)
-        print(f"    {company['name_en']} ({ticker}) → {edinet_code}")
-    
-    print("\n  Major company lookups:")
-    major_tickers = [('7203', 'Toyota Motor'), ('6758', 'Sony Group'), ('9984', 'SoftBank Group')]
-    for ticker, name in major_tickers:
-        edinet_code = edinet_tools.ticker_to_edinet(ticker)
-        print(f"    {ticker} ({name}) → {edinet_code}")
+def quick_start():
+    """The minimal quick start - get today's documents."""
+
+    # Get today's filings (Japan is ahead, so there's usually data)
+    today = date.today().isoformat()
+    docs = edinet_tools.documents(today)
+    print(f"Found {len(docs)} filings from {today}")
+
+    for doc in docs[:5]:
+        print(f"  {doc.doc_id}: {doc.filer_name[:40]} - {doc.doc_type_name}")
 
 
-def demo_live_document_processing():
-    """Demonstrate processing of recent Japanese corporate filings."""
-    print("\nLive Document Processing")
-    
-    # Check API keys
-    edinet_key = os.getenv('EDINET_API_KEY')
-    anthropic_key = os.getenv('ANTHROPIC_API_KEY') or os.getenv('LLM_API_KEY')
-    
-    if not edinet_key or not anthropic_key:
-        print("  API keys required:")
-        if not edinet_key:
-            print("    EDINET_API_KEY → disclosure.edinet-fsa.go.jp")
-        if not anthropic_key:
-            print("    ANTHROPIC_API_KEY → claude.ai")
-        print("  Demo: Download and analyze recent filings")
+def entity_lookup():
+    """Look up companies by ticker, EDINET code, or name."""
+    print("\n--- Entity Lookup ---")
+
+    # By ticker
+    mitsubishi = edinet_tools.entity("8058")
+    print(f"Ticker 8058: {mitsubishi.name} ({mitsubishi.edinet_code})")
+
+    # By EDINET code
+    same = edinet_tools.entity("E02529")
+    print(f"Code E02529: {same.name}")
+
+    # By name search
+    toyota = edinet_tools.entity("Toyota")
+    print(f"Search 'Toyota': {toyota.name} ({toyota.ticker})")
+
+    # Search multiple results
+    results = edinet_tools.search("trading", limit=3)
+    print(f"\nSearch 'trading': {len(results)} results")
+    for e in results:
+        print(f"  {e.ticker or '----'}: {e.name[:50]}")
+
+
+def parse_document():
+    """Download and parse a document."""
+    print("\n--- Parse Document ---")
+
+    today = date.today().isoformat()
+    docs = edinet_tools.documents(today)
+
+    if not docs:
+        print("No documents found - try a weekday")
+        return None
+
+    # Find a large holding report (type 350) - common and interesting
+    for doc in docs:
+        if doc.doc_type_code == "350":
+            print(f"Parsing: {doc.doc_id} ({doc.doc_type_name})")
+            report = doc.parse()
+            print(f"  Parser: {type(report).__name__}")
+            print(f"  Fields: {report.fields()[:5]}...")
+            if hasattr(report, 'holder_name'):
+                print(f"  Holder: {report.holder_name}")
+            if hasattr(report, 'target_company'):
+                print(f"  Target: {report.target_company}")
+            return doc
+
+    # Fallback to first document
+    doc = docs[0]
+    print(f"Parsing: {doc.doc_id} ({doc.doc_type_name})")
+    report = doc.parse()
+    print(f"  Parser: {type(report).__name__}")
+    print(f"  Fields: {report.fields()[:5]}...")
+    return doc
+
+
+def llm_analysis():
+    """Use LLM to generate an executive summary (requires LLM API key)."""
+    import tempfile
+    from edinet_tools.config import LLM_API_KEY
+    from edinet_tools.utils import process_zip_file
+    from edinet_tools.analysis import ExecutiveSummaryTool
+
+    print("\n--- LLM Analysis ---")
+
+    if not LLM_API_KEY:
+        print("No LLM API key found - skipping")
+        print("Set GOOGLE_API_KEY for Gemini or ANTHROPIC_API_KEY for Claude")
         return
-    
+
+    # Get today's documents
+    today = date.today().isoformat()
+    docs = edinet_tools.documents(today)
+
+    if not docs:
+        print("No documents to analyze")
+        return
+
+    # Find an interesting document (extraordinary report, quarterly, or large holding)
+    doc = None
+    for d in docs:
+        if d.doc_type_code in ("180", "140", "350"):
+            doc = d
+            break
+    doc = doc or docs[0]
+
+    print(f"Analyzing: {doc.filer_name[:40]}")
+    print(f"Type: {doc.doc_type_name}")
+
+    # Fetch and process document
+    content = doc.fetch()
+
+    with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as f:
+        f.write(content)
+        temp_path = f.name
+
     try:
-        from datetime import datetime, timedelta
-        
-        # Initialize client
-        client = edinet_tools.EdinetClient()
-        print("  Connected to EDINET")
-        
-        # Find recent filings, skip document type 135
-        print("  Scanning for recent filings...")
-        
-        successful_data = []
-        for days_back in range(7):  # Search up to a week back
-            date = datetime.now() - timedelta(days=days_back)
-            if date.weekday() >= 5:  # Skip weekends
-                continue
-                
-            date_str = date.strftime('%Y-%m-%d')
-            try:
-                documents = client.get_documents_by_date(date_str)
-                if not documents:
-                    continue
-                    
-                print(f"    {date_str}: {len(documents)} filings found")
-                
-                # Sort by submission time (most recent first)
-                sorted_docs = sorted(documents, 
-                                   key=lambda x: x.get('submitDateTime', ''), 
-                                   reverse=True)
-                
-                for doc in sorted_docs:
-                    # Skip document type 135
-                    if doc.get('docTypeCode') == '135':
-                        continue
-                        
-                    # Try to download and extract data
-                    data = client.download_filing(doc['docID'], raise_on_error=False)
-                    if data:
-                        # Get company name (English if available)
-                        company_name = doc['filerName']
-                        edinet_code = doc.get('edinetCode')
-                        if edinet_code:
-                            try:
-                                company_info = edinet_tools.get_company_info(edinet_code)
-                                if company_info and company_info.get('name_en'):
-                                    company_name = company_info['name_en']
-                            except:
-                                pass
-                        
-                        # Try analysis
-                        try:
-                            summary = analyze_document_data(data, 'one_line_summary')
-                            successful_data.append({
-                                'company': company_name,
-                                'date': doc.get('submitDateTime', '')[:10],
-                                'summary': summary,
-                                'doc_id': doc['docID']
-                            })
-                            
-                            if len(successful_data) >= 5:
-                                break
-                        except:
-                            continue
-                
-                if len(successful_data) >= 5:
-                    break
-                    
-            except Exception:
-                continue
-        
-        # Display results
-        print(f"\n  Successfully analyzed {len(successful_data)} filings:")
-        for i, item in enumerate(successful_data, 1):
-            company = item['company'][:40] + '...' if len(item['company']) > 40 else item['company']
-            print(f"    {i}. {company}")
-            print(f"       {item['date']} | {item['doc_id']}")
-            print(f"       {item['summary']}")
-            print()
-        
-        if len(successful_data) == 0:
-            print("    No filings available for analysis at this time")
-        
-    except Exception as e:
-        print(f"  Error: {e}")
+        structured_data = process_zip_file(temp_path, doc.doc_id, doc.doc_type_code)
 
+        if not structured_data:
+            print("Could not extract structured data")
+            return
 
-def demo_getting_started():
-    """Show getting started information."""
-    print("\nGetting Started")
-    print("  pip install edinet-tools")
-    print("  Set EDINET_API_KEY and ANTHROPIC_API_KEY in environment")
-    print("  import edinet_tools")
-    print("  client = edinet_tools.EdinetClient()")
-    print("\n  GitHub: matthelmer/edinet-api-tools")
+        # Generate executive summary
+        tool = ExecutiveSummaryTool()
+        result = tool.generate_structured_output(structured_data)
+
+        if result:
+            print(f"\n{result.company_name_en}")
+            if result.company_description_short:
+                print(f"  {result.company_description_short}")
+            print(f"\nSummary: {result.summary}")
+            if result.key_highlights:
+                print("\nKey Points:")
+                for h in result.key_highlights[:3]:
+                    print(f"  - {h}")
+        else:
+            print("LLM analysis failed")
+    finally:
+        os.unlink(temp_path)
 
 
 def main():
-    """Run live EDINET Tools demo."""
-    demo_company_intelligence()
-    demo_live_document_processing()
-    demo_getting_started()
-    
-    print("\nDemo complete - ready to analyze EDINET filings.")
+    """Run the demo."""
+    # Check API key
+    if not os.getenv('EDINET_API_KEY'):
+        print("EDINET_API_KEY not set")
+        print("Get your free API key at: https://disclosure.edinet-fsa.go.jp/")
+        print("\nRunning entity lookup only (no API required)...\n")
+        entity_lookup()
+        return
+
+    print("EDINET Tools Quick Start")
+    print("=" * 40)
+
+    quick_start()
+    entity_lookup()
+    parse_document()
+    llm_analysis()
+
+    print("\n" + "=" * 40)
+    print("Getting Started:")
+    print("""
+  pip install edinet-tools
+
+  import edinet_tools
+
+  # Look up any company
+  company = edinet_tools.entity("8058")
+
+  # Get filings for a date
+  docs = edinet_tools.documents("2026-01-20")
+
+  # Parse a document
+  report = docs[0].parse()
+
+  # LLM analysis (requires API key: ANTHROPIC_API_KEY or OPENAI_API_KEY)
+  # Default model: claude-4-sonnet (or set LLM_MODEL env var)
+  from edinet_tools.analysis import ExecutiveSummaryTool
+
+  GitHub: https://github.com/matthelmer/edinet-tools
+""")
+
 
 if __name__ == "__main__":
     main()

@@ -14,6 +14,10 @@ from edinet_tools.exceptions import (
     DocumentNotFoundError, APIError
 )
 
+# All tests in this file test deprecated EdinetClient functionality.
+# Suppress deprecation warnings since we're intentionally testing legacy code.
+pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
+
 
 class TestEdinetClientInitialization:
     """Test EdinetClient initialization."""
