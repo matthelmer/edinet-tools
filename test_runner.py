@@ -3,7 +3,7 @@
 Test runner for EDINET Tools.
 
 Organized testing approach using pytest markers:
-1. Unit tests (fast, mocked, ~180 tests)
+1. Unit tests (fast, mocked, ~260 tests)
 2. Integration tests (real API, ~25 tests)
 3. Slow tests (CSV loading, ~2 tests)
 
@@ -11,7 +11,7 @@ Usage:
     python test_runner.py --help
     python test_runner.py --unit        # Fast unit tests only
     python test_runner.py --integration # Integration tests with real API
-    python test_runner.py --all         # All tests (~205 total)
+    python test_runner.py --all         # All tests (~287 total)
     python test_runner.py --smoke       # Quick validation
 """
 
@@ -75,7 +75,7 @@ def run_unit_tests():
     """Run unit tests (fast, no external dependencies)."""
     # Use pytest markers to run fast unit tests only
     cmd = ["python", "-m", "pytest", "-m", "not slow and not integration", "-v", "--tb=short"]
-    return run_command(cmd, "Unit Tests (fast, mocked, ~180 tests)")
+    return run_command(cmd, "Unit Tests (fast, mocked, ~260 tests)")
 
 
 def run_integration_tests():
@@ -117,12 +117,12 @@ def run_integration_tests():
 def run_all_tests():
     """Run complete test suite including slow tests."""
     print("\n🧪 EDINET Tools - Complete Test Suite")
-    print("📊 Running all 198 tests (unit + integration + slow)")
-    print("⏱️  Expected runtime: ~2 minutes")
+    print("📊 Running all 287 tests (unit + integration + slow)")
+    print("⏱️  Expected runtime: ~2-3 minutes")
     
     # Run all tests without exclusions
     cmd = ["python", "-m", "pytest", "-v", "--tb=short"]
-    return run_command(cmd, "Complete Test Suite (198 tests)")
+    return run_command(cmd, "Complete Test Suite (287 tests)")
 
 
 def run_slow_tests():
@@ -153,11 +153,11 @@ def main():
   python test_runner.py --smoke       # Quick functionality check""",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("--unit", action="store_true", help="Run unit tests only (~172 tests, <30s)")
-    parser.add_argument("--integration", action="store_true", help="Run integration tests only (~24 tests, requires API key)") 
+    parser.add_argument("--unit", action="store_true", help="Run unit tests only (~260 tests, <2min)")
+    parser.add_argument("--integration", action="store_true", help="Run integration tests only (~25 tests, requires API key)")
     parser.add_argument("--slow", action="store_true", help="Run slow tests only (~2 tests, CSV loading)")
     parser.add_argument("--smoke", action="store_true", help="Run quick smoke test (3 tests, <5s)")
-    parser.add_argument("--all", action="store_true", help="Run all tests (198 tests, 2-3min)")
+    parser.add_argument("--all", action="store_true", help="Run all tests (287 tests, 2-3min)")
     parser.add_argument("--coverage", action="store_true", help="Run with coverage report")
     
     args = parser.parse_args()

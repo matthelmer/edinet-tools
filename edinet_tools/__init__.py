@@ -4,35 +4,82 @@ EDINET Tools - Python package for accessing Japanese corporate financial data.
 The authoritative Python library for Japanese financial disclosure data.
 """
 
-__version__ = "0.1.0"
-__author__ = "Matt Helmer" 
+__version__ = "0.2.0"
+__author__ = "Matt Helmer"
 __description__ = "Python package for accessing Japanese corporate financial data from EDINET"
 
-# Core API imports
-from .client import EdinetClient
+# Core API
+from .client import EdinetClient  # Deprecated, but kept for migration
+from ._client import configure, documents
 from .config import SUPPORTED_DOC_TYPES as DOCUMENT_TYPES
-from .data import (
-    search_companies, 
-    get_supported_companies, 
-    ticker_to_edinet, 
-    resolve_company,
-    get_company_info
+
+# Entity classification
+from .entity_classifier import EntityClassifier, EntityType
+
+# Entity-first API
+from .entity import (
+    Entity,
+    entity,
+    entity_by_ticker,
+    entity_by_edinet_code,
+    entity_by_code,  # Shorter alias
+    search_entities,
+    search,
+    Fund,
+    fund,
+    funds_by_issuer,
+)
+from .document import Document
+from .doc_types import DocType, doc_type, list_doc_types, doc_types
+
+# Parsers
+from .parsers import (
+    parse,
+    ParsedReport,
+    RawReport,
+    LargeHoldingReport,
+    SecuritiesReport,
+    QuarterlyReport,
+    SemiAnnualReport,
+    ExtraordinaryReport,
+    GenericReport,  # Backwards compatibility alias
 )
 
-# Make key classes and functions available at package level
 __all__ = [
-    "EdinetClient",
+    # Configuration
+    "configure",
+    "documents",
     "DOCUMENT_TYPES",
-    "search_companies",
-    "get_supported_companies", 
-    "ticker_to_edinet",
-    "resolve_company",
-    "get_company_info",
-    "get_client",
-    "__version__"
+    "__version__",
+    # Entity lookup
+    "Entity",
+    "entity",
+    "entity_by_ticker",
+    "entity_by_edinet_code",
+    "entity_by_code",  # Shorter alias
+    "search_entities",
+    "search",
+    "Fund",
+    "fund",
+    "funds_by_issuer",
+    # Documents
+    "Document",
+    "DocType",
+    "doc_type",
+    "list_doc_types",
+    "doc_types",
+    # Parsers
+    "parse",
+    "ParsedReport",
+    "RawReport",
+    "LargeHoldingReport",
+    "SecuritiesReport",
+    "QuarterlyReport",
+    "SemiAnnualReport",
+    "ExtraordinaryReport",
+    # Legacy (deprecated)
+    "EdinetClient",
+    "EntityClassifier",
+    "EntityType",
+    "GenericReport",  # Backwards compatibility alias
 ]
-
-# Convenience functions
-def get_client(api_key=None):
-    """Get an EDINET client instance."""
-    return EdinetClient(api_key=api_key)

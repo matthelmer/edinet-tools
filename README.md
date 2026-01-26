@@ -1,40 +1,31 @@
 # EDINET Tools
 
-> **Access Japanese corporate disclosure data**
+> **Python SDK for Japanese corporate disclosure data**
 
-A Python package for Japan's [EDINET](https://disclosure2.edinet-fsa.go.jp/) disclosure system. Clean API, comprehensive testing, and optional LLM-powered analysis.
+Access Japan's [EDINET](https://disclosure2.edinet-fsa.go.jp/) system - the official repository for securities reports, earnings, large shareholding notices, and other regulatory filings from 11,000+ Japanese companies.
 
-## Features
+```python
+import edinet_tools
 
-**Company Data**
-- Search 11,000+ Japanese companies by name or ticker
-- Convert ticker symbols to EDINET codes instantly
-- Access official government financial disclosure data
+docs = edinet_tools.documents("2026-01-20")  # Get all filings for a date
+report = docs[0].parse()                      # Parse to typed Python object
+```
 
-**Document Processing**
-- Download EDINET filings programmatically
-- Extract structured data from XBRL documents
-- Handle Japanese text encoding automatically
+## Why EDINET?
 
-**Optional AI Analysis**
-- Generate executive summaries from financial documents
-- One-line insights for quick analysis
-- Support for Anthropic, OpenAI, and other LLM providers
+EDINET (Electronic Disclosure for Investors' NETwork) is Japan's equivalent to the SEC's EDGAR. Every listed company in Japan must file:
+
+- **Securities Reports (有価証券報告書)** - Annual reports with full financials
+- **Quarterly Reports (四半期報告書)** - Quarterly earnings data
+- **Large Shareholding Reports (大量保有報告書)** - 5%+ ownership disclosures
+- **Extraordinary Reports (臨時報告書)** - Material events (M&A, executive changes)
+
+This package gives you programmatic access to all of it.
 
 ## Installation
 
-Install from PyPI:
-
 ```bash
 pip install edinet-tools
-```
-
-Or install from source:
-
-```bash
-git clone https://github.com/matthelmer/edinet-api-tools.git
-cd edinet-api-tools
-pip install -e .
 ```
 
 ## Quick Start
@@ -42,163 +33,193 @@ pip install -e .
 ```python
 import edinet_tools
 
+# Look up any company
+toyota = edinet_tools.entity("7203")      # By ticker
+toyota = edinet_tools.entity("Toyota")    # By name
+print(toyota.name, toyota.edinet_code)    # TOYOTA MOTOR CORPORATION E02144
+
 # Search companies
-companies = edinet_tools.search_companies("Toyota")
-print(companies[0]['name_en'])  # TOYOTA MOTOR CORPORATION
+banks = edinet_tools.search("bank", limit=5)
 
-# Convert ticker to EDINET code
-edinet_code = edinet_tools.ticker_to_edinet("7203")  # E02144
+# Get filings (requires EDINET_API_KEY)
+docs = toyota.documents(days=30)
+for doc in docs[:3]:
+    print(f"{doc.filing_datetime}: {doc.doc_type_name}")
 
-# Initialize client
-client = edinet_tools.EdinetClient()
+# Parse a document into a typed object
+report = docs[0].parse()
+print(type(report).__name__)  # SecuritiesReport, LargeHoldingReport, etc.
 
-# Get recent filings
-filings = client.get_recent_filings(days_back=7)
-
-# Download and analyze a filing (requires LLM API key)
-structured_data = client.download_filing(filings[0]['docID'], extract_data=True)
-
-# Batch processing with graceful error handling
-results = client.download_filings_batch([f['docID'] for f in filings[:5]])
-successful = [r for r in results if r is not None]
-print(f"Successfully processed {len(successful)}/{len(results)} documents")
-
-# Graceful single document processing (skip errors)
-for filing in filings:
-    data = client.download_filing(filing['docID'], raise_on_error=False)
-    if data:
-        summary = analyze_document_data(data, 'one_line_summary')
-        print(f"• {summary}")
-    else:
-        print(f"• Skipped {filing['docID']} - not available")
+# Or get all documents filed on a specific date
+all_filings = edinet_tools.documents("2026-01-20")
 ```
 
 ## Configuration
 
-Set up your environment variables:
+Get your free API key from [EDINET](https://disclosure2.edinet-fsa.go.jp/) and set it:
 
 ```bash
-export EDINET_API_KEY=your_edinet_key
-export ANTHROPIC_API_KEY=your_anthropic_key
-export OPENAI_API_KEY=your_openai_key
+export EDINET_API_KEY=your_key_here
 ```
 
-Or create a `.env` file:
+Or create a `.env` file in your project:
 
 ```dotenv
 EDINET_API_KEY=your_edinet_key
 
-ANTHROPIC_API_KEY=your_anthropic_key
-OPENAI_API_KEY=your_openai_api_key
+# Optional: For LLM-powered analysis
+ANTHROPIC_API_KEY=your_anthropic_key   # Claude models
+OPENAI_API_KEY=your_openai_key         # GPT models
+GOOGLE_API_KEY=your_google_key         # Gemini models
 
-LLM_MODEL=claude-4-sonnet              # Or gpt-5-mini, gpt-4o, etc.
-LLM_FALLBACK_MODEL=gpt-5-mini          # Optional fallback
-
-# Azure OpenAI Configuration (optional)
-# AZURE_OPENAI_API_KEY=your_azure_openai_api_key
-# AZURE_OPENAI_ENDPOINT=your_azure_openai_endpoint
-# AZURE_OPENAI_API_VERSION=your_azure_openai_api_version
-# AZURE_OPENAI_DEPLOYMENT=your_azure_openai_deployment_name
+LLM_MODEL=claude-4-sonnet              # Default model (optional)
 ```
 
-**API Keys:**
-- **EDINET_API_KEY**: Get from [EDINET website](https://disclosure2.edinet-fsa.go.jp/) (free)
-- **ANTHROPIC_API_KEY**: For Claude models (claude-4-sonnet, etc.)
-- **OPENAI_API_KEY**: For GPT models (gpt-5, gpt-5-mini, etc.)
-- **AZURE_OPENAI_API_KEY**: Enterprise LLM option via Microsoft Azure
+## Document Types
+
+All 30+ EDINET document types are supported. These common types have specialized typed parsers:
+
+| Code | Type | Parser Class |
+|------|------|--------------|
+| 120 | Securities Report | `SecuritiesReport` |
+| 140 | Quarterly Report | `QuarterlyReport` |
+| 160 | Semi-Annual Report | `SemiAnnualReport` |
+| 180 | Extraordinary Report | `ExtraordinaryReport` |
+| 350 | Large Shareholding | `LargeHoldingReport` |
+
+All other document types parse to `RawReport`, which provides access to the underlying XBRL data.
+
+```python
+# Filter by document type
+earnings = toyota.documents(doc_type="120")
+
+# Get document type info
+dt = edinet_tools.doc_type("120")
+print(dt.name_en)  # Securities Report
+print(dt.name_jp)  # 有価証券報告書
+
+# See all supported types
+all_types = edinet_tools.doc_types()
+```
+
+## Parsing Documents
+
+Documents parse into typed Python objects with structured fields:
+
+```python
+report = doc.parse()
+
+# Large Shareholding Report
+if hasattr(report, 'holder_name'):
+    print(report.holder_name)
+    print(report.target_company)
+    print(report.ownership_pct)
+
+# Securities Report
+if hasattr(report, 'net_sales'):
+    print(report.filer_name)
+    print(report.net_sales)
+    print(report.fiscal_year_end)
+
+# All reports have these
+print(report.fields())      # List available fields
+print(report.to_dict())     # Export as dictionary
+```
+
+## LLM Analysis (Optional)
+
+Generate executive summaries using Claude, GPT, or Gemini:
+
+```python
+from edinet_tools.analysis import ExecutiveSummaryTool
+from edinet_tools.utils import process_zip_file
+import tempfile
+
+# Fetch document
+content = doc.fetch()
+
+# Process to structured data
+with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as f:
+    f.write(content)
+    temp_path = f.name
+
+structured_data = process_zip_file(temp_path, doc.doc_id, doc.doc_type_code)
+
+# Generate summary
+tool = ExecutiveSummaryTool()
+result = tool.generate_structured_output(structured_data)
+print(result.summary)
+print(result.key_highlights)
+```
+
+Requires the [llm](https://github.com/simonw/llm) library and an API key (Anthropic, OpenAI, or Google).
+
+## Entity Properties
+
+```python
+company = edinet_tools.entity("7203")
+
+company.name          # Company name
+company.ticker        # Stock ticker (e.g., "7203")
+company.edinet_code   # EDINET code (e.g., "E02144")
+company.is_listed     # True if publicly traded
+company.is_fund_issuer # True if investment fund manager
+company.funds         # List of funds (if fund issuer)
+```
+
+## Document Properties
+
+```python
+doc.doc_id            # EDINET document ID
+doc.doc_type_code     # Type code (e.g., "120")
+doc.doc_type_name     # English name
+doc.filer_name        # Filing company name
+doc.filer             # Entity object
+doc.filing_datetime   # When filed
+doc.period_start      # Reporting period start
+doc.period_end        # Reporting period end
+```
+
+## Error Handling
+
+```python
+from edinet_tools.exceptions import DocumentNotFoundError, APIError
+
+try:
+    content = doc.fetch()
+    report = doc.parse()
+except DocumentNotFoundError:
+    print(f"Document not available: {doc.doc_id}")
+except APIError as e:
+    print(f"API error: {e}")
+```
+
+## Testing
+
+```bash
+python test_runner.py --unit        # Fast unit tests (~290 tests)
+python test_runner.py --integration # API tests (requires key)
+python test_runner.py --all         # Everything
+```
 
 ## Demo
-
-Run the interactive demo to see the package in action:
 
 ```bash
 python demo.py
 ```
 
-This demonstrates:
-- Company search and ticker resolution
-- Live EDINET document processing
-- LLM-powered summaries
+Shows entity lookup, document retrieval, parsing, and LLM analysis.
 
-## Testing
+## Links
 
-Run the comprehensive test suite:
-
-```bash
-python test_runner.py --all         # Full test suite (198 tests)
-python test_runner.py --unit        # Unit tests only (~172 tests, <30s)
-python test_runner.py --integration # Integration tests only (~24 tests, requires API key)
-python test_runner.py --smoke       # Quick validation (3 tests, <5s)
-```
-
-## LLM Analysis
-
-Generate insights from financial documents using a LLM:
-
-```python
-from edinet_tools.analysis import analyze_document_data
-
-# Executive summary
-summary = analyze_document_data(structured_data, 'executive_summary')
-
-# One-line summary
-insights = analyze_document_data(structured_data, 'one_line_summary')
-```
-
-**Models**: Claude-4-Sonnet, GPT-5-Mini, GPT-4o, and more via the `llm` library.
-
-## Error Handling
-
-The library provides flexible error handling for both single and batch document processing:
-
-```python
-# Traditional approach (raises exceptions)
-try:
-    data = client.download_filing("S100ABC1")
-    process(data)
-except DocumentNotFoundError:
-    print("Document not found")
-except APIError:
-    print("API request failed")
-
-# Graceful approach (returns None on error)
-data = client.download_filing("S100ABC1", raise_on_error=False)
-if data:
-    process(data)
-else:
-    print("Document not available")
-
-# Batch processing (graceful by default)
-results = client.download_filings_batch(doc_ids)
-for i, (doc_id, data) in enumerate(zip(doc_ids, results)):
-    if data:
-        print(f"✅ {doc_id}: Success")
-    else:
-        print(f"⚠️  {doc_id}: Skipped")
-
-# Batch processing (fail-fast mode)
-try:
-    results = client.download_filings_batch(doc_ids, raise_on_error=True)
-except DocumentNotFoundError as e:
-    print(f"Batch failed: {e}")
-```
-
-## Contributing
-
-Contributions welcome. Run tests before submitting:
-
-```bash
-python test_runner.py --all
-```
-
-## Disclaimer
-
-Independent project, not affiliated with Japan's Financial Services Agency (FSA).
-
-Official EDINET: [disclosure2.edinet-fsa.go.jp](https://disclosure2.edinet-fsa.go.jp/)
-
-Provided "as is" for informational purposes. Verify data independently.
+- **PyPI**: [pypi.org/project/edinet-tools](https://pypi.org/project/edinet-tools/)
+- **GitHub**: [github.com/matthelmer/edinet-tools](https://github.com/matthelmer/edinet-tools)
+- **EDINET**: [disclosure2.edinet-fsa.go.jp](https://disclosure2.edinet-fsa.go.jp/)
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License
+
+---
+
+*Independent project, not affiliated with Japan's Financial Services Agency. Data provided for informational purposes - verify independently for financial decisions.*

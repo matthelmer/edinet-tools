@@ -4,10 +4,12 @@ EDINET XBRL CSV Parser
 
 Parses structured financial data from EDINET's XBRL-to-CSV converted files.
 These CSV files contain financial metrics with context information (current/prior periods).
+Also extracts narrative text blocks containing business policy, strategy, and targets.
 """
 import csv
 import logging
-from typing import Dict, Optional, Any, List
+import re
+from typing import Dict, Optional, Any, List, Tuple
 from dataclasses import dataclass
 import os
 
@@ -60,9 +62,47 @@ class FinancialMetric:
         return any(prior_indicators)
 
 
+@dataclass
+class TextBlock:
+    """Represents a narrative text block from EDINET filings."""
+    element_name: str
+    japanese_label: str
+    text_content: str
+
+    def search(self, keywords: List[str], context_chars: int = 200) -> List[Tuple[str, str]]:
+        """
+        Search for keywords in this text block.
+
+        Args:
+            keywords: List of keywords/patterns to search for
+            context_chars: Number of characters of context to return around matches
+
+        Returns:
+            List of (keyword, context_snippet) tuples
+        """
+        matches = []
+        for keyword in keywords:
+            pattern = re.compile(keyword, re.IGNORECASE)
+            for match in pattern.finditer(self.text_content):
+                start = max(0, match.start() - context_chars)
+                end = min(len(self.text_content), match.end() + context_chars)
+                snippet = self.text_content[start:end]
+                matches.append((keyword, snippet))
+        return matches
+
+
 class EdinetXbrlCsvParser:
-    """Parser for EDINET XBRL CSV files containing structured financial data."""
-    
+    """Parser for EDINET XBRL CSV files containing structured financial data and narrative text blocks."""
+
+    # Narrative text blocks containing business policy, strategy, and MTP information
+    NARRATIVE_TEXT_BLOCKS = {
+        'business_policy': 'jpcrp_cor:BusinessPolicyBusinessEnvironmentIssuesToAddressEtcTextBlock',
+        'metrics_and_targets': 'jpcrp_cor:MetricsAndTargetsTextBlock',
+        'management_analysis': 'jpcrp_cor:ManagementAnalysisOfFinancialPositionOperatingResultsAndCashFlowsTextBlock',
+        'research_and_development': 'jpcrp_cor:ResearchAndDevelopmentActivitiesTextBlock',
+        'facilities_plan': 'jpcrp_cor:PlannedAdditionsRetirementsEtcOfFacilitiesTextBlock',
+    }
+
     # Key financial metrics mapping - expanded to include J-GAAP variants
     FINANCIAL_METRICS = {
         # Revenue/Sales - IFRS
@@ -106,29 +146,37 @@ class EdinetXbrlCsvParser:
     
     def __init__(self):
         self.metrics: List[FinancialMetric] = []
+        self.text_blocks: List[TextBlock] = []
     
-    def parse_xbrl_csv_files(self, csv_files: List[str]) -> Dict[str, Any]:
+    def parse_xbrl_csv_files(self, csv_files: List[str], extract_text_blocks: bool = True) -> Dict[str, Any]:
         """
-        Parse multiple XBRL CSV files and extract financial metrics.
-        
+        Parse multiple XBRL CSV files and extract financial metrics and text blocks.
+
         Args:
             csv_files: List of paths to XBRL CSV files
-            
+            extract_text_blocks: Whether to extract narrative text blocks (default True)
+
         Returns:
-            Dictionary of structured financial data
+            Dictionary of structured financial data and text blocks
         """
         self.metrics = []
-        
+        self.text_blocks = []
+
         for csv_file in csv_files:
             if os.path.exists(csv_file):
                 logger.debug(f"Parsing XBRL CSV file: {csv_file}")
-                self._parse_single_csv_file(csv_file)
+                self._parse_single_csv_file(csv_file, extract_text_blocks=extract_text_blocks)
             else:
                 logger.warning(f"XBRL CSV file not found: {csv_file}")
-        
-        return self._extract_key_metrics()
+
+        result = self._extract_key_metrics()
+
+        if extract_text_blocks:
+            result['text_blocks'] = self._format_text_blocks()
+
+        return result
     
-    def _parse_single_csv_file(self, csv_file: str) -> None:
+    def _parse_single_csv_file(self, csv_file: str, extract_text_blocks: bool = True) -> None:
         """Parse a single XBRL CSV file."""
         logger.debug(f"Parsing XBRL CSV file: {csv_file}")
         # Try multiple encodings for robust parsing
@@ -167,14 +215,29 @@ class EdinetXbrlCsvParser:
                     try:
                         if total_rows <= 3:  # Show raw data for first few rows
                             logger.debug(f"Raw row {row_num}: {[col[:50] for col in row[:3]]}")  # Truncate long values
-                        metric = self._parse_csv_row(row, total_rows)
-                        if metric:
-                            parsed_rows += 1
-                            if self._is_relevant_metric(metric.element_name):
-                                relevant_rows += 1
-                                self.metrics.append(metric)
-                            elif total_rows <= 10 and metric.element_name:  # Show more examples for debugging
-                                logger.debug(f"Non-relevant element: '{metric.element_name[:100]}'")
+                        # Check if this is a text block BEFORE parsing as metric
+                        element_name = row[0].strip() if len(row) > 0 else ""
+                        if extract_text_blocks and self._is_text_block(element_name):
+                            # Extract text blocks directly from raw row
+                            text_content = row[8].strip() if len(row) > 8 else ""
+                            if text_content and len(text_content) > 50:
+                                text_block = TextBlock(
+                                    element_name=element_name,
+                                    japanese_label=row[1].strip() if len(row) > 1 else "",
+                                    text_content=text_content
+                                )
+                                self.text_blocks.append(text_block)
+                                parsed_rows += 1
+                        else:
+                            # Parse as financial metric
+                            metric = self._parse_csv_row(row, total_rows)
+                            if metric:
+                                parsed_rows += 1
+                                if self._is_relevant_metric(metric.element_name):
+                                    relevant_rows += 1
+                                    self.metrics.append(metric)
+                                elif total_rows <= 10 and metric.element_name:  # Show more examples for debugging
+                                    logger.debug(f"Non-relevant element: '{metric.element_name[:100]}'")
                     except Exception as e:
                         logger.debug(f"Error parsing row {row_num} in {csv_file}: {e}")
                         continue
@@ -259,6 +322,61 @@ class EdinetXbrlCsvParser:
     def _is_relevant_metric(self, element_name: str) -> bool:
         """Check if this metric is one we care about."""
         return element_name in self.FINANCIAL_METRICS.values()
+
+    def _is_text_block(self, element_name: str) -> bool:
+        """Check if this is a narrative text block we want to extract."""
+        return element_name in self.NARRATIVE_TEXT_BLOCKS.values() or 'TextBlock' in element_name
+
+    def _format_text_blocks(self) -> Dict[str, Any]:
+        """Format extracted text blocks for output."""
+        result = {}
+        for block in self.text_blocks:
+            # Find the key name for this block
+            block_key = None
+            for key, element in self.NARRATIVE_TEXT_BLOCKS.items():
+                if block.element_name == element:
+                    block_key = key
+                    break
+
+            if not block_key:
+                # Use element name as fallback
+                block_key = block.element_name.split(':')[-1] if ':' in block.element_name else block.element_name
+
+            result[block_key] = {
+                'label': block.japanese_label,
+                'content': block.text_content,
+                'content_length': len(block.text_content)
+            }
+
+        return result
+
+    def search_text_blocks(self, keywords: List[str], context_chars: int = 200) -> Dict[str, List[Tuple[str, str]]]:
+        """
+        Search all text blocks for keywords.
+
+        Args:
+            keywords: List of keywords/patterns to search for
+            context_chars: Number of characters of context around matches
+
+        Returns:
+            Dict mapping block keys to list of (keyword, context) tuples
+        """
+        results = {}
+        for block in self.text_blocks:
+            matches = block.search(keywords, context_chars)
+            if matches:
+                # Find block key
+                block_key = None
+                for key, element in self.NARRATIVE_TEXT_BLOCKS.items():
+                    if block.element_name == element:
+                        block_key = key
+                        break
+                if not block_key:
+                    block_key = block.element_name.split(':')[-1] if ':' in block.element_name else block.element_name
+
+                results[block_key] = matches
+
+        return results
     
     def _extract_key_metrics(self) -> Dict[str, Any]:
         """Extract and organize key financial metrics."""
@@ -333,3 +451,84 @@ def extract_xbrl_financial_data(zip_extract_path: str) -> Dict[str, Any]:
     # Parse the XBRL CSV files
     parser = EdinetXbrlCsvParser()
     return parser.parse_xbrl_csv_files(csv_files)
+
+
+def extract_mtp_targets(zip_extract_path: str) -> Dict[str, Any]:
+    """
+    Extract Medium-Term Plan (MTP) targets from EDINET Yuho text blocks.
+
+    This function looks for operating profit targets, revenue targets, and fiscal year goals
+    mentioned in the business policy and management strategy sections.
+
+    Args:
+        zip_extract_path: Path to extracted ZIP contents
+
+    Returns:
+        Dictionary containing MTP targets and related information
+    """
+    result = {
+        'has_mtp_data': False,
+        'targets': [],
+        'raw_matches': []
+    }
+
+    xbrl_csv_dir = os.path.join(zip_extract_path, 'XBRL_TO_CSV')
+
+    if not os.path.exists(xbrl_csv_dir):
+        return result
+
+    # Find all CSV files
+    csv_files = []
+    for filename in os.listdir(xbrl_csv_dir):
+        if filename.endswith('.csv'):
+            csv_files.append(os.path.join(xbrl_csv_dir, filename))
+
+    if not csv_files:
+        return result
+
+    # Parse and extract text blocks
+    parser = EdinetXbrlCsvParser()
+    data = parser.parse_xbrl_csv_files(csv_files, extract_text_blocks=True)
+
+    if 'text_blocks' not in data or not data['text_blocks']:
+        return result
+
+    # Search for MTP-related keywords in text blocks
+    mtp_keywords = [
+        r'中期経営計画',  # Medium-term management plan
+        r'中期.*計画',    # Medium-term plan (variations)
+        r'営業利益.*目標', # Operating profit target
+        r'目標.*営業利益', # Target operating profit
+        r'20\d{2}年.*目標', # Year target (2025, 2027, etc.)
+        r'\d+億円.*目標',  # Billion yen target
+        r'FY20\d{2}',     # Fiscal year
+    ]
+
+    matches = parser.search_text_blocks(mtp_keywords, context_chars=300)
+
+    if matches:
+        result['has_mtp_data'] = True
+        result['raw_matches'] = matches
+
+        # Try to extract structured targets using regex patterns
+        for block_key, match_list in matches.items():
+            for keyword, context in match_list:
+                # Pattern: operating profit + number + billion yen
+                op_pattern = r'営業利益[^\d]*?(\d+(?:,\d+)*)\s*億円'
+                op_matches = re.findall(op_pattern, context)
+
+                # Pattern: fiscal year
+                fy_pattern = r'(?:FY)?20(\d{2})年?'
+                fy_matches = re.findall(fy_pattern, context)
+
+                if op_matches or fy_matches:
+                    target_entry = {
+                        'block': block_key,
+                        'context': context[:200],  # Limit context length
+                        'operating_profit_billions': [int(m.replace(',', '')) for m in op_matches] if op_matches else None,
+                        'fiscal_years': [f"FY20{y}" for y in fy_matches] if fy_matches else None
+                    }
+                    result['targets'].append(target_entry)
+
+    logger.info(f"Found {len(result['targets'])} MTP target mentions")
+    return result

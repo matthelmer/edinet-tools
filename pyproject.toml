@@ -1,25 +1,23 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "edinet-tools"
-version = "0.1.1"
+version = "0.2.0"
 authors = [
     {name = "Matt Helmer"},
 ]
 description = "Python package for accessing Japanese corporate financial data from EDINET"
 readme = "README.md"
-license = "MIT"
-requires-python = ">=3.8"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Intended Audience :: Financial and Insurance Industry", 
+    "Intended Audience :: Financial and Insurance Industry",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -53,9 +51,9 @@ dev = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/matthelmer/edinet-api-tools"
-"Repository" = "https://github.com/matthelmer/edinet-api-tools"
-"Bug Reports" = "https://github.com/matthelmer/edinet-api-tools/issues"
+"Homepage" = "https://github.com/matthelmer/edinet-tools"
+"Repository" = "https://github.com/matthelmer/edinet-tools"
+"Bug Reports" = "https://github.com/matthelmer/edinet-tools/issues"
 
 
 [tool.setuptools.packages.find]
@@ -68,7 +66,7 @@ edinet_tools = ["*.json", "*.csv", "data/*"]
 
 [tool.black]
 line-length = 100
-target-version = ['py38']
+target-version = ['py310']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -96,7 +94,7 @@ python_files = [
 ]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
