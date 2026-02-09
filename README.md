@@ -115,15 +115,36 @@ if hasattr(report, 'holder_name'):
     print(report.target_company)
     print(report.ownership_pct)
 
-# Securities Report
+# Securities Report (supports both Japan GAAP and IFRS)
 if hasattr(report, 'net_sales'):
     print(report.filer_name)
     print(report.net_sales)
+    print(report.operating_cash_flow)
+    print(report.investing_cash_flow)
     print(report.fiscal_year_end)
 
 # All reports have these
 print(report.fields())      # List available fields
 print(report.to_dict())     # Export as dictionary
+```
+
+## Financial Data Support
+
+Securities Reports and Quarterly Reports extract comprehensive financial data including:
+
+- **Income Statement**: Revenue, operating income, net income, EPS
+- **Balance Sheet**: Assets, liabilities, equity, book value per share
+- **Cash Flow Statement**: Operating, investing, and financing cash flows
+- **Financial Ratios**: ROE, equity ratio, and more
+
+**Accounting Standards**: Both **Japan GAAP** (Generally Accepted Accounting Principles - Japan's domestic standard) and **IFRS** (International Financial Reporting Standards - used by global firms and airlines) are fully supported. The parser automatically detects the accounting standard and extracts cash flows using the appropriate XBRL elements.
+
+```python
+# Works for both Japan GAAP and IFRS companies
+report = doc.parse()
+print(f"Accounting: {report.accounting_standard}")
+print(f"Operating CF: {report.operating_cash_flow}")
+print(f"Free Cash Flow: {report.operating_cash_flow + report.investing_cash_flow}")
 ```
 
 ## LLM Analysis (Optional)
