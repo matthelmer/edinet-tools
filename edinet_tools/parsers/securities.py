@@ -63,6 +63,19 @@ ELEMENT_MAP = {
     'net_assets_fs': 'jppfs_cor:NetAssets',
     'total_liabilities_fs': 'jppfs_cor:Liabilities',
 
+    # === Cash Flow Statement Elements (Fallback for companies without Summary section) ===
+    'operating_cf_cfs': 'jpcrp_cor:CashFlowsFromOperatingActivities',
+    'investing_cf_cfs': 'jpcrp_cor:CashFlowsFromInvestmentActivities',
+    'financing_cf_cfs': 'jpcrp_cor:CashFlowsFromFinancingActivities',
+
+    # === IFRS Cash Flow Elements (for IFRS companies like airlines) ===
+    'operating_cf_ifrs_summary': 'jpcrp_cor:CashFlowsFromUsedInOperatingActivitiesIFRSSummaryOfBusinessResults',
+    'investing_cf_ifrs_summary': 'jpcrp_cor:CashFlowsFromUsedInInvestingActivitiesIFRSSummaryOfBusinessResults',
+    'financing_cf_ifrs_summary': 'jpcrp_cor:CashFlowsFromUsedInFinancingActivitiesIFRSSummaryOfBusinessResults',
+    'operating_cf_ifrs': 'jpigp_cor:NetCashProvidedByUsedInOperatingActivitiesIFRS',
+    'investing_cf_ifrs': 'jpigp_cor:NetCashProvidedByUsedInInvestingActivitiesIFRS',
+    'financing_cf_ifrs': 'jpigp_cor:NetCashProvidedByUsedInFinancingActivitiesIFRS',
+
     # === Employment ===
     'num_employees': 'jpcrp_cor:NumberOfEmployees',
 }
@@ -239,10 +252,31 @@ def parse_securities_report(document) -> SecuritiesReport:
     )
     total_liabilities = get_fin('total_liabilities_fs', 'CurrentYearInstant')
 
-    # Cash flow
-    operating_cf = get_fin('operating_cf_summary', 'CurrentYearDuration')
-    investing_cf = get_fin('investing_cf_summary', 'CurrentYearDuration')
-    financing_cf = get_fin('financing_cf_summary', 'CurrentYearDuration')
+    # Cash flow - Multi-tier fallback:
+    # 1. Japan GAAP Summary (jpcrp_cor)
+    # 2. IFRS Summary (jpcrp_cor with IFRS suffix)
+    # 3. Japan GAAP detailed statement (jppfs_cor)
+    # 4. IFRS detailed statement (jpigp_cor)
+    operating_cf = (
+        get_fin('operating_cf_summary', 'CurrentYearDuration') or
+        get_fin('operating_cf_ifrs_summary', 'CurrentYearDuration') or
+        get_fin('operating_cf_cfs', 'CurrentYearDuration') or
+        get_fin('operating_cf_ifrs', 'CurrentYearDuration')
+    )
+
+    investing_cf = (
+        get_fin('investing_cf_summary', 'CurrentYearDuration') or
+        get_fin('investing_cf_ifrs_summary', 'CurrentYearDuration') or
+        get_fin('investing_cf_cfs', 'CurrentYearDuration') or
+        get_fin('investing_cf_ifrs', 'CurrentYearDuration')
+    )
+
+    financing_cf = (
+        get_fin('financing_cf_summary', 'CurrentYearDuration') or
+        get_fin('financing_cf_ifrs_summary', 'CurrentYearDuration') or
+        get_fin('financing_cf_cfs', 'CurrentYearDuration') or
+        get_fin('financing_cf_ifrs', 'CurrentYearDuration')
+    )
 
     # Per-share metrics
     patterns = get_context_patterns(is_consolidated, 'CurrentYearInstant')
