@@ -63,6 +63,15 @@ ELEMENT_MAP = {
     'net_assets_fs': 'jppfs_cor:NetAssets',
     'total_liabilities_fs': 'jppfs_cor:Liabilities',
 
+    # === Balance Sheet - Debt Details ===
+    'short_term_loans_payable': 'jppfs_cor:ShortTermLoansPayable',
+    'long_term_loans_payable': 'jppfs_cor:LongTermLoansPayable',
+    'bonds_payable': 'jppfs_cor:BondsPayable',
+    'current_portion_long_term_loans_payable': 'jppfs_cor:CurrentPortionOfLongTermLoansPayable',
+    'lease_obligations_current': 'jppfs_cor:LeaseObligationsCL',
+    'lease_obligations_noncurrent': 'jppfs_cor:LeaseObligationsNCL',
+    'commercial_paper': 'jppfs_cor:CommercialPaper',
+
     # === Cash Flow Statement Elements (Fallback for companies without Summary section) ===
     'operating_cf_cfs': 'jpcrp_cor:CashFlowsFromOperatingActivities',
     'investing_cf_cfs': 'jpcrp_cor:CashFlowsFromInvestmentActivities',
@@ -89,6 +98,10 @@ IFRS_FALLBACK_MAP = {
     'jppfs_cor:Assets': 'jpigp_cor:AssetsIFRS',
     'jppfs_cor:NetAssets': 'jpigp_cor:EquityIFRS',
     'jppfs_cor:Liabilities': 'jpigp_cor:LiabilitiesIFRS',
+    # Debt elements
+    'jppfs_cor:ShortTermLoansPayable': 'jpigp_cor:ShortTermBorrowingsIFRS',
+    'jppfs_cor:LongTermLoansPayable': 'jpigp_cor:LongTermBorrowingsIFRS',
+    'jppfs_cor:BondsPayable': 'jpigp_cor:BondsPayableIFRS',
 }
 
 
@@ -124,6 +137,15 @@ class SecuritiesReport(ParsedReport):
     total_assets: int | None = None
     net_assets: int | None = None
     total_liabilities: int | None = None
+
+    # Balance Sheet - Debt Details
+    short_term_loans_payable: int | None = None
+    long_term_loans_payable: int | None = None
+    bonds_payable: int | None = None
+    current_portion_long_term_loans_payable: int | None = None
+    lease_obligations_current: int | None = None
+    lease_obligations_noncurrent: int | None = None
+    commercial_paper: int | None = None
 
     # Cash Flow
     operating_cash_flow: int | None = None
@@ -252,6 +274,15 @@ def parse_securities_report(document) -> SecuritiesReport:
     )
     total_liabilities = get_fin('total_liabilities_fs', 'CurrentYearInstant')
 
+    # Debt details
+    short_term_loans_payable = get_fin('short_term_loans_payable', 'CurrentYearInstant')
+    long_term_loans_payable = get_fin('long_term_loans_payable', 'CurrentYearInstant')
+    bonds_payable = get_fin('bonds_payable', 'CurrentYearInstant')
+    current_portion_ltd = get_fin('current_portion_long_term_loans_payable', 'CurrentYearInstant')
+    lease_obligations_current = get_fin('lease_obligations_current', 'CurrentYearInstant')
+    lease_obligations_noncurrent = get_fin('lease_obligations_noncurrent', 'CurrentYearInstant')
+    commercial_paper = get_fin('commercial_paper', 'CurrentYearInstant')
+
     # Cash flow - Multi-tier fallback:
     # 1. Japan GAAP Summary (jpcrp_cor)
     # 2. IFRS Summary (jpcrp_cor with IFRS suffix)
@@ -338,6 +369,15 @@ def parse_securities_report(document) -> SecuritiesReport:
         total_assets=total_assets,
         net_assets=net_assets,
         total_liabilities=total_liabilities,
+
+        # Balance Sheet - Debt Details
+        short_term_loans_payable=short_term_loans_payable,
+        long_term_loans_payable=long_term_loans_payable,
+        bonds_payable=bonds_payable,
+        current_portion_long_term_loans_payable=current_portion_ltd,
+        lease_obligations_current=lease_obligations_current,
+        lease_obligations_noncurrent=lease_obligations_noncurrent,
+        commercial_paper=commercial_paper,
 
         # Cash Flow
         operating_cash_flow=operating_cf,

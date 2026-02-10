@@ -11,6 +11,7 @@ venv
 *downloads
 *.csv
 *.zip
+.idea/
 
 # Build artifacts
 build/
