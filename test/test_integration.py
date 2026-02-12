@@ -18,7 +18,7 @@ class TestPackageExports:
 
     def test_version(self):
         """Package version is available and correct."""
-        assert edinet_tools.__version__ == "0.2.0"
+        assert edinet_tools.__version__ == "0.3.0"
 
     def test_metadata(self):
         """Package metadata is available."""
