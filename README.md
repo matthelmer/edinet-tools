@@ -115,15 +115,52 @@ if hasattr(report, 'holder_name'):
     print(report.target_company)
     print(report.ownership_pct)
 
-# Securities Report
+# Securities Report (supports both Japan GAAP and IFRS)
 if hasattr(report, 'net_sales'):
     print(report.filer_name)
     print(report.net_sales)
+    print(report.operating_cash_flow)
+    print(report.investing_cash_flow)
     print(report.fiscal_year_end)
 
 # All reports have these
 print(report.fields())      # List available fields
 print(report.to_dict())     # Export as dictionary
+```
+
+## Financial Data Support
+
+Securities Reports and Quarterly Reports extract comprehensive financial data including:
+
+- **Income Statement**: Revenue, operating income, net income, EPS
+- **Balance Sheet**: Assets, liabilities, equity, book value per share
+- **Debt Details**: Short/long-term loans, bonds payable, commercial paper, lease obligations
+- **Cash Flow Statement**: Operating, investing, and financing cash flows
+- **Financial Ratios**: ROE, equity ratio, and more
+
+**Accounting Standards**: Both **Japan GAAP** (Generally Accepted Accounting Principles - Japan's domestic standard) and **IFRS** (International Financial Reporting Standards - used by global firms and airlines) are fully supported. The parser automatically detects the accounting standard and extracts the appropriate XBRL elements.
+
+```python
+# Works for both Japan GAAP and IFRS companies
+report = doc.parse()
+print(f"Accounting: {report.accounting_standard}")
+print(f"Operating CF: {report.operating_cash_flow}")
+print(f"Free Cash Flow: {report.operating_cash_flow + report.investing_cash_flow}")
+
+# Access detailed debt breakdown
+print(f"Short-term loans: {report.short_term_loans_payable}")
+print(f"Long-term loans: {report.long_term_loans_payable}")
+print(f"Bonds payable: {report.bonds_payable}")
+
+# Calculate total financial debt
+total_debt = sum(filter(None, [
+    report.short_term_loans_payable,
+    report.long_term_loans_payable,
+    report.bonds_payable,
+    report.current_portion_long_term_loans_payable,
+    report.commercial_paper,
+]))
+print(f"Total debt: ¥{total_debt:,.0f}")
 ```
 
 ## LLM Analysis (Optional)

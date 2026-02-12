@@ -63,6 +63,28 @@ ELEMENT_MAP = {
     'net_assets_fs': 'jppfs_cor:NetAssets',
     'total_liabilities_fs': 'jppfs_cor:Liabilities',
 
+    # === Balance Sheet - Debt Details ===
+    'short_term_loans_payable': 'jppfs_cor:ShortTermLoansPayable',
+    'long_term_loans_payable': 'jppfs_cor:LongTermLoansPayable',
+    'bonds_payable': 'jppfs_cor:BondsPayable',
+    'current_portion_long_term_loans_payable': 'jppfs_cor:CurrentPortionOfLongTermLoansPayable',
+    'lease_obligations_current': 'jppfs_cor:LeaseObligationsCL',
+    'lease_obligations_noncurrent': 'jppfs_cor:LeaseObligationsNCL',
+    'commercial_paper': 'jppfs_cor:CommercialPaper',
+
+    # === Cash Flow Statement Elements (Fallback for companies without Summary section) ===
+    'operating_cf_cfs': 'jpcrp_cor:CashFlowsFromOperatingActivities',
+    'investing_cf_cfs': 'jpcrp_cor:CashFlowsFromInvestmentActivities',
+    'financing_cf_cfs': 'jpcrp_cor:CashFlowsFromFinancingActivities',
+
+    # === IFRS Cash Flow Elements (for IFRS companies like airlines) ===
+    'operating_cf_ifrs_summary': 'jpcrp_cor:CashFlowsFromUsedInOperatingActivitiesIFRSSummaryOfBusinessResults',
+    'investing_cf_ifrs_summary': 'jpcrp_cor:CashFlowsFromUsedInInvestingActivitiesIFRSSummaryOfBusinessResults',
+    'financing_cf_ifrs_summary': 'jpcrp_cor:CashFlowsFromUsedInFinancingActivitiesIFRSSummaryOfBusinessResults',
+    'operating_cf_ifrs': 'jpigp_cor:NetCashProvidedByUsedInOperatingActivitiesIFRS',
+    'investing_cf_ifrs': 'jpigp_cor:NetCashProvidedByUsedInInvestingActivitiesIFRS',
+    'financing_cf_ifrs': 'jpigp_cor:NetCashProvidedByUsedInFinancingActivitiesIFRS',
+
     # === Employment ===
     'num_employees': 'jpcrp_cor:NumberOfEmployees',
 }
@@ -76,6 +98,10 @@ IFRS_FALLBACK_MAP = {
     'jppfs_cor:Assets': 'jpigp_cor:AssetsIFRS',
     'jppfs_cor:NetAssets': 'jpigp_cor:EquityIFRS',
     'jppfs_cor:Liabilities': 'jpigp_cor:LiabilitiesIFRS',
+    # Debt elements
+    'jppfs_cor:ShortTermLoansPayable': 'jpigp_cor:ShortTermBorrowingsIFRS',
+    'jppfs_cor:LongTermLoansPayable': 'jpigp_cor:LongTermBorrowingsIFRS',
+    'jppfs_cor:BondsPayable': 'jpigp_cor:BondsPayableIFRS',
 }
 
 
@@ -112,6 +138,15 @@ class SecuritiesReport(ParsedReport):
     net_assets: int | None = None
     total_liabilities: int | None = None
 
+    # Balance Sheet - Debt Details
+    short_term_loans_payable: int | None = None
+    long_term_loans_payable: int | None = None
+    bonds_payable: int | None = None
+    current_portion_long_term_loans_payable: int | None = None
+    lease_obligations_current: int | None = None
+    lease_obligations_noncurrent: int | None = None
+    commercial_paper: int | None = None
+
     # Cash Flow
     operating_cash_flow: int | None = None
     investing_cash_flow: int | None = None
@@ -142,6 +177,14 @@ class SecuritiesReport(ParsedReport):
             filer = filer[:22] + '...'
         fy = self.fiscal_year_end.strftime('%Y-%m') if self.fiscal_year_end else '?'
         return f"SecuritiesReport(filer='{filer}', fy_end={fy})"
+
+
+def _coalesce(*values):
+    """Return the first non-None value."""
+    for v in values:
+        if v is not None:
+            return v
+    return None
 
 
 def parse_securities_report(document) -> SecuritiesReport:
@@ -199,50 +242,80 @@ def parse_securities_report(document) -> SecuritiesReport:
         return extract_financial(csv_files, element_id, period, is_consolidated, IFRS_FALLBACK_MAP)
 
     # Try summary elements first, then fall back to FS elements
-    net_sales = (
-        get_fin('net_sales_summary', 'CurrentYearDuration') or
-        get_fin('net_sales_fs', 'CurrentYearDuration')
+    net_sales = _coalesce(
+        get_fin('net_sales_summary', 'CurrentYearDuration'),
+        get_fin('net_sales_fs', 'CurrentYearDuration'),
     )
     operating_income = get_fin('operating_income_fs', 'CurrentYearDuration')
-    ordinary_income = (
-        get_fin('ordinary_income_summary', 'CurrentYearDuration') or
-        get_fin('ordinary_income_fs', 'CurrentYearDuration')
+    ordinary_income = _coalesce(
+        get_fin('ordinary_income_summary', 'CurrentYearDuration'),
+        get_fin('ordinary_income_fs', 'CurrentYearDuration'),
     )
-    net_income = (
-        get_fin('net_income_summary', 'CurrentYearDuration') or
-        get_fin('net_income_fs', 'CurrentYearDuration')
+    net_income = _coalesce(
+        get_fin('net_income_summary', 'CurrentYearDuration'),
+        get_fin('net_income_fs', 'CurrentYearDuration'),
     )
 
     # Prior year
-    prior_net_sales = (
-        get_fin('net_sales_summary', 'Prior1YearDuration') or
-        get_fin('net_sales_fs', 'Prior1YearDuration')
+    prior_net_sales = _coalesce(
+        get_fin('net_sales_summary', 'Prior1YearDuration'),
+        get_fin('net_sales_fs', 'Prior1YearDuration'),
     )
     prior_operating_income = get_fin('operating_income_fs', 'Prior1YearDuration')
-    prior_ordinary_income = (
-        get_fin('ordinary_income_summary', 'Prior1YearDuration') or
-        get_fin('ordinary_income_fs', 'Prior1YearDuration')
+    prior_ordinary_income = _coalesce(
+        get_fin('ordinary_income_summary', 'Prior1YearDuration'),
+        get_fin('ordinary_income_fs', 'Prior1YearDuration'),
     )
-    prior_net_income = (
-        get_fin('net_income_summary', 'Prior1YearDuration') or
-        get_fin('net_income_fs', 'Prior1YearDuration')
+    prior_net_income = _coalesce(
+        get_fin('net_income_summary', 'Prior1YearDuration'),
+        get_fin('net_income_fs', 'Prior1YearDuration'),
     )
 
     # Balance sheet
-    total_assets = (
-        get_fin('total_assets_summary', 'CurrentYearInstant') or
-        get_fin('total_assets_fs', 'CurrentYearInstant')
+    total_assets = _coalesce(
+        get_fin('total_assets_summary', 'CurrentYearInstant'),
+        get_fin('total_assets_fs', 'CurrentYearInstant'),
     )
-    net_assets = (
-        get_fin('net_assets_summary', 'CurrentYearInstant') or
-        get_fin('net_assets_fs', 'CurrentYearInstant')
+    net_assets = _coalesce(
+        get_fin('net_assets_summary', 'CurrentYearInstant'),
+        get_fin('net_assets_fs', 'CurrentYearInstant'),
     )
     total_liabilities = get_fin('total_liabilities_fs', 'CurrentYearInstant')
 
-    # Cash flow
-    operating_cf = get_fin('operating_cf_summary', 'CurrentYearDuration')
-    investing_cf = get_fin('investing_cf_summary', 'CurrentYearDuration')
-    financing_cf = get_fin('financing_cf_summary', 'CurrentYearDuration')
+    # Debt details
+    short_term_loans_payable = get_fin('short_term_loans_payable', 'CurrentYearInstant')
+    long_term_loans_payable = get_fin('long_term_loans_payable', 'CurrentYearInstant')
+    bonds_payable = get_fin('bonds_payable', 'CurrentYearInstant')
+    current_portion_ltd = get_fin('current_portion_long_term_loans_payable', 'CurrentYearInstant')
+    lease_obligations_current = get_fin('lease_obligations_current', 'CurrentYearInstant')
+    lease_obligations_noncurrent = get_fin('lease_obligations_noncurrent', 'CurrentYearInstant')
+    commercial_paper = get_fin('commercial_paper', 'CurrentYearInstant')
+
+    # Cash flow - Multi-tier fallback:
+    # 1. Japan GAAP Summary (jpcrp_cor)
+    # 2. IFRS Summary (jpcrp_cor with IFRS suffix)
+    # 3. Japan GAAP detailed statement (jppfs_cor)
+    # 4. IFRS detailed statement (jpigp_cor)
+    operating_cf = _coalesce(
+        get_fin('operating_cf_summary', 'CurrentYearDuration'),
+        get_fin('operating_cf_ifrs_summary', 'CurrentYearDuration'),
+        get_fin('operating_cf_cfs', 'CurrentYearDuration'),
+        get_fin('operating_cf_ifrs', 'CurrentYearDuration'),
+    )
+
+    investing_cf = _coalesce(
+        get_fin('investing_cf_summary', 'CurrentYearDuration'),
+        get_fin('investing_cf_ifrs_summary', 'CurrentYearDuration'),
+        get_fin('investing_cf_cfs', 'CurrentYearDuration'),
+        get_fin('investing_cf_ifrs', 'CurrentYearDuration'),
+    )
+
+    financing_cf = _coalesce(
+        get_fin('financing_cf_summary', 'CurrentYearDuration'),
+        get_fin('financing_cf_ifrs_summary', 'CurrentYearDuration'),
+        get_fin('financing_cf_cfs', 'CurrentYearDuration'),
+        get_fin('financing_cf_ifrs', 'CurrentYearDuration'),
+    )
 
     # Per-share metrics
     patterns = get_context_patterns(is_consolidated, 'CurrentYearInstant')
@@ -304,6 +377,15 @@ def parse_securities_report(document) -> SecuritiesReport:
         total_assets=total_assets,
         net_assets=net_assets,
         total_liabilities=total_liabilities,
+
+        # Balance Sheet - Debt Details
+        short_term_loans_payable=short_term_loans_payable,
+        long_term_loans_payable=long_term_loans_payable,
+        bonds_payable=bonds_payable,
+        current_portion_long_term_loans_payable=current_portion_ltd,
+        lease_obligations_current=lease_obligations_current,
+        lease_obligations_noncurrent=lease_obligations_noncurrent,
+        commercial_paper=commercial_paper,
 
         # Cash Flow
         operating_cash_flow=operating_cf,
