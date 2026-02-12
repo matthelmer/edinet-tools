@@ -2,7 +2,7 @@
 
 > **Python SDK for Japanese corporate disclosure data**
 
-Access Japan's [EDINET](https://disclosure2.edinet-fsa.go.jp/) system - the official repository for securities reports, earnings, large shareholding notices, and other regulatory filings from 11,000+ Japanese companies.
+Access Japan's [EDINET](https://disclosure2.edinet-fsa.go.jp/) system — the official repository for securities reports, earnings, large shareholding notices, and other regulatory filings from 11,000+ Japanese companies.
 
 ```python
 import edinet_tools
@@ -10,17 +10,6 @@ import edinet_tools
 docs = edinet_tools.documents("2026-01-20")  # Get all filings for a date
 report = docs[0].parse()                      # Parse to typed Python object
 ```
-
-## Why EDINET?
-
-EDINET (Electronic Disclosure for Investors' NETwork) is Japan's equivalent to the SEC's EDGAR. Every listed company in Japan must file:
-
-- **Securities Reports (有価証券報告書)** - Annual reports with full financials
-- **Quarterly Reports (四半期報告書)** - Quarterly earnings data
-- **Large Shareholding Reports (大量保有報告書)** - 5%+ ownership disclosures
-- **Extraordinary Reports (臨時報告書)** - Material events (M&A, executive changes)
-
-This package gives you programmatic access to all of it.
 
 ## Installation
 
@@ -50,7 +39,7 @@ for doc in docs[:3]:
 report = docs[0].parse()
 print(type(report).__name__)  # SecuritiesReport, LargeHoldingReport, etc.
 
-# Or get all documents filed on a specific date
+# Get all documents filed on a specific date
 all_filings = edinet_tools.documents("2026-01-20")
 ```
 
@@ -71,8 +60,6 @@ EDINET_API_KEY=your_edinet_key
 ANTHROPIC_API_KEY=your_anthropic_key   # Claude models
 OPENAI_API_KEY=your_openai_key         # GPT models
 GOOGLE_API_KEY=your_google_key         # Gemini models
-
-LLM_MODEL=claude-4-sonnet              # Default model (optional)
 ```
 
 ## Document Types
@@ -85,9 +72,10 @@ All 30+ EDINET document types are supported. These common types have specialized
 | 140 | Quarterly Report | `QuarterlyReport` |
 | 160 | Semi-Annual Report | `SemiAnnualReport` |
 | 180 | Extraordinary Report | `ExtraordinaryReport` |
+| 220 | Treasury Stock Report | `TreasuryStockReport` |
 | 350 | Large Shareholding | `LargeHoldingReport` |
 
-All other document types parse to `RawReport`, which provides access to the underlying XBRL data.
+All other document types parse to `RawReport` with access to the underlying XBRL data.
 
 ```python
 # Filter by document type
@@ -97,9 +85,6 @@ earnings = toyota.documents(doc_type="120")
 dt = edinet_tools.doc_type("120")
 print(dt.name_en)  # Securities Report
 print(dt.name_jp)  # 有価証券報告書
-
-# See all supported types
-all_types = edinet_tools.doc_types()
 ```
 
 ## Parsing Documents
@@ -115,52 +100,39 @@ if hasattr(report, 'holder_name'):
     print(report.target_company)
     print(report.ownership_pct)
 
-# Securities Report (supports both Japan GAAP and IFRS)
+# Securities Report (Japan GAAP and IFRS)
 if hasattr(report, 'net_sales'):
-    print(report.filer_name)
     print(report.net_sales)
     print(report.operating_cash_flow)
-    print(report.investing_cash_flow)
     print(report.fiscal_year_end)
 
-# All reports have these
+# Treasury Stock Report
+if hasattr(report, 'by_board_meeting'):
+    print(report.filer_name)
+    print(report.ticker)
+    print(report.has_board_authorization)
+
+# All reports
 print(report.fields())      # List available fields
 print(report.to_dict())     # Export as dictionary
 ```
 
-## Financial Data Support
+## Financial Data
 
-Securities Reports and Quarterly Reports extract comprehensive financial data including:
+Securities Reports extract comprehensive financial data with automatic support for both **Japan GAAP** and **IFRS** accounting standards:
 
 - **Income Statement**: Revenue, operating income, net income, EPS
 - **Balance Sheet**: Assets, liabilities, equity, book value per share
-- **Debt Details**: Short/long-term loans, bonds payable, commercial paper, lease obligations
-- **Cash Flow Statement**: Operating, investing, and financing cash flows
-- **Financial Ratios**: ROE, equity ratio, and more
-
-**Accounting Standards**: Both **Japan GAAP** (Generally Accepted Accounting Principles - Japan's domestic standard) and **IFRS** (International Financial Reporting Standards - used by global firms and airlines) are fully supported. The parser automatically detects the accounting standard and extracts the appropriate XBRL elements.
+- **Debt**: Short/long-term loans, bonds payable, commercial paper, lease obligations
+- **Cash Flow**: Operating, investing, and financing cash flows
+- **Ratios**: ROE, equity ratio
 
 ```python
-# Works for both Japan GAAP and IFRS companies
 report = doc.parse()
-print(f"Accounting: {report.accounting_standard}")
-print(f"Operating CF: {report.operating_cash_flow}")
-print(f"Free Cash Flow: {report.operating_cash_flow + report.investing_cash_flow}")
-
-# Access detailed debt breakdown
-print(f"Short-term loans: {report.short_term_loans_payable}")
-print(f"Long-term loans: {report.long_term_loans_payable}")
-print(f"Bonds payable: {report.bonds_payable}")
-
-# Calculate total financial debt
-total_debt = sum(filter(None, [
-    report.short_term_loans_payable,
-    report.long_term_loans_payable,
-    report.bonds_payable,
-    report.current_portion_long_term_loans_payable,
-    report.commercial_paper,
-]))
-print(f"Total debt: ¥{total_debt:,.0f}")
+print(report.accounting_standard)        # "Japan GAAP" or "IFRS"
+print(report.operating_cash_flow)
+print(report.short_term_loans_payable)
+print(report.bonds_payable)
 ```
 
 ## LLM Analysis (Optional)
@@ -172,80 +144,25 @@ from edinet_tools.analysis import ExecutiveSummaryTool
 from edinet_tools.utils import process_zip_file
 import tempfile
 
-# Fetch document
 content = doc.fetch()
-
-# Process to structured data
 with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as f:
     f.write(content)
-    temp_path = f.name
+    structured_data = process_zip_file(f.name, doc.doc_id, doc.doc_type_code)
 
-structured_data = process_zip_file(temp_path, doc.doc_id, doc.doc_type_code)
-
-# Generate summary
 tool = ExecutiveSummaryTool()
 result = tool.generate_structured_output(structured_data)
 print(result.summary)
-print(result.key_highlights)
 ```
 
 Requires the [llm](https://github.com/simonw/llm) library and an API key (Anthropic, OpenAI, or Google).
 
-## Entity Properties
-
-```python
-company = edinet_tools.entity("7203")
-
-company.name          # Company name
-company.ticker        # Stock ticker (e.g., "7203")
-company.edinet_code   # EDINET code (e.g., "E02144")
-company.is_listed     # True if publicly traded
-company.is_fund_issuer # True if investment fund manager
-company.funds         # List of funds (if fund issuer)
-```
-
-## Document Properties
-
-```python
-doc.doc_id            # EDINET document ID
-doc.doc_type_code     # Type code (e.g., "120")
-doc.doc_type_name     # English name
-doc.filer_name        # Filing company name
-doc.filer             # Entity object
-doc.filing_datetime   # When filed
-doc.period_start      # Reporting period start
-doc.period_end        # Reporting period end
-```
-
-## Error Handling
-
-```python
-from edinet_tools.exceptions import DocumentNotFoundError, APIError
-
-try:
-    content = doc.fetch()
-    report = doc.parse()
-except DocumentNotFoundError:
-    print(f"Document not available: {doc.doc_id}")
-except APIError as e:
-    print(f"API error: {e}")
-```
-
 ## Testing
 
 ```bash
-python test_runner.py --unit        # Fast unit tests (~290 tests)
+python test_runner.py --unit        # Fast unit tests (~330 tests)
 python test_runner.py --integration # API tests (requires key)
 python test_runner.py --all         # Everything
 ```
-
-## Demo
-
-```bash
-python demo.py
-```
-
-Shows entity lookup, document retrieval, parsing, and LLM analysis.
 
 ## Links
 
@@ -259,4 +176,4 @@ MIT License
 
 ---
 
-*Independent project, not affiliated with Japan's Financial Services Agency. Data provided for informational purposes - verify independently for financial decisions.*
+*Independent project, not affiliated with Japan's Financial Services Agency. Verify data independently before making financial decisions.*
