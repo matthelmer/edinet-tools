@@ -179,6 +179,14 @@ class SecuritiesReport(ParsedReport):
         return f"SecuritiesReport(filer='{filer}', fy_end={fy})"
 
 
+def _coalesce(*values):
+    """Return the first non-None value."""
+    for v in values:
+        if v is not None:
+            return v
+    return None
+
+
 def parse_securities_report(document) -> SecuritiesReport:
     """
     Parse a Securities Report document.
@@ -234,43 +242,43 @@ def parse_securities_report(document) -> SecuritiesReport:
         return extract_financial(csv_files, element_id, period, is_consolidated, IFRS_FALLBACK_MAP)
 
     # Try summary elements first, then fall back to FS elements
-    net_sales = (
-        get_fin('net_sales_summary', 'CurrentYearDuration') or
-        get_fin('net_sales_fs', 'CurrentYearDuration')
+    net_sales = _coalesce(
+        get_fin('net_sales_summary', 'CurrentYearDuration'),
+        get_fin('net_sales_fs', 'CurrentYearDuration'),
     )
     operating_income = get_fin('operating_income_fs', 'CurrentYearDuration')
-    ordinary_income = (
-        get_fin('ordinary_income_summary', 'CurrentYearDuration') or
-        get_fin('ordinary_income_fs', 'CurrentYearDuration')
+    ordinary_income = _coalesce(
+        get_fin('ordinary_income_summary', 'CurrentYearDuration'),
+        get_fin('ordinary_income_fs', 'CurrentYearDuration'),
     )
-    net_income = (
-        get_fin('net_income_summary', 'CurrentYearDuration') or
-        get_fin('net_income_fs', 'CurrentYearDuration')
+    net_income = _coalesce(
+        get_fin('net_income_summary', 'CurrentYearDuration'),
+        get_fin('net_income_fs', 'CurrentYearDuration'),
     )
 
     # Prior year
-    prior_net_sales = (
-        get_fin('net_sales_summary', 'Prior1YearDuration') or
-        get_fin('net_sales_fs', 'Prior1YearDuration')
+    prior_net_sales = _coalesce(
+        get_fin('net_sales_summary', 'Prior1YearDuration'),
+        get_fin('net_sales_fs', 'Prior1YearDuration'),
     )
     prior_operating_income = get_fin('operating_income_fs', 'Prior1YearDuration')
-    prior_ordinary_income = (
-        get_fin('ordinary_income_summary', 'Prior1YearDuration') or
-        get_fin('ordinary_income_fs', 'Prior1YearDuration')
+    prior_ordinary_income = _coalesce(
+        get_fin('ordinary_income_summary', 'Prior1YearDuration'),
+        get_fin('ordinary_income_fs', 'Prior1YearDuration'),
     )
-    prior_net_income = (
-        get_fin('net_income_summary', 'Prior1YearDuration') or
-        get_fin('net_income_fs', 'Prior1YearDuration')
+    prior_net_income = _coalesce(
+        get_fin('net_income_summary', 'Prior1YearDuration'),
+        get_fin('net_income_fs', 'Prior1YearDuration'),
     )
 
     # Balance sheet
-    total_assets = (
-        get_fin('total_assets_summary', 'CurrentYearInstant') or
-        get_fin('total_assets_fs', 'CurrentYearInstant')
+    total_assets = _coalesce(
+        get_fin('total_assets_summary', 'CurrentYearInstant'),
+        get_fin('total_assets_fs', 'CurrentYearInstant'),
     )
-    net_assets = (
-        get_fin('net_assets_summary', 'CurrentYearInstant') or
-        get_fin('net_assets_fs', 'CurrentYearInstant')
+    net_assets = _coalesce(
+        get_fin('net_assets_summary', 'CurrentYearInstant'),
+        get_fin('net_assets_fs', 'CurrentYearInstant'),
     )
     total_liabilities = get_fin('total_liabilities_fs', 'CurrentYearInstant')
 
@@ -288,25 +296,25 @@ def parse_securities_report(document) -> SecuritiesReport:
     # 2. IFRS Summary (jpcrp_cor with IFRS suffix)
     # 3. Japan GAAP detailed statement (jppfs_cor)
     # 4. IFRS detailed statement (jpigp_cor)
-    operating_cf = (
-        get_fin('operating_cf_summary', 'CurrentYearDuration') or
-        get_fin('operating_cf_ifrs_summary', 'CurrentYearDuration') or
-        get_fin('operating_cf_cfs', 'CurrentYearDuration') or
-        get_fin('operating_cf_ifrs', 'CurrentYearDuration')
+    operating_cf = _coalesce(
+        get_fin('operating_cf_summary', 'CurrentYearDuration'),
+        get_fin('operating_cf_ifrs_summary', 'CurrentYearDuration'),
+        get_fin('operating_cf_cfs', 'CurrentYearDuration'),
+        get_fin('operating_cf_ifrs', 'CurrentYearDuration'),
     )
 
-    investing_cf = (
-        get_fin('investing_cf_summary', 'CurrentYearDuration') or
-        get_fin('investing_cf_ifrs_summary', 'CurrentYearDuration') or
-        get_fin('investing_cf_cfs', 'CurrentYearDuration') or
-        get_fin('investing_cf_ifrs', 'CurrentYearDuration')
+    investing_cf = _coalesce(
+        get_fin('investing_cf_summary', 'CurrentYearDuration'),
+        get_fin('investing_cf_ifrs_summary', 'CurrentYearDuration'),
+        get_fin('investing_cf_cfs', 'CurrentYearDuration'),
+        get_fin('investing_cf_ifrs', 'CurrentYearDuration'),
     )
 
-    financing_cf = (
-        get_fin('financing_cf_summary', 'CurrentYearDuration') or
-        get_fin('financing_cf_ifrs_summary', 'CurrentYearDuration') or
-        get_fin('financing_cf_cfs', 'CurrentYearDuration') or
-        get_fin('financing_cf_ifrs', 'CurrentYearDuration')
+    financing_cf = _coalesce(
+        get_fin('financing_cf_summary', 'CurrentYearDuration'),
+        get_fin('financing_cf_ifrs_summary', 'CurrentYearDuration'),
+        get_fin('financing_cf_cfs', 'CurrentYearDuration'),
+        get_fin('financing_cf_ifrs', 'CurrentYearDuration'),
     )
 
     # Per-share metrics
