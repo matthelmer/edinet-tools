@@ -16,7 +16,10 @@ def test_ifrs_company():
     
     jal = entity_by_ticker('9201')
     docs = list(jal.documents(days=730))
-    sec_report = [d for d in docs if d.doc_type_code == '120'][0]
+    sec_reports = [d for d in docs if d.doc_type_code == '120']
+    if not sec_reports:
+        pytest.skip("No securities report found for JAL in last 730 days")
+    sec_report = sec_reports[0]
     
     report = parse(sec_report)
     
@@ -42,6 +45,8 @@ def test_japan_gaap_company():
     
     shizuki = entity_by_ticker('6994')
     docs = shizuki.documents(doc_type='120', days=730)
+    if not docs:
+        pytest.skip("No securities report found for Shizuki in last 730 days")
     latest = docs[0]
     
     report = parse(latest)
