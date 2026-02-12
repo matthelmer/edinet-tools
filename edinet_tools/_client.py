@@ -52,18 +52,22 @@ def configure(api_key: Optional[str] = None) -> None:
     _client = None  # Reset so next _get_client() uses new config
 
 
-def documents(date: str, doc_type: Optional[str] = None) -> list:
+def documents(date: Optional[str] = None, doc_type: Optional[str] = None) -> list:
     """
     Get all documents filed on a specific date.
 
     Args:
-        date: Date string (YYYY-MM-DD)
+        date: Date string (YYYY-MM-DD). Defaults to today in JST.
         doc_type: Optional filter by document type code
 
     Returns:
         List of Document objects
     """
     from .document import Document
+    from .timezone import today_jst
+
+    if date is None:
+        date = today_jst().isoformat()
 
     client = _get_client()
     filings = client.get_documents_by_date(date)

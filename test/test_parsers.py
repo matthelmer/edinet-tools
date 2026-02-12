@@ -12,6 +12,7 @@ from edinet_tools.parsers.securities import SecuritiesReport, parse_securities_r
 from edinet_tools.parsers.quarterly import QuarterlyReport, parse_quarterly_report
 from edinet_tools.parsers.semi_annual import SemiAnnualReport, parse_semi_annual_report
 from edinet_tools.parsers.extraordinary import ExtraordinaryReport, parse_extraordinary_report
+from edinet_tools.parsers.treasury_stock import TreasuryStockReport, parse_treasury_stock_report
 
 
 class TestParsedReportBase:
@@ -373,6 +374,124 @@ class TestExtraordinaryReport:
         report = parse_extraordinary_report(doc)
         assert isinstance(report, ExtraordinaryReport)
         assert report.doc_id == 'S100TEST'
+
+
+class TestTreasuryStockReport:
+    """Test TreasuryStockReport parser (Doc 220/230)."""
+
+    def test_treasury_stock_report_structure(self):
+        """TreasuryStockReport has expected fields."""
+        report = TreasuryStockReport(
+            doc_id='S100ABC123',
+            doc_type_code='220',
+            filer_name='トヨタ自動車株式会社',
+            filing_date=date(2025, 11, 15),
+            by_board_meeting='取締役会決議に基づく取得',
+            is_amendment=False,
+        )
+        assert report.filer_name == 'トヨタ自動車株式会社'
+        assert report.filing_date == date(2025, 11, 15)
+        assert report.by_board_meeting == '取締役会決議に基づく取得'
+        assert report.is_amendment is False
+
+    def test_treasury_stock_report_amendment(self):
+        """TreasuryStockReport handles amendments (Doc 230)."""
+        report = TreasuryStockReport(
+            doc_id='S100ABC456',
+            doc_type_code='230',
+            filer_name='ソニーグループ',
+            is_amendment=True,
+        )
+        assert report.is_amendment is True
+        assert report.doc_type_code == '230'
+
+    def test_treasury_stock_report_repr(self):
+        """TreasuryStockReport repr shows filer and amendment status."""
+        report = TreasuryStockReport(
+            doc_id='S100ABC123',
+            doc_type_code='220',
+            filer_name='三菱UFJ',
+        )
+        assert '三菱UFJ' in repr(report)
+
+        amended = TreasuryStockReport(
+            doc_id='S100ABC456',
+            doc_type_code='230',
+            filer_name='三菱UFJ',
+            is_amendment=True,
+        )
+        assert 'AMENDED' in repr(amended)
+
+    def test_treasury_stock_authorization_properties(self):
+        """TreasuryStockReport authorization properties work."""
+        report = TreasuryStockReport(
+            doc_id='S100ABC123',
+            doc_type_code='220',
+            by_board_meeting='取締役会決議に基づく取得',
+            by_shareholders_meeting=None,
+        )
+        assert report.has_board_authorization is True
+        assert report.has_shareholder_authorization is False
+
+    def test_treasury_stock_filer_property(self):
+        """TreasuryStockReport.filer returns Entity if resolvable."""
+        report = TreasuryStockReport(
+            doc_id='S100ABC123',
+            doc_type_code='220',
+            filer_edinet_code='E02144',
+            filer_name='トヨタ自動車',
+        )
+        filer = report.filer
+        if filer:
+            from edinet_tools.entity import Entity
+            assert isinstance(filer, Entity)
+
+    def test_parse_treasury_stock_returns_report(self):
+        """parse_treasury_stock_report returns TreasuryStockReport."""
+        from unittest.mock import Mock
+        doc = Mock()
+        doc.doc_id = 'S100TEST'
+        doc.doc_type_code = '220'
+
+        report = parse_treasury_stock_report(doc)
+        assert isinstance(report, TreasuryStockReport)
+        assert report.doc_id == 'S100TEST'
+
+    def test_parse_dispatches_doc_220(self):
+        """parse() dispatches doc type 220 to TreasuryStockReport."""
+        from unittest.mock import Mock
+        doc = Mock()
+        doc.doc_id = 'S100TEST220'
+        doc.doc_type_code = '220'
+
+        report = parse(doc)
+        assert isinstance(report, TreasuryStockReport)
+
+    def test_parse_dispatches_doc_230(self):
+        """parse() dispatches doc type 230 (amendment) to TreasuryStockReport."""
+        from unittest.mock import Mock
+        doc = Mock()
+        doc.doc_id = 'S100TEST230'
+        doc.doc_type_code = '230'
+
+        report = parse(doc)
+        assert isinstance(report, TreasuryStockReport)
+
+    def test_treasury_stock_to_dict(self):
+        """TreasuryStockReport.to_dict exports clean dict."""
+        report = TreasuryStockReport(
+            doc_id='S100ABC123',
+            doc_type_code='220',
+            filer_name='Test Corp',
+            filing_date=date(2025, 11, 15),
+            is_amendment=False,
+        )
+        d = report.to_dict()
+        assert d['doc_id'] == 'S100ABC123'
+        assert d['filer_name'] == 'Test Corp'
+        assert d['is_amendment'] is False
+        assert 'raw_fields' not in d
+        assert 'unmapped_fields' not in d
 
 
 class TestExtractionUtilities:

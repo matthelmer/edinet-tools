@@ -11,6 +11,7 @@ __description__ = "Python package for accessing Japanese corporate financial dat
 # Core API
 from .client import EdinetClient  # Deprecated, but kept for migration
 from ._client import configure, documents
+from .timezone import today_jst
 from .config import SUPPORTED_DOC_TYPES as DOCUMENT_TYPES
 
 # Entity classification
@@ -42,6 +43,7 @@ from .parsers import (
     QuarterlyReport,
     SemiAnnualReport,
     ExtraordinaryReport,
+    TreasuryStockReport,
     GenericReport,  # Backwards compatibility alias
 )
 
@@ -49,6 +51,7 @@ __all__ = [
     # Configuration
     "configure",
     "documents",
+    "today_jst",
     "DOCUMENT_TYPES",
     "__version__",
     # Entity lookup
@@ -77,6 +80,7 @@ __all__ = [
     "QuarterlyReport",
     "SemiAnnualReport",
     "ExtraordinaryReport",
+    "TreasuryStockReport",
     # Legacy (deprecated)
     "EdinetClient",
     "EntityClassifier",

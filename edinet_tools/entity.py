@@ -127,7 +127,8 @@ class Entity:
         """
         from .document import Document
         from ._client import _get_client
-        from datetime import date, timedelta
+        from .timezone import today_jst
+        from datetime import timedelta
 
         # Handle deprecated parameter
         if days_back is not None and days is None:
@@ -138,9 +139,9 @@ class Entity:
         # Use explicit client if set, otherwise module-level client
         client = self._client if self._client is not None else _get_client()
 
-        # Collect filings from each day
+        # Collect filings from each day (JST so we don't miss today's filings)
         all_filings = []
-        today = date.today()
+        today = today_jst()
         for i in range(days):
             check_date = today - timedelta(days=i)
             try:

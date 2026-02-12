@@ -6,17 +6,28 @@ Get Japanese corporate filings in 3 lines of code.
 """
 
 import os
-from datetime import date
+from datetime import timedelta
 import edinet_tools  # This loads .env automatically
 
 
-def quick_start():
-    """The minimal quick start - get today's documents."""
+def _get_recent_docs(max_days_back=5):
+    """Get documents from today (JST) or the most recent day with filings."""
+    today = edinet_tools.today_jst()
+    for i in range(max_days_back):
+        d = today - timedelta(days=i)
+        docs = edinet_tools.documents(d.isoformat())
+        if docs:
+            if i > 0:
+                print(f"  (No filings today — using {d})")
+            return docs, d
+    return [], today
 
-    # Get today's filings (Japan is ahead, so there's usually data)
-    today = date.today().isoformat()
-    docs = edinet_tools.documents(today)
-    print(f"Found {len(docs)} filings from {today}")
+
+def quick_start():
+    """The minimal quick start - get recent documents."""
+
+    docs, filing_date = _get_recent_docs()
+    print(f"Found {len(docs)} filings from {filing_date}")
 
     for doc in docs[:5]:
         print(f"  {doc.doc_id}: {doc.filer_name[:40]} - {doc.doc_type_name}")
@@ -49,11 +60,10 @@ def parse_document():
     """Download and parse a document."""
     print("\n--- Parse Document ---")
 
-    today = date.today().isoformat()
-    docs = edinet_tools.documents(today)
+    docs, _ = _get_recent_docs()
 
     if not docs:
-        print("No documents found - try a weekday")
+        print("No documents found in the last 5 days")
         return None
 
     # Find a large holding report (type 350) - common and interesting
@@ -78,6 +88,31 @@ def parse_document():
     return doc
 
 
+def parse_treasury_stock():
+    """Parse a treasury stock buyback report (doc 220)."""
+    print("\n--- Treasury Stock Report ---")
+
+    docs, _ = _get_recent_docs()
+
+    for doc in docs:
+        if doc.doc_type_code == "220":
+            report = doc.parse()
+            print(f"  Company: {report.filer_name}")
+            if report.filer_name_en:
+                print(f"           {report.filer_name_en}")
+            print(f"  Ticker:  {report.ticker}")
+            print(f"  Filed:   {report.filing_date}")
+            print(f"  Period:  {report.reporting_period}")
+            print(f"  Board authorization:       {report.has_board_authorization}")
+            print(f"  Shareholder authorization: {report.has_shareholder_authorization}")
+            if report.by_board_meeting:
+                preview = report.by_board_meeting[:200].replace('\n', ' ')
+                print(f"  Board detail: {preview}...")
+            return
+
+    print("  No doc 220 found in the last 5 days")
+
+
 def llm_analysis():
     """Use LLM to generate an executive summary (requires LLM API key)."""
     import tempfile
@@ -92,9 +127,7 @@ def llm_analysis():
         print("Set GOOGLE_API_KEY for Gemini or ANTHROPIC_API_KEY for Claude")
         return
 
-    # Get today's documents
-    today = date.today().isoformat()
-    docs = edinet_tools.documents(today)
+    docs, _ = _get_recent_docs()
 
     if not docs:
         print("No documents to analyze")
@@ -160,6 +193,7 @@ def main():
     quick_start()
     entity_lookup()
     parse_document()
+    parse_treasury_stock()
     llm_analysis()
 
     print("\n" + "=" * 40)
