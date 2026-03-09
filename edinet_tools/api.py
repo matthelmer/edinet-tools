@@ -19,9 +19,19 @@ def fetch_documents_list(date: Union[str, datetime.date],
                          type: int = 2,
                          max_retries: int = 3,
                          delay_seconds: int = 5,
-                         api_key: str = None) -> Dict:
+                         api_key: str = None,
+                         timeout: int = 60) -> Dict:
     """
     Retrieve disclosure documents from EDINET API for a specified date with retries.
+
+    Args:
+        date: Date string ('YYYY-MM-DD') or datetime.date object.
+        type: EDINET API type parameter (1=metadata only, 2=metadata+results).
+        max_retries: Maximum number of retry attempts on failure.
+        delay_seconds: Kept for backwards compatibility; retries now use
+            exponential backoff (2s, 4s, 8s, ... capped at 30s).
+        api_key: Optional API key override.
+        timeout: Timeout in seconds for the HTTP request (default 60).
     """
     if isinstance(date, str):
         try:
@@ -46,7 +56,7 @@ def fetch_documents_list(date: Union[str, datetime.date],
     for attempt in range(max_retries):
         try:
             logger.info(f"Attempt {attempt + 1} to fetch documents for {date_str}...")
-            with urllib.request.urlopen(full_url) as response:
+            with urllib.request.urlopen(full_url, timeout=timeout) as response:
                 # Check for non-200 status codes
                 if response.getcode() != 200:
                     logger.error(f"API returned status code {response.getcode()} for date {date_str}.")
@@ -58,8 +68,9 @@ def fetch_documents_list(date: Union[str, datetime.date],
                          pass
                     # If it's a client error (4xx) or server error (5xx), might be retryable
                     if 400 <= response.getcode() < 600 and attempt < max_retries - 1:
-                         logger.warning(f"Retrying in {delay_seconds}s...")
-                         time.sleep(delay_seconds)
+                         backoff = min(2 ** (attempt + 1), 30)
+                         logger.warning(f"Retrying in {backoff}s...")
+                         time.sleep(backoff)
                          continue # Retry
                     else:
                          # Non-retryable error or last attempt
@@ -73,16 +84,18 @@ def fetch_documents_list(date: Union[str, datetime.date],
         except urllib.error.URLError as e:
             logger.error(f"URL Error fetching documents for {date_str}: {e}")
             if attempt < max_retries - 1:
-                logger.warning(f"Retrying in {delay_seconds}s...")
-                time.sleep(delay_seconds)
+                backoff = min(2 ** (attempt + 1), 30)
+                logger.warning(f"Retrying in {backoff}s...")
+                time.sleep(backoff)
             else:
                 logger.error("Max retries reached for fetching documents.")
                 raise # Re-raise the last exception
         except Exception as e:
             logger.error(f"An unexpected error occurred fetching documents for {date_str}: {e}")
             if attempt < max_retries - 1:
-                 logger.warning(f"Retrying in {delay_seconds}s...")
-                 time.sleep(delay_seconds)
+                 backoff = min(2 ** (attempt + 1), 30)
+                 logger.warning(f"Retrying in {backoff}s...")
+                 time.sleep(backoff)
             else:
                  logger.error("Max retries reached for fetching documents.")
                  raise # Re-raise
@@ -91,9 +104,17 @@ def fetch_documents_list(date: Union[str, datetime.date],
     raise Exception("Failed to fetch documents after multiple retries.")
 
 
-def fetch_document(doc_id: str, max_retries: int = 3, delay_seconds: int = 5, api_key: str = None) -> bytes:
+def fetch_document(doc_id: str, max_retries: int = 3, delay_seconds: int = 5, api_key: str = None, timeout: int = 60) -> bytes:
     """
     Retrieve a specific document from EDINET API with retries and return raw bytes.
+
+    Args:
+        doc_id: EDINET document ID (e.g. 'S100ABC').
+        max_retries: Maximum number of retry attempts on failure.
+        delay_seconds: Kept for backwards compatibility; retries now use
+            exponential backoff (2s, 4s, 8s, ... capped at 30s).
+        api_key: Optional API key override.
+        timeout: Timeout in seconds for the HTTP request (default 60).
     """
     url = f'https://disclosure.edinet-fsa.go.jp/api/v2/documents/{doc_id}'
     params = {
@@ -106,7 +127,7 @@ def fetch_document(doc_id: str, max_retries: int = 3, delay_seconds: int = 5, ap
     for attempt in range(max_retries):
         try:
             logger.info(f"Attempt {attempt + 1} to fetch document {doc_id}...")
-            with urllib.request.urlopen(full_url) as response:
+            with urllib.request.urlopen(full_url, timeout=timeout) as response:
                  # Check for non-200 status codes
                  if response.getcode() != 200:
                      logger.error(f"API returned status code {response.getcode()} for document {doc_id}.")
@@ -117,8 +138,9 @@ def fetch_document(doc_id: str, max_retries: int = 3, delay_seconds: int = 5, ap
                           pass
 
                      if 400 <= response.getcode() < 600 and attempt < max_retries - 1:
-                          logger.warning(f"Retrying in {delay_seconds}s...")
-                          time.sleep(delay_seconds)
+                          backoff = min(2 ** (attempt + 1), 30)
+                          logger.warning(f"Retrying in {backoff}s...")
+                          time.sleep(backoff)
                           continue # Retry
                      else:
                           raise urllib.error.HTTPError(full_url, response.getcode(), f"HTTP Error: {response.getcode()}", response.headers, None)
@@ -130,16 +152,18 @@ def fetch_document(doc_id: str, max_retries: int = 3, delay_seconds: int = 5, ap
         except urllib.error.URLError as e:
             logger.error(f"URL Error fetching document {doc_id}: {e}")
             if attempt < max_retries - 1:
-                logger.warning(f"Retrying in {delay_seconds}s...")
-                time.sleep(delay_seconds)
+                backoff = min(2 ** (attempt + 1), 30)
+                logger.warning(f"Retrying in {backoff}s...")
+                time.sleep(backoff)
             else:
                 logger.error("Max retries reached for fetching document.")
                 raise
         except Exception as e:
             logger.error(f"An unexpected error occurred fetching document {doc_id}: {e}")
             if attempt < max_retries - 1:
-                 logger.warning(f"Retrying in {delay_seconds}s...")
-                 time.sleep(delay_seconds)
+                 backoff = min(2 ** (attempt + 1), 30)
+                 logger.warning(f"Retrying in {backoff}s...")
+                 time.sleep(backoff)
             else:
                  logger.error("Max retries reached for fetching document.")
                  raise
