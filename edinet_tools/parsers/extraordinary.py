@@ -53,6 +53,20 @@ ELEMENT_MAP = {
     'financial_impact': 'jpcrp-esr_cor:EventWithSignificantEffectsOnFinancialPositionBusinessPerformanceAndCashFlowsTextBlock',
     'shareholder_meeting': 'jpcrp-esr_cor:ResolutionOfShareholdersMeetingTextBlock',
     'major_shareholder_change': 'jpcrp-esr_cor:ChangesInMajorShareholderTextBlock',
+
+    # === Amendment Tracking ===
+    'amendment_flag': 'jpdei_cor:AmendmentFlagDEI',
+    'report_amendment_flag': 'jpdei_cor:ReportAmendmentFlagDEI',
+
+    # === Contact Info (dual namespace: fund + corp) ===
+    'place_of_filing_fund': 'jpsps-esr_cor:PlaceOfFilingCoverPage',
+    'place_of_filing_corp': 'jpcrp-esr_cor:PlaceOfFilingCoverPage',
+    'contact_person_fund': 'jpsps-esr_cor:NameOfContactPersonCoverPage',
+    'contact_person_corp': 'jpcrp-esr_cor:NameOfContactPersonCoverPage',
+    'contact_address_fund': 'jpsps-esr_cor:PlaceOfContactCoverPage',
+    'contact_address_corp': 'jpcrp-esr_cor:PlaceOfContactCoverPage',
+    'contact_phone_fund': 'jpsps-esr_cor:TelephoneNumberCoverPage',
+    'contact_phone_corp': 'jpcrp-esr_cor:TelephoneNumberCoverPage',
 }
 
 # Event type detection keywords
@@ -82,6 +96,16 @@ class ExtraordinaryReport(ParsedReport):
     filing_date: date | None = None
     representative: str | None = None
     address: str | None = None
+
+    # Amendment
+    amendment_flag: str | None = None
+    report_amendment_flag: str | None = None
+
+    # Contact
+    place_of_filing: str | None = None
+    contact_person: str | None = None
+    contact_address: str | None = None
+    contact_phone: str | None = None
 
     # Content
     reason_for_filing: str | None = None
@@ -121,23 +145,29 @@ def _classify_event_type(reason_text: Optional[str]) -> str:
     return 'other'
 
 
-def parse_extraordinary_report(document) -> ExtraordinaryReport:
+def parse_extraordinary_report(document=None, *, csv_files=None, doc_id=None, doc_type_code=None) -> ExtraordinaryReport:
     """
     Parse an Extraordinary Report document.
 
     Args:
-        document: Document object with fetch() method
+        document: Document object with fetch() method (optional if csv_files provided)
+        csv_files: Pre-extracted CSV data (list of dicts with 'filename' and 'data' keys)
+        doc_id: Document ID (required if csv_files provided)
+        doc_type_code: Document type code (required if csv_files provided)
 
     Returns:
         ExtraordinaryReport with extracted fields
     """
-    zip_bytes = document.fetch()
-    csv_files = extract_csv_from_zip(zip_bytes)
+    if csv_files is None:
+        zip_bytes = document.fetch()
+        csv_files = extract_csv_from_zip(zip_bytes)
+        doc_id = document.doc_id
+        doc_type_code = document.doc_type_code
 
     if not csv_files:
         return ExtraordinaryReport(
-            doc_id=document.doc_id,
-            doc_type_code=document.doc_type_code,
+            doc_id=doc_id,
+            doc_type_code=doc_type_code,
             source_files=[],
             raw_fields={},
             unmapped_fields={},
@@ -180,6 +210,16 @@ def parse_extraordinary_report(document) -> ExtraordinaryReport:
     # Extract address - try both namespaces
     address = get('address_fund') or get('address_corp')
 
+    # Amendment flags
+    amendment_flag = get('amendment_flag', ['FilingDateInstant'])
+    report_amendment_flag = get('report_amendment_flag', ['FilingDateInstant'])
+
+    # Contact info - try both namespaces
+    place_of_filing = get('place_of_filing_fund') or get('place_of_filing_corp')
+    contact_person = get('contact_person_fund') or get('contact_person_corp')
+    contact_address = get('contact_address_fund') or get('contact_address_corp')
+    contact_phone = get('contact_phone_fund') or get('contact_phone_corp')
+
     # Extract reason for filing - try both namespaces
     reason_for_filing = get('reason_fund') or get('reason_corp')
 
@@ -190,17 +230,17 @@ def parse_extraordinary_report(document) -> ExtraordinaryReport:
     raw_fields, text_blocks, unmapped_fields = categorize_elements(csv_files, ELEMENT_MAP)
 
     return ExtraordinaryReport(
-        doc_id=document.doc_id,
-        doc_type_code=document.doc_type_code,
+        doc_id=doc_id,
+        doc_type_code=doc_type_code,
         source_files=source_files,
         raw_fields=raw_fields,
         unmapped_fields=unmapped_fields,
         text_blocks=text_blocks,
 
         # Identification
-        filer_name=filer_name or document.filer_name,
+        filer_name=filer_name or getattr(document, 'filer_name', None),
         filer_name_en=filer_name_en,
-        filer_edinet_code=edinet_code or document.filer_edinet_code,
+        filer_edinet_code=edinet_code or getattr(document, 'filer_edinet_code', None),
         ticker=ticker,
         fund_code=fund_code,
         fund_name=fund_name,
@@ -210,6 +250,16 @@ def parse_extraordinary_report(document) -> ExtraordinaryReport:
         filing_date=filing_date,
         representative=representative,
         address=address,
+
+        # Amendment
+        amendment_flag=amendment_flag,
+        report_amendment_flag=report_amendment_flag,
+
+        # Contact
+        place_of_filing=place_of_filing,
+        contact_person=contact_person,
+        contact_address=contact_address,
+        contact_phone=contact_phone,
 
         # Content
         reason_for_filing=reason_for_filing,

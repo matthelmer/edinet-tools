@@ -67,6 +67,9 @@ ELEMENT_MAP = {
     'acquisition_fund_borrowing': 'jplvh_cor:TotalAmountOfBorrowings',
     'acquisition_fund_other': 'jplvh_cor:TotalAmountFromOtherSources',
     'acquisition_fund_total': 'jplvh_cor:TotalAmountOfFundingForAcquisition',
+
+    # Target Company Detail
+    'listed_or_otc': 'jplvh_cor:ListedOrOTC',
 }
 
 
@@ -89,6 +92,7 @@ class LargeHoldingReport(ParsedReport):
     # Target (company being held)
     target_company: str | None = None
     target_ticker: str | None = None
+    listed_or_otc: str | None = None
 
     # Ownership
     shares_held: int | None = None
@@ -151,25 +155,32 @@ class LargeHoldingReport(ParsedReport):
         return f"LargeHoldingReport(filer='{filer}', target='{target}', ownership={pct})"
 
 
-def parse_large_holding(document) -> LargeHoldingReport:
+def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_code=None) -> LargeHoldingReport:
     """
     Parse a Large Shareholding Report document.
 
     Args:
-        document: Document object with fetch() method
+        document: Document object with fetch() method (optional if csv_files provided)
+        csv_files: Pre-extracted CSV data (list of dicts with 'filename' and 'data' keys)
+        doc_id: Document ID (required if csv_files provided)
+        doc_type_code: Document type code (required if csv_files provided)
 
     Returns:
         LargeHoldingReport with extracted fields
     """
-    # Fetch and extract CSV data
-    zip_bytes = document.fetch()
-    csv_files = extract_csv_from_zip(zip_bytes)
+    # Fetch and extract CSV data (unless pre-extracted)
+    if csv_files is None:
+        zip_bytes = document.fetch()
+        csv_files = extract_csv_from_zip(zip_bytes)
+        doc_id = document.doc_id
+        doc_type_code = document.doc_type_code
+
 
     if not csv_files:
         # Return minimal report if extraction failed
         return LargeHoldingReport(
-            doc_id=document.doc_id,
-            doc_type_code=document.doc_type_code,
+            doc_id=doc_id,
+            doc_type_code=doc_type_code,
             source_files=[],
             raw_fields={},
             unmapped_fields={},
@@ -184,7 +195,7 @@ def parse_large_holding(document) -> LargeHoldingReport:
         return extract_value(csv_files, ELEMENT_MAP.get(key, ''), get_last=last)
 
     # Filer name (try multiple element IDs)
-    filer_name = get('filer_name_alt1') or get('filer_name_alt2') or document.filer_name
+    filer_name = get('filer_name_alt1') or get('filer_name_alt2') or getattr(document, 'filer_name', None)
 
     # Target ticker (normalize to 4-digit + .T format)
     target_ticker_raw = get('target_ticker')
@@ -204,15 +215,16 @@ def parse_large_holding(document) -> LargeHoldingReport:
 
     # Dates
     filing_date = parse_date(get('filing_date'))
-    if not filing_date and document.filing_datetime:
-        filing_date = document.filing_datetime.date()
+    filing_datetime = getattr(document, 'filing_datetime', None)
+    if not filing_date and filing_datetime:
+        filing_date = filing_datetime.date()
 
     # Categorize all elements
     raw_fields, text_blocks, unmapped_fields = categorize_elements(csv_files, ELEMENT_MAP)
 
     return LargeHoldingReport(
-        doc_id=document.doc_id,
-        doc_type_code=document.doc_type_code,
+        doc_id=doc_id,
+        doc_type_code=doc_type_code,
         source_files=source_files,
         raw_fields=raw_fields,
         unmapped_fields=unmapped_fields,
@@ -225,7 +237,7 @@ def parse_large_holding(document) -> LargeHoldingReport:
         # Filer
         filer_name=filer_name,
         filer_name_en=get('filer_name_en'),
-        filer_edinet_code=get('filer_edinet_code') or document.filer_edinet_code,
+        filer_edinet_code=get('filer_edinet_code') or getattr(document, 'filer_edinet_code', None),
         filer_address=get('filer_address'),
         filer_type=get('filer_type'),
         filer_business=get('filer_business'),
@@ -233,6 +245,7 @@ def parse_large_holding(document) -> LargeHoldingReport:
         # Target
         target_company=get('target_company'),
         target_ticker=target_ticker,
+        listed_or_otc=get('listed_or_otc'),
 
         # Ownership
         shares_held=parse_int(get('shares_held', last=True)),

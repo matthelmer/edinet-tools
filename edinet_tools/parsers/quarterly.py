@@ -163,23 +163,29 @@ def _derive_quarter_number(filing_date: date, fiscal_year_end: date) -> Optional
         return None
 
 
-def parse_quarterly_report(document) -> QuarterlyReport:
+def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_type_code=None) -> QuarterlyReport:
     """
     Parse a Quarterly Report document.
 
     Args:
-        document: Document object with fetch() method
+        document: Document object with fetch() method (optional if csv_files provided)
+        csv_files: Pre-extracted CSV data (list of dicts with 'filename' and 'data' keys)
+        doc_id: Document ID (required if csv_files provided)
+        doc_type_code: Document type code (required if csv_files provided)
 
     Returns:
         QuarterlyReport with extracted fields
     """
-    zip_bytes = document.fetch()
-    csv_files = extract_csv_from_zip(zip_bytes)
+    if csv_files is None:
+        zip_bytes = document.fetch()
+        csv_files = extract_csv_from_zip(zip_bytes)
+        doc_id = document.doc_id
+        doc_type_code = document.doc_type_code
 
     if not csv_files:
         return QuarterlyReport(
-            doc_id=document.doc_id,
-            doc_type_code=document.doc_type_code,
+            doc_id=doc_id,
+            doc_type_code=doc_type_code,
             source_files=[],
             raw_fields={},
             unmapped_fields={},
@@ -262,16 +268,16 @@ def parse_quarterly_report(document) -> QuarterlyReport:
     raw_fields, text_blocks, unmapped_fields = categorize_elements(csv_files, ELEMENT_MAP)
 
     return QuarterlyReport(
-        doc_id=document.doc_id,
-        doc_type_code=document.doc_type_code,
+        doc_id=doc_id,
+        doc_type_code=doc_type_code,
         source_files=source_files,
         raw_fields=raw_fields,
         unmapped_fields=unmapped_fields,
         text_blocks=text_blocks,
 
         # Identification
-        filer_name=company_name or document.filer_name,
-        filer_edinet_code=edinet_code or document.filer_edinet_code,
+        filer_name=company_name or getattr(document, 'filer_name', None),
+        filer_edinet_code=edinet_code or getattr(document, 'filer_edinet_code', None),
         ticker=ticker,
         is_consolidated=is_consolidated,
 

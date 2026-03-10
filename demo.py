@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 """
-EDINET Tools Quick Start
+EDINET Tools — Quick Start Demo
 
-Get Japanese corporate filings in 3 lines of code.
+Demonstrates entity lookup, document listing, typed parsing,
+and doc type registry. Run with an EDINET API key for the full
+experience, or without one for entity-only features.
+
+  python demo.py
 """
 
 import os
 from datetime import timedelta
-import edinet_tools  # This loads .env automatically
+import edinet_tools
 
 
 def _get_recent_docs(max_days_back=5):
-    """Get documents from today (JST) or the most recent day with filings."""
+    """Get documents from today (JST) or the most recent filing day."""
     today = edinet_tools.today_jst()
     for i in range(max_days_back):
         d = today - timedelta(days=i)
@@ -23,15 +27,7 @@ def _get_recent_docs(max_days_back=5):
     return [], today
 
 
-def quick_start():
-    """The minimal quick start - get recent documents."""
-
-    docs, filing_date = _get_recent_docs()
-    print(f"Found {len(docs)} filings from {filing_date}")
-
-    for doc in docs[:5]:
-        print(f"  {doc.doc_id}: {doc.filer_name[:40]} - {doc.doc_type_name}")
-
+# ── 1. Entity lookup (no API key needed) ──────────────────────────
 
 def entity_lookup():
     """Look up companies by ticker, EDINET code, or name."""
@@ -49,175 +45,147 @@ def entity_lookup():
     toyota = edinet_tools.entity("Toyota")
     print(f"Search 'Toyota': {toyota.name} ({toyota.ticker})")
 
-    # Search multiple results
+    # Multiple results
     results = edinet_tools.search("trading", limit=3)
     print(f"\nSearch 'trading': {len(results)} results")
     for e in results:
         print(f"  {e.ticker or '----'}: {e.name[:50]}")
 
 
-def parse_document():
-    """Download and parse a document."""
-    print("\n--- Parse Document ---")
+# ── 2. Document listing ───────────────────────────────────────────
 
-    docs, _ = _get_recent_docs()
+def list_documents():
+    """Fetch the latest day's filings and show a summary."""
+    print("\n--- Recent Documents ---")
 
-    if not docs:
-        print("No documents found in the last 5 days")
-        return None
+    docs, filing_date = _get_recent_docs()
+    print(f"Found {len(docs)} filings from {filing_date}")
 
-    # Find a large holding report (type 350) - common and interesting
+    for doc in docs[:5]:
+        print(f"  {doc.doc_id}: {doc.filer_name[:40]} — {doc.doc_type_name}")
+
+    return docs
+
+
+# ── 3. Typed parsers ─────────────────────────────────────────────
+
+def parse_large_holding(docs):
+    """Parse a large holding report (doc 350) — typed fields."""
+    print("\n--- Large Holding Report (Doc 350) ---")
+
     for doc in docs:
         if doc.doc_type_code == "350":
-            print(f"Parsing: {doc.doc_id} ({doc.doc_type_name})")
-            report = doc.parse()
-            print(f"  Parser: {type(report).__name__}")
-            print(f"  Fields: {report.fields()[:5]}...")
-            if hasattr(report, 'holder_name'):
-                print(f"  Holder: {report.holder_name}")
-            if hasattr(report, 'target_company'):
-                print(f"  Target: {report.target_company}")
-            return doc
+            report = doc.parse()  # → LargeHoldingReport
+            print(f"  Parser:    {type(report).__name__}")
+            print(f"  Filer:     {report.filer_name}")
+            print(f"  Target:    {report.target_company}")
+            if report.ownership_pct is not None:
+                print(f"  Ownership: {report.ownership_pct}%")
+            if report.prior_ownership_pct is not None:
+                print(f"  Prior:     {report.prior_ownership_pct}%")
+            if report.purpose:
+                preview = report.purpose[:120].replace('\n', ' ')
+                print(f"  Purpose:   {preview}...")
+            return
 
-    # Fallback to first document
-    doc = docs[0]
-    print(f"Parsing: {doc.doc_id} ({doc.doc_type_name})")
-    report = doc.parse()
-    print(f"  Parser: {type(report).__name__}")
-    print(f"  Fields: {report.fields()[:5]}...")
-    return doc
+    print("  No doc 350 found in the last 5 days")
 
 
-def parse_treasury_stock():
-    """Parse a treasury stock buyback report (doc 220)."""
-    print("\n--- Treasury Stock Report ---")
-
-    docs, _ = _get_recent_docs()
+def parse_treasury_stock(docs):
+    """Parse a treasury stock report (doc 220) — typed fields."""
+    print("\n--- Treasury Stock Report (Doc 220) ---")
 
     for doc in docs:
         if doc.doc_type_code == "220":
-            report = doc.parse()
-            print(f"  Company: {report.filer_name}")
+            report = doc.parse()  # → TreasuryStockReport
+            print(f"  Parser:    {type(report).__name__}")
+            print(f"  Company:   {report.filer_name}")
             if report.filer_name_en:
-                print(f"           {report.filer_name_en}")
-            print(f"  Ticker:  {report.ticker}")
-            print(f"  Filed:   {report.filing_date}")
-            print(f"  Period:  {report.reporting_period}")
-            print(f"  Board authorization:       {report.has_board_authorization}")
-            print(f"  Shareholder authorization: {report.has_shareholder_authorization}")
-            if report.by_board_meeting:
-                preview = report.by_board_meeting[:200].replace('\n', ' ')
-                print(f"  Board detail: {preview}...")
+                print(f"             {report.filer_name_en}")
+            print(f"  Ticker:    {report.ticker}")
+            print(f"  Filed:     {report.filing_date}")
+            print(f"  Period:    {report.reporting_period}")
+            print(f"  Board auth:       {report.has_board_authorization}")
+            print(f"  Shareholder auth: {report.has_shareholder_authorization}")
             return
 
     print("  No doc 220 found in the last 5 days")
 
 
-def llm_analysis():
-    """Use LLM to generate an executive summary (requires LLM API key)."""
-    import tempfile
-    from edinet_tools.config import LLM_API_KEY
-    from edinet_tools.utils import process_zip_file
-    from edinet_tools.analysis import ExecutiveSummaryTool
+def parse_securities_report(docs):
+    """Parse a securities report (doc 120) — rich financial data."""
+    print("\n--- Securities Report (Doc 120) ---")
 
-    print("\n--- LLM Analysis ---")
-
-    if not LLM_API_KEY:
-        print("No LLM API key found - skipping")
-        print("Set GOOGLE_API_KEY for Gemini or ANTHROPIC_API_KEY for Claude")
-        return
-
-    docs, _ = _get_recent_docs()
-
-    if not docs:
-        print("No documents to analyze")
-        return
-
-    # Find an interesting document (extraordinary report, quarterly, or large holding)
-    doc = None
-    for d in docs:
-        if d.doc_type_code in ("180", "140", "350"):
-            doc = d
-            break
-    doc = doc or docs[0]
-
-    print(f"Analyzing: {doc.filer_name[:40]}")
-    print(f"Type: {doc.doc_type_name}")
-
-    # Fetch and process document
-    content = doc.fetch()
-
-    with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as f:
-        f.write(content)
-        temp_path = f.name
-
-    try:
-        structured_data = process_zip_file(temp_path, doc.doc_id, doc.doc_type_code)
-
-        if not structured_data:
-            print("Could not extract structured data")
+    for doc in docs:
+        if doc.doc_type_code == "120":
+            report = doc.parse()  # → SecuritiesReport
+            print(f"  Parser:       {type(report).__name__}")
+            print(f"  Company:      {report.filer_name}")
+            print(f"  Ticker:       {report.ticker}")
+            print(f"  FY end:       {report.fiscal_year_end}")
+            print(f"  Consolidated: {report.is_consolidated}")
+            if report.net_sales is not None:
+                print(f"  Net sales:    ¥{report.net_sales:,}")
+            if report.operating_income is not None:
+                print(f"  Op. income:   ¥{report.operating_income:,}")
+            if report.roe is not None:
+                print(f"  ROE:          {report.roe}%")
+            if report.equity_ratio is not None:
+                print(f"  Equity ratio: {report.equity_ratio}%")
             return
 
-        # Generate executive summary
-        tool = ExecutiveSummaryTool()
-        result = tool.generate_structured_output(structured_data)
+    print("  No doc 120 found in the last 5 days")
 
-        if result:
-            print(f"\n{result.company_name_en}")
-            if result.company_description_short:
-                print(f"  {result.company_description_short}")
-            print(f"\nSummary: {result.summary}")
-            if result.key_highlights:
-                print("\nKey Points:")
-                for h in result.key_highlights[:3]:
-                    print(f"  - {h}")
-        else:
-            print("LLM analysis failed")
-    finally:
-        os.unlink(temp_path)
 
+# ── 4. Doc type registry ─────────────────────────────────────────
+
+def doc_type_registry():
+    """Browse the document type registry."""
+    print("\n--- Doc Type Registry ---")
+
+    all_types = edinet_tools.doc_types()
+    print(f"{len(all_types)} document types registered\n")
+
+    for dt in sorted(all_types, key=lambda t: t.code):
+        print(f"  {dt.code}: {dt.name_en} ({dt.name_jp})")
+
+
+# ── Main ──────────────────────────────────────────────────────────
 
 def main():
-    """Run the demo."""
-    # Check API key
-    if not os.getenv('EDINET_API_KEY'):
-        print("EDINET_API_KEY not set")
-        print("Get your free API key at: https://disclosure.edinet-fsa.go.jp/")
-        print("\nRunning entity lookup only (no API required)...\n")
-        entity_lookup()
-        return
+    has_api_key = bool(os.getenv('EDINET_API_KEY'))
 
     print("EDINET Tools Quick Start")
     print("=" * 40)
 
-    quick_start()
+    # Entity lookup works without an API key
     entity_lookup()
-    parse_document()
-    parse_treasury_stock()
-    llm_analysis()
+    doc_type_registry()
+
+    if not has_api_key:
+        print("\n" + "-" * 40)
+        print("Set EDINET_API_KEY for document features.")
+        print("Get a free key: https://disclosure.edinet-fsa.go.jp/")
+    else:
+        docs = list_documents()
+        if docs:
+            parse_large_holding(docs)
+            parse_treasury_stock(docs)
+            parse_securities_report(docs)
 
     print("\n" + "=" * 40)
-    print("Getting Started:")
-    print("""
-  pip install edinet-tools
-
-  import edinet_tools
-
-  # Look up any company
-  company = edinet_tools.entity("8058")
-
-  # Get filings for a date
-  docs = edinet_tools.documents("2026-01-20")
-
-  # Parse a document
-  report = docs[0].parse()
-
-  # LLM analysis (requires API key: ANTHROPIC_API_KEY or OPENAI_API_KEY)
-  # Default model: claude-4-sonnet (or set LLM_MODEL env var)
-  from edinet_tools.analysis import ExecutiveSummaryTool
-
-  GitHub: https://github.com/matthelmer/edinet-tools
-""")
+    print("Getting Started:\n")
+    print("  pip install edinet-tools\n")
+    print("  import edinet_tools\n")
+    print("  # Look up any company")
+    print('  company = edinet_tools.entity("7203")')
+    print(f"  # → {edinet_tools.entity('7203').name}\n")
+    print("  # Get filings for a date")
+    print('  docs = edinet_tools.documents("2026-01-20")\n')
+    print("  # Parse → typed report object")
+    print("  report = docs[0].parse()")
+    print("  # → SecuritiesReport, LargeHoldingReport, etc.\n")
+    print("  GitHub: https://github.com/matthelmer/edinet-tools")
 
 
 if __name__ == "__main__":

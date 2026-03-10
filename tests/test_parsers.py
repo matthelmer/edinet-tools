@@ -599,19 +599,18 @@ class TestExtractionUtilities:
         assert extract_value(csv_files, 'elem1', get_last=True) == 'last'
 
     def test_get_context_patterns_consolidated(self):
-        """get_context_patterns prioritizes consolidated for consolidated filers."""
+        """get_context_patterns: bare context = consolidated (EDINET convention)."""
         from edinet_tools.parsers.extraction import get_context_patterns
         patterns = get_context_patterns(is_consolidated=True, period='CurrentYearDuration')
-        assert patterns[0] == 'CurrentYearDuration_ConsolidatedMember'
-        assert patterns[1] == 'CurrentYearDuration_NonConsolidatedMember'
-        assert patterns[2] == 'CurrentYearDuration'
+        assert patterns[0] == 'CurrentYearDuration'  # Bare context = consolidated
+        assert patterns[1] == 'CurrentYearDuration_NonConsolidatedMember'  # Fallback
 
     def test_get_context_patterns_non_consolidated(self):
-        """get_context_patterns prioritizes non-consolidated for non-consolidated filers."""
+        """get_context_patterns: _NonConsolidatedMember preferred for non-consolidated."""
         from edinet_tools.parsers.extraction import get_context_patterns
         patterns = get_context_patterns(is_consolidated=False, period='CurrentYearInstant')
         assert patterns[0] == 'CurrentYearInstant_NonConsolidatedMember'
-        assert patterns[1] == 'CurrentYearInstant_ConsolidatedMember'
+        assert patterns[1] == 'CurrentYearInstant'  # Fallback to bare
 
     def test_extract_financial_with_ifrs_fallback(self):
         """extract_financial falls back to IFRS elements."""
@@ -619,7 +618,7 @@ class TestExtractionUtilities:
         csv_files = [{
             'filename': 'test.csv',
             'data': [
-                {'要素ID': 'jpigp_cor:AssetsIFRS', 'コンテキストID': 'CurrentYearInstant_ConsolidatedMember', '値': '2000000'},
+                {'要素ID': 'jpigp_cor:AssetsIFRS', 'コンテキストID': 'CurrentYearInstant', '値': '2000000'},
             ]
         }]
         ifrs_map = {'jppfs_cor:Assets': 'jpigp_cor:AssetsIFRS'}
