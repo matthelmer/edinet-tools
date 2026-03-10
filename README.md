@@ -73,6 +73,7 @@ All 30+ EDINET document types are supported. These common types have specialized
 | 160 | Semi-Annual Report | `SemiAnnualReport` |
 | 180 | Extraordinary Report | `ExtraordinaryReport` |
 | 220 | Treasury Stock Report | `TreasuryStockReport` |
+| 240 | Tender Offer Registration | `TenderOfferReport` |
 | 350 | Large Shareholding | `LargeHoldingReport` |
 
 All other document types parse to `RawReport` with access to the underlying XBRL data.
@@ -111,6 +112,13 @@ if hasattr(report, 'by_board_meeting'):
     print(report.filer_name)
     print(report.ticker)
     print(report.has_board_authorization)
+
+# Tender Offer (TOB)
+if hasattr(report, 'acquirer_name'):
+    print(report.acquirer_name)
+    print(report.target_name)
+    print(report.purchase_ratio)
+    print(report.holding_ratio_after)
 
 # All reports
 print(report.fields())      # List available fields
@@ -159,7 +167,7 @@ Requires the [llm](https://github.com/simonw/llm) library and an API key (Anthro
 ## Testing
 
 ```bash
-python test_runner.py --unit        # Fast unit tests (~330 tests)
+python test_runner.py --unit        # Fast unit tests (~360 tests)
 python test_runner.py --integration # API tests (requires key)
 python test_runner.py --all         # Everything
 ```
