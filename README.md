@@ -55,11 +55,6 @@ Or create a `.env` file in your project:
 
 ```dotenv
 EDINET_API_KEY=your_edinet_key
-
-# Optional: For LLM-powered analysis
-ANTHROPIC_API_KEY=your_anthropic_key   # Claude models
-OPENAI_API_KEY=your_openai_key         # GPT models
-GOOGLE_API_KEY=your_google_key         # Gemini models
 ```
 
 ## Document Types
@@ -96,25 +91,27 @@ Documents parse into typed Python objects with structured fields:
 report = doc.parse()
 
 # Large Shareholding Report
-if hasattr(report, 'holder_name'):
-    print(report.holder_name)
+if isinstance(report, edinet_tools.LargeHoldingReport):
+    print(report.filer_name)
     print(report.target_company)
     print(report.ownership_pct)
+    print(report.purpose)
 
 # Securities Report (Japan GAAP and IFRS)
-if hasattr(report, 'net_sales'):
+if isinstance(report, edinet_tools.SecuritiesReport):
     print(report.net_sales)
     print(report.operating_cash_flow)
     print(report.fiscal_year_end)
+    print(report.roe)
 
 # Treasury Stock Report
-if hasattr(report, 'by_board_meeting'):
+if isinstance(report, edinet_tools.TreasuryStockReport):
     print(report.filer_name)
     print(report.ticker)
     print(report.has_board_authorization)
 
 # Tender Offer (TOB)
-if hasattr(report, 'acquirer_name'):
+if isinstance(report, edinet_tools.TenderOfferReport):
     print(report.acquirer_name)
     print(report.target_name)
     print(report.purchase_ratio)
@@ -143,33 +140,11 @@ print(report.short_term_loans_payable)
 print(report.bonds_payable)
 ```
 
-## LLM Analysis (Optional)
-
-Generate executive summaries using Claude, GPT, or Gemini:
-
-```python
-from edinet_tools.analysis import ExecutiveSummaryTool
-from edinet_tools.utils import process_zip_file
-import tempfile
-
-content = doc.fetch()
-with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as f:
-    f.write(content)
-    structured_data = process_zip_file(f.name, doc.doc_id, doc.doc_type_code)
-
-tool = ExecutiveSummaryTool()
-result = tool.generate_structured_output(structured_data)
-print(result.summary)
-```
-
-Requires the [llm](https://github.com/simonw/llm) library and an API key (Anthropic, OpenAI, or Google).
-
 ## Testing
 
 ```bash
-python test_runner.py --unit        # Fast unit tests (~360 tests)
-python test_runner.py --integration # API tests (requires key)
-python test_runner.py --all         # Everything
+pytest tests/ -v              # Full suite (~350 tests)
+python test_runner.py --unit  # Unit tests only
 ```
 
 ## Links
