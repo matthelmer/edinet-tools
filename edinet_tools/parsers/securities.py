@@ -87,6 +87,25 @@ ELEMENT_MAP = {
 
     # === Employment ===
     'num_employees': 'jpcrp_cor:NumberOfEmployees',
+
+    # === Balance Sheet Detail ===
+    'cash_and_deposits': 'jppfs_cor:CashAndDeposits',
+    'current_assets': 'jppfs_cor:CurrentAssets',
+    'noncurrent_assets': 'jppfs_cor:NoncurrentAssets',
+    'property_plant_equipment': 'jppfs_cor:PropertyPlantAndEquipment',
+    'deferred_tax_assets': 'jppfs_cor:DeferredTaxAssets',
+    'current_liabilities': 'jppfs_cor:CurrentLiabilities',
+    'accounts_payable_other': 'jppfs_cor:AccountsPayableOther',
+    'retained_earnings': 'jppfs_cor:RetainedEarnings',
+
+    # === Income Detail ===
+    'income_before_taxes': 'jppfs_cor:IncomeBeforeIncomeTaxes',
+    'non_operating_income': 'jppfs_cor:NonOperatingIncome',
+    'non_operating_expenses': 'jppfs_cor:NonOperatingExpenses',
+    'income_taxes': 'jppfs_cor:IncomeTaxes',
+
+    # === Cash Flow Detail ===
+    'depreciation_amortization_cfo': 'jppfs_cor:DepreciationAndAmortizationOpeCF',
 }
 
 # IFRS fallback elements (jpigp_cor namespace)
@@ -163,6 +182,25 @@ class SecuritiesReport(ParsedReport):
     # Employment
     num_employees: int | None = None
 
+    # Balance Sheet Detail
+    cash_and_deposits: int | None = None
+    current_assets: int | None = None
+    noncurrent_assets: int | None = None
+    property_plant_equipment: int | None = None
+    deferred_tax_assets: int | None = None
+    current_liabilities: int | None = None
+    accounts_payable_other: int | None = None
+    retained_earnings: int | None = None
+
+    # Income Detail
+    income_before_taxes: int | None = None
+    non_operating_income: int | None = None
+    non_operating_expenses: int | None = None
+    income_taxes: int | None = None
+
+    # Cash Flow Detail
+    depreciation_amortization: int | None = None
+
     @property
     def filer(self):
         """Resolve filer to Entity if possible."""
@@ -187,24 +225,30 @@ def _coalesce(*values):
     return None
 
 
-def parse_securities_report(document) -> SecuritiesReport:
+def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_type_code=None) -> SecuritiesReport:
     """
     Parse a Securities Report document.
 
     Args:
-        document: Document object with fetch() method
+        document: Document object with fetch() method (optional if csv_files provided)
+        csv_files: Pre-extracted CSV data (list of dicts with 'filename' and 'data' keys)
+        doc_id: Document ID (required if csv_files provided)
+        doc_type_code: Document type code (required if csv_files provided)
 
     Returns:
         SecuritiesReport with extracted fields
     """
-    # Fetch and extract CSV data
-    zip_bytes = document.fetch()
-    csv_files = extract_csv_from_zip(zip_bytes)
+    # Fetch and extract CSV data (unless pre-extracted)
+    if csv_files is None:
+        zip_bytes = document.fetch()
+        csv_files = extract_csv_from_zip(zip_bytes)
+        doc_id = document.doc_id
+        doc_type_code = document.doc_type_code
 
     if not csv_files:
         return SecuritiesReport(
-            doc_id=document.doc_id,
-            doc_type_code=document.doc_type_code,
+            doc_id=doc_id,
+            doc_type_code=doc_type_code,
             source_files=[],
             raw_fields={},
             unmapped_fields={},
@@ -338,21 +382,40 @@ def parse_securities_report(document) -> SecuritiesReport:
     # Employment
     num_employees = get_fin('num_employees', 'CurrentYearInstant')
 
+    # Balance sheet detail
+    cash_and_deposits = get_fin('cash_and_deposits', 'CurrentYearInstant')
+    current_assets = get_fin('current_assets', 'CurrentYearInstant')
+    noncurrent_assets = get_fin('noncurrent_assets', 'CurrentYearInstant')
+    property_plant_equipment = get_fin('property_plant_equipment', 'CurrentYearInstant')
+    deferred_tax_assets = get_fin('deferred_tax_assets', 'CurrentYearInstant')
+    current_liabilities = get_fin('current_liabilities', 'CurrentYearInstant')
+    accounts_payable_other = get_fin('accounts_payable_other', 'CurrentYearInstant')
+    retained_earnings = get_fin('retained_earnings', 'CurrentYearInstant')
+
+    # Income detail
+    income_before_taxes = get_fin('income_before_taxes', 'CurrentYearDuration')
+    non_operating_income = get_fin('non_operating_income', 'CurrentYearDuration')
+    non_operating_expenses = get_fin('non_operating_expenses', 'CurrentYearDuration')
+    income_taxes = get_fin('income_taxes', 'CurrentYearDuration')
+
+    # Cash flow detail
+    depreciation_amortization = get_fin('depreciation_amortization_cfo', 'CurrentYearDuration')
+
     # Categorize all elements
     raw_fields, text_blocks, unmapped_fields = categorize_elements(csv_files, ELEMENT_MAP)
 
     return SecuritiesReport(
-        doc_id=document.doc_id,
-        doc_type_code=document.doc_type_code,
+        doc_id=doc_id,
+        doc_type_code=doc_type_code,
         source_files=source_files,
         raw_fields=raw_fields,
         unmapped_fields=unmapped_fields,
         text_blocks=text_blocks,
 
         # Identification
-        filer_name=company_name or document.filer_name,
+        filer_name=company_name or getattr(document, 'filer_name', None),
         filer_name_en=get_dei('company_name_en'),
-        filer_edinet_code=edinet_code or document.filer_edinet_code,
+        filer_edinet_code=edinet_code or getattr(document, 'filer_edinet_code', None),
         ticker=ticker,
         accounting_standard=accounting_standard,
         is_consolidated=is_consolidated,
@@ -402,4 +465,23 @@ def parse_securities_report(document) -> SecuritiesReport:
 
         # Employment
         num_employees=num_employees,
+
+        # Balance Sheet Detail
+        cash_and_deposits=cash_and_deposits,
+        current_assets=current_assets,
+        noncurrent_assets=noncurrent_assets,
+        property_plant_equipment=property_plant_equipment,
+        deferred_tax_assets=deferred_tax_assets,
+        current_liabilities=current_liabilities,
+        accounts_payable_other=accounts_payable_other,
+        retained_earnings=retained_earnings,
+
+        # Income Detail
+        income_before_taxes=income_before_taxes,
+        non_operating_income=non_operating_income,
+        non_operating_expenses=non_operating_expenses,
+        income_taxes=income_taxes,
+
+        # Cash Flow Detail
+        depreciation_amortization=depreciation_amortization,
     )

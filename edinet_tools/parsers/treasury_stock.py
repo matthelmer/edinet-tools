@@ -125,23 +125,29 @@ class TreasuryStockReport(ParsedReport):
         return f"TreasuryStockReport(filer='{filer}'{amend})"
 
 
-def parse_treasury_stock_report(document) -> TreasuryStockReport:
+def parse_treasury_stock_report(document=None, *, csv_files=None, doc_id=None, doc_type_code=None) -> TreasuryStockReport:
     """
     Parse a Treasury Stock Purchase Status Report.
 
     Args:
-        document: Document object with fetch() method
+        document: Document object with fetch() method (optional if csv_files provided)
+        csv_files: Pre-extracted CSV data (list of dicts with 'filename' and 'data' keys)
+        doc_id: Document ID (required if csv_files provided)
+        doc_type_code: Document type code (required if csv_files provided)
 
     Returns:
         TreasuryStockReport with extracted fields
     """
-    zip_bytes = document.fetch()
-    csv_files = extract_csv_from_zip(zip_bytes)
+    if csv_files is None:
+        zip_bytes = document.fetch()
+        csv_files = extract_csv_from_zip(zip_bytes)
+        doc_id = document.doc_id
+        doc_type_code = document.doc_type_code
 
     if not csv_files:
         return TreasuryStockReport(
-            doc_id=document.doc_id,
-            doc_type_code=document.doc_type_code,
+            doc_id=doc_id,
+            doc_type_code=doc_type_code,
             source_files=[],
             raw_fields={},
             unmapped_fields={},
@@ -197,17 +203,17 @@ def parse_treasury_stock_report(document) -> TreasuryStockReport:
     raw_fields, text_blocks, unmapped_fields = categorize_elements(csv_files, ELEMENT_MAP)
 
     return TreasuryStockReport(
-        doc_id=document.doc_id,
-        doc_type_code=document.doc_type_code,
+        doc_id=doc_id,
+        doc_type_code=doc_type_code,
         source_files=source_files,
         raw_fields=raw_fields,
         unmapped_fields=unmapped_fields,
         text_blocks=text_blocks,
 
         # Identification
-        filer_name=filer_name or document.filer_name,
+        filer_name=filer_name or getattr(document, 'filer_name', None),
         filer_name_en=filer_name_en,
-        filer_edinet_code=edinet_code or document.filer_edinet_code,
+        filer_edinet_code=edinet_code or getattr(document, 'filer_edinet_code', None),
         ticker=ticker,
 
         # Cover page

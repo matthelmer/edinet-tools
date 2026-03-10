@@ -135,9 +135,9 @@ def run_quick_smoke_test():
     """Run a quick smoke test to verify core functionality."""
     # Test a few key components quickly
     tests = [
-        "test/test_analysis.py::TestPydanticSchemas::test_one_line_summary_valid_data",
-        "test/test_api.py::TestAPIWorkflow::test_find_and_download_document_workflow",
-        "test/test_client.py::TestEdinetClientInitialization::test_init_with_env_var"
+        "tests/test_analysis.py::TestPydanticSchemas::test_one_line_summary_valid_data",
+        "tests/test_api.py::TestAPIWorkflow::test_find_and_download_document_workflow",
+        "tests/test_client.py::TestEdinetClientInitialization::test_init_with_env_var"
     ]
     cmd = ["python", "-m", "pytest"] + tests + ["-v", "--tb=short"]
     return run_command(cmd, "Quick Smoke Test (3 key functionality tests)")

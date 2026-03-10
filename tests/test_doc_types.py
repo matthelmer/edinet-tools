@@ -14,9 +14,9 @@ class TestDocType:
         assert dt.name_en == "Large Shareholding Report"
         assert dt.name_jp == "大量保有報告書"
 
-    def test_catalyst_doc_types_defined(self):
-        """All catalyst doc types are defined."""
-        for code in ["120", "140", "160", "180", "350"]:
+    def test_common_doc_types_defined(self):
+        """All common doc types are defined."""
+        for code in ["120", "140", "160", "180", "220", "240", "350"]:
             dt = doc_type(code)
             assert dt is not None
             assert dt.name_en is not None

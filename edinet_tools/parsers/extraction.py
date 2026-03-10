@@ -123,7 +123,7 @@ def _clean_value(value: str) -> str:
     return cleaned
 
 
-# --- Parsing utilities (borrowed from corpjapan BaseProcessor) ---
+# --- Parsing utilities ---
 
 def parse_percentage(value: Any) -> Optional[Decimal]:
     """
@@ -254,9 +254,9 @@ def get_context_patterns(is_consolidated: bool, period: str) -> list[str]:
     """
     Build context patterns in priority order for financial data extraction.
 
-    XBRL data includes context IDs like "CurrentYearDuration_ConsolidatedMember".
-    This function returns patterns to try in order, preferring consolidated
-    data for consolidated filers and non-consolidated for others.
+    EDINET convention: bare context (e.g., 'CurrentYearDuration') = consolidated data.
+    Non-consolidated data uses '_NonConsolidatedMember' suffix.
+    There is NO '_ConsolidatedMember' suffix in real EDINET data.
 
     Args:
         is_consolidated: Whether the filer prepares consolidated statements
@@ -267,15 +267,13 @@ def get_context_patterns(is_consolidated: bool, period: str) -> list[str]:
     """
     if is_consolidated:
         return [
-            f"{period}_ConsolidatedMember",
-            f"{period}_NonConsolidatedMember",
-            period
+            period,                              # Bare context = consolidated (preferred)
+            f"{period}_NonConsolidatedMember",   # Fallback to non-consolidated
         ]
     else:
         return [
-            f"{period}_NonConsolidatedMember",
-            f"{period}_ConsolidatedMember",
-            period
+            f"{period}_NonConsolidatedMember",   # Non-consolidated (preferred)
+            period,                              # Fallback to bare context
         ]
 
 

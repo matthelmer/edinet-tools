@@ -85,6 +85,20 @@ _DOC_TYPES: dict[str, DocType] = {
         description="Amendment to extraordinary report",
     ),
 
+    # Treasury Stock Reports (自己株券買付状況報告書)
+    "220": DocType(
+        code="220",
+        name_en="Treasury Stock Report",
+        name_jp="自己株券買付状況報告書",
+        description="Report on treasury stock (share buyback) acquisition status",
+    ),
+    "230": DocType(
+        code="230",
+        name_en="Treasury Stock Report Amendment",
+        name_jp="自己株券買付状況報告書の訂正報告書",
+        description="Amendment to treasury stock report",
+    ),
+
     # Tender Offer (公開買付)
     "240": DocType(
         code="240",
