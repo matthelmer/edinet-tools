@@ -11,6 +11,7 @@ from .quarterly import QuarterlyReport, parse_quarterly_report
 from .semi_annual import SemiAnnualReport, parse_semi_annual_report
 from .extraordinary import ExtraordinaryReport, parse_extraordinary_report
 from .treasury_stock import TreasuryStockReport, parse_treasury_stock_report
+from .tender_offer import TenderOfferReport, parse_tender_offer
 
 
 def parse(document) -> ParsedReport:
@@ -31,6 +32,8 @@ def parse(document) -> ParsedReport:
         "180": parse_extraordinary_report,
         "220": parse_treasury_stock_report,
         "230": parse_treasury_stock_report,  # Amendments use same parser
+        "240": parse_tender_offer,
+        "250": parse_tender_offer,  # Amendments use same parser
         "350": parse_large_holding,
     }
 
@@ -51,6 +54,7 @@ __all__ = [
     'SemiAnnualReport',
     'ExtraordinaryReport',
     'TreasuryStockReport',
+    'TenderOfferReport',
     # Backwards compatibility
     'GenericReport',
 ]

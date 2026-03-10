@@ -85,6 +85,32 @@ _DOC_TYPES: dict[str, DocType] = {
         description="Amendment to extraordinary report",
     ),
 
+    # Tender Offer (公開買付)
+    "240": DocType(
+        code="240",
+        name_en="Tender Offer Registration",
+        name_jp="公開買付届出書",
+        description="Registration for tender offer (TOB)",
+    ),
+    "250": DocType(
+        code="250",
+        name_en="Tender Offer Registration Amendment",
+        name_jp="訂正公開買付届出書",
+        description="Amendment to tender offer registration",
+    ),
+    "260": DocType(
+        code="260",
+        name_en="Tender Offer Withdrawal",
+        name_jp="公開買付撤回届出書",
+        description="Withdrawal of tender offer",
+    ),
+    "270": DocType(
+        code="270",
+        name_en="Tender Offer Report",
+        name_jp="公開買付報告書",
+        description="Report on completion of tender offer",
+    ),
+
     # Large Shareholding Reports (大量保有報告書)
     "350": DocType(
         code="350",
@@ -111,18 +137,18 @@ _DOC_TYPES: dict[str, DocType] = {
         description="Amendment to change report",
     ),
 
-    # Tender Offer Reports (公開買付届出書)
+    # Securities Registration (有価証券届出書)
     "030": DocType(
         code="030",
-        name_en="Tender Offer Registration",
-        name_jp="公開買付届出書",
-        description="Registration for tender offer",
+        name_en="Securities Registration",
+        name_jp="有価証券届出書",
+        description="Registration statement for new securities issuance",
     ),
     "040": DocType(
         code="040",
-        name_en="Tender Offer Registration Amendment",
-        name_jp="公開買付届出書の訂正届出書",
-        description="Amendment to tender offer registration",
+        name_en="Securities Registration Amendment",
+        name_jp="有価証券届出書の訂正届出書",
+        description="Amendment to securities registration statement",
     ),
 
     # Shelf Registration (発行登録書)

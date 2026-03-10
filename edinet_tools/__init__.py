@@ -44,6 +44,7 @@ from .parsers import (
     SemiAnnualReport,
     ExtraordinaryReport,
     TreasuryStockReport,
+    TenderOfferReport,
     GenericReport,  # Backwards compatibility alias
 )
 
@@ -81,6 +82,7 @@ __all__ = [
     "SemiAnnualReport",
     "ExtraordinaryReport",
     "TreasuryStockReport",
+    "TenderOfferReport",
     # Legacy (deprecated)
     "EdinetClient",
     "EntityClassifier",

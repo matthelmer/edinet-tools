@@ -10,6 +10,7 @@ venv
 .DS_Store
 *downloads
 *.csv
+!edinet_tools/data/*.csv
 *.zip
 
 # Build artifacts
