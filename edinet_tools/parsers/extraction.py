@@ -221,8 +221,10 @@ def extract_value(
         csv_files: List of dicts with 'filename' and 'data' keys
         element_id: XBRL element ID to search for
         get_last: If True, return last occurrence (useful for totals in joint filings)
-        context_patterns: List of context patterns to try in order (e.g., ['ConsolidatedMember'])
+        context_patterns: List of context IDs to try in order (e.g., ['CurrentYearDuration'])
                          If None, returns first match regardless of context.
+                         Uses exact matching to prevent e.g. 'CurrentYearDuration' from
+                         matching 'CurrentYearDuration_NonConsolidatedMember'.
     """
     # If context patterns specified, try each in priority order
     if context_patterns:
@@ -232,7 +234,7 @@ def extract_value(
                 for entry in data:
                     if entry.get('要素ID') == element_id:
                         context = entry.get('コンテキストID', '')
-                        if pattern in context:
+                        if context == pattern:
                             return entry.get('値')
         return None
 
@@ -282,7 +284,7 @@ def extract_financial(
     element_id: str,
     period: str,
     is_consolidated: bool,
-    ifrs_fallback_map: Optional[dict[str, str]] = None
+    ifrs_fallback_map: Optional[dict[str, str | list[str]]] = None
 ) -> Optional[int]:
     """
     Extract financial value with context preference and optional IFRS fallback.
@@ -303,18 +305,26 @@ def extract_financial(
     """
     patterns = get_context_patterns(is_consolidated, period)
 
-    # Try primary element first
-    value_str = extract_value(csv_files, element_id, context_patterns=patterns)
-    if value_str:
-        return parse_int(value_str)
+    # Try each context level with both primary and IFRS fallback before
+    # falling through to the next context level. This prevents non-consolidated
+    # J-GAAP data from leaking into results for consolidated IFRS filers.
+    for pattern in patterns:
+        # Try primary element at this context level
+        value_str = extract_value(csv_files, element_id, context_patterns=[pattern])
+        if value_str:
+            return parse_int(value_str)
 
-    # Try IFRS fallback if available
-    if ifrs_fallback_map:
-        ifrs_element = ifrs_fallback_map.get(element_id)
-        if ifrs_element:
-            value_str = extract_value(csv_files, ifrs_element, context_patterns=patterns)
-            if value_str:
-                return parse_int(value_str)
+        # Try IFRS fallback(s) at the same context level
+        if ifrs_fallback_map:
+            fallbacks = ifrs_fallback_map.get(element_id)
+            if fallbacks:
+                # Support both single string and list of fallbacks
+                if isinstance(fallbacks, str):
+                    fallbacks = [fallbacks]
+                for ifrs_element in fallbacks:
+                    value_str = extract_value(csv_files, ifrs_element, context_patterns=[pattern])
+                    if value_str:
+                        return parse_int(value_str)
 
     return None
 

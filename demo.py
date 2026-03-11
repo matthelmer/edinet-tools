@@ -22,7 +22,7 @@ def _get_recent_docs(max_days_back=5):
         docs = edinet_tools.documents(d.isoformat())
         if docs:
             if i > 0:
-                print(f"  (No filings today — using {d})")
+                print(f"  (No filings yet for {today} JST — showing {d})")
             return docs, d
     return [], today
 
@@ -123,6 +123,7 @@ def parse_securities_report(docs):
             print(f"  Company:      {report.filer_name}")
             print(f"  Ticker:       {report.ticker}")
             print(f"  FY end:       {report.fiscal_year_end}")
+            print(f"  Standard:     {report.accounting_standard}")
             print(f"  Consolidated: {report.is_consolidated}")
             if report.net_sales is not None:
                 print(f"  Net sales:    ¥{report.net_sales:,}")
