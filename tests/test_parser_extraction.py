@@ -174,6 +174,103 @@ class TestSecuritiesExtraction:
         r = parse_securities_report(doc)
         assert r.is_consolidated is True
 
+    def test_ifrs_full_extraction(self):
+        """IFRS company should extract via IFRS Summary and FS elements."""
+        rows = [
+            make_csv_row('jpdei_cor:EDINETCodeDEI', 'FilingDateInstant', 'E04425'),
+            make_csv_row('jpdei_cor:SecurityCodeDEI', 'FilingDateInstant', '80580'),
+            make_csv_row('jpdei_cor:FilerNameInJapaneseDEI', 'FilingDateInstant', '三菱商事株式会社'),
+            make_csv_row('jpdei_cor:FilerNameInEnglishDEI', 'FilingDateInstant', 'Mitsubishi Corporation'),
+            make_csv_row('jpdei_cor:CurrentFiscalYearStartDateDEI', 'FilingDateInstant', '2024-04-01'),
+            make_csv_row('jpdei_cor:CurrentFiscalYearEndDateDEI', 'FilingDateInstant', '2025-03-31'),
+            make_csv_row('jpdei_cor:AccountingStandardsDEI', 'FilingDateInstant', 'IFRS'),
+            make_csv_row('jpdei_cor:WhetherConsolidatedFinancialStatementsArePreparedDEI', 'FilingDateInstant', 'true'),
+            # IFRS Summary elements (no J-GAAP summary available for IFRS filers)
+            make_csv_row('jpcrp_cor:RevenueIFRSSummaryOfBusinessResults', 'CurrentYearDuration', '19000000000000'),
+            make_csv_row('jpcrp_cor:ProfitLossAttributableToOwnersOfParentIFRSSummaryOfBusinessResults', 'CurrentYearDuration', '1200000000000'),
+            make_csv_row('jpcrp_cor:TotalAssetsIFRSSummaryOfBusinessResults', 'CurrentYearInstant', '22000000000000'),
+            make_csv_row('jpcrp_cor:EquityAttributableToOwnersOfParentIFRSSummaryOfBusinessResults', 'CurrentYearInstant', '8000000000000'),
+            # IFRS Summary CF
+            make_csv_row('jpcrp_cor:CashFlowsFromUsedInOperatingActivitiesIFRSSummaryOfBusinessResults', 'CurrentYearDuration', '1500000000000'),
+            make_csv_row('jpcrp_cor:CashFlowsFromUsedInInvestingActivitiesIFRSSummaryOfBusinessResults', 'CurrentYearDuration', '-800000000000'),
+            make_csv_row('jpcrp_cor:CashFlowsFromUsedInFinancingActivitiesIFRSSummaryOfBusinessResults', 'CurrentYearDuration', '-400000000000'),
+            # IFRS Summary ratios/per-share
+            make_csv_row('jpcrp_cor:BasicEarningsLossPerShareIFRSSummaryOfBusinessResults', 'CurrentYearDuration', '289.45'),
+            make_csv_row('jpcrp_cor:EquityToAssetRatioIFRSSummaryOfBusinessResults', 'CurrentYearInstant', '36.4'),
+            make_csv_row('jpcrp_cor:RateOfReturnOnEquityIFRSSummaryOfBusinessResults', 'CurrentYearDuration', '15.8'),
+            # IFRS FS elements (operating income not in summary)
+            make_csv_row('jpigp_cor:OperatingProfitLossIFRS', 'CurrentYearDuration', '1800000000000'),
+            # IFRS balance sheet detail
+            make_csv_row('jpigp_cor:CashAndCashEquivalentsIFRS', 'CurrentYearInstant', '2500000000000'),
+            make_csv_row('jpigp_cor:CurrentAssetsIFRS', 'CurrentYearInstant', '10000000000000'),
+            make_csv_row('jpigp_cor:RetainedEarningsIFRS', 'CurrentYearInstant', '5000000000000'),
+            # Prior year IFRS Summary
+            make_csv_row('jpcrp_cor:RevenueIFRSSummaryOfBusinessResults', 'Prior1YearDuration', '18000000000000'),
+            make_csv_row('jpcrp_cor:ProfitLossAttributableToOwnersOfParentIFRSSummaryOfBusinessResults', 'Prior1YearDuration', '1100000000000'),
+            # Employees
+            make_csv_row('jpcrp_cor:NumberOfEmployees', 'CurrentYearInstant', '80000'),
+        ]
+        doc = make_mock_doc('S100IFRS_FULL', '120', rows)
+        r = parse_securities_report(doc)
+
+        assert r.accounting_standard == 'IFRS'
+        assert r.filer_name == '三菱商事株式会社'
+        assert r.ticker == '8058.T'
+
+        # Revenue from IFRS Summary
+        assert r.net_sales == 19000000000000
+        assert r.prior_net_sales == 18000000000000
+
+        # Operating income from IFRS FS (via IFRS_FALLBACK_MAP)
+        assert r.operating_income == 1800000000000
+
+        # Net income from IFRS Summary
+        assert r.net_income == 1200000000000
+        assert r.prior_net_income == 1100000000000
+
+        # Balance sheet from IFRS Summary
+        assert r.total_assets == 22000000000000
+        assert r.net_assets == 8000000000000
+
+        # Cash flow from IFRS Summary
+        assert r.operating_cash_flow == 1500000000000
+        assert r.investing_cash_flow == -800000000000
+        assert r.financing_cash_flow == -400000000000
+
+        # Per-share from IFRS Summary
+        assert r.earnings_per_share == Decimal('289.45')
+
+        # Ratios from IFRS Summary
+        assert r.equity_ratio == Decimal('36.4')
+        assert r.roe == Decimal('15.8')
+
+        # Balance sheet detail from IFRS FS
+        assert r.cash_and_deposits == 2500000000000
+        assert r.current_assets == 10000000000000
+        assert r.retained_earnings == 5000000000000
+
+        # Employees
+        assert r.num_employees == 80000
+
+    def test_ifrs_fs_revenue_fallback_chain(self):
+        """When IFRS Summary missing, should try IFRS FS elements for revenue."""
+        rows = [
+            make_csv_row('jpdei_cor:EDINETCodeDEI', 'FilingDateInstant', 'E99999'),
+            make_csv_row('jpdei_cor:FilerNameInJapaneseDEI', 'FilingDateInstant', 'IFRS社'),
+            make_csv_row('jpdei_cor:AccountingStandardsDEI', 'FilingDateInstant', 'IFRS'),
+            make_csv_row('jpdei_cor:WhetherConsolidatedFinancialStatementsArePreparedDEI', 'FilingDateInstant', 'true'),
+            # No summary at all — only IFRS FS element
+            make_csv_row('jpigp_cor:RevenueIFRS', 'CurrentYearDuration', '5000000000000'),
+            make_csv_row('jpigp_cor:ProfitLossIFRS', 'CurrentYearDuration', '300000000000'),
+            make_csv_row('jpigp_cor:AssetsIFRS', 'CurrentYearInstant', '8000000000000'),
+        ]
+        doc = make_mock_doc('S100IFRS_FS', '120', rows)
+        r = parse_securities_report(doc)
+
+        assert r.net_sales == 5000000000000
+        assert r.net_income == 300000000000
+        assert r.total_assets == 8000000000000
+
 
 # =====================================================================
 # Quarterly Report (Doc 140)

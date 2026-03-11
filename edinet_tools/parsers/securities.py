@@ -77,7 +77,17 @@ ELEMENT_MAP = {
     'investing_cf_cfs': 'jpcrp_cor:CashFlowsFromInvestmentActivities',
     'financing_cf_cfs': 'jpcrp_cor:CashFlowsFromFinancingActivities',
 
-    # === IFRS Cash Flow Elements (for IFRS companies like airlines) ===
+    # === IFRS Summary Elements (for ~6% of listed companies) ===
+    'net_sales_ifrs_summary': 'jpcrp_cor:RevenueIFRSSummaryOfBusinessResults',
+    'operating_income_ifrs_summary': 'jpcrp_cor:OperatingProfitLossIFRSSummaryOfBusinessResults',
+    'net_income_ifrs_summary': 'jpcrp_cor:ProfitLossAttributableToOwnersOfParentIFRSSummaryOfBusinessResults',
+    'total_assets_ifrs_summary': 'jpcrp_cor:TotalAssetsIFRSSummaryOfBusinessResults',
+    'net_assets_ifrs_summary': 'jpcrp_cor:EquityAttributableToOwnersOfParentIFRSSummaryOfBusinessResults',
+    'earnings_per_share_ifrs': 'jpcrp_cor:BasicEarningsLossPerShareIFRSSummaryOfBusinessResults',
+    'equity_ratio_ifrs': 'jpcrp_cor:EquityToAssetRatioIFRSSummaryOfBusinessResults',
+    'roe_ifrs': 'jpcrp_cor:RateOfReturnOnEquityIFRSSummaryOfBusinessResults',
+
+    # === IFRS Cash Flow Elements ===
     'operating_cf_ifrs_summary': 'jpcrp_cor:CashFlowsFromUsedInOperatingActivitiesIFRSSummaryOfBusinessResults',
     'investing_cf_ifrs_summary': 'jpcrp_cor:CashFlowsFromUsedInInvestingActivitiesIFRSSummaryOfBusinessResults',
     'financing_cf_ifrs_summary': 'jpcrp_cor:CashFlowsFromUsedInFinancingActivitiesIFRSSummaryOfBusinessResults',
@@ -109,15 +119,36 @@ ELEMENT_MAP = {
 }
 
 # IFRS fallback elements (jpigp_cor namespace)
+# extract_financial() supports both single string and list values.
+# Lists are tried in order at each context level.
 IFRS_FALLBACK_MAP = {
-    'jppfs_cor:NetSales': 'jpigp_cor:RevenueIFRS',
+    # === Financial Statement Core ===
+    'jppfs_cor:NetSales': [
+        'jpigp_cor:RevenueIFRS',
+        'jpigp_cor:Revenue2IFRS',
+        'jpigp_cor:NetSalesIFRS',
+    ],
     'jppfs_cor:OperatingIncome': 'jpigp_cor:OperatingProfitLossIFRS',
+    # IFRS has no "ordinary income" — profit before tax is the closest analogue
     'jppfs_cor:OrdinaryIncome': 'jpigp_cor:ProfitLossBeforeTaxIFRS',
     'jppfs_cor:ProfitLoss': 'jpigp_cor:ProfitLossIFRS',
     'jppfs_cor:Assets': 'jpigp_cor:AssetsIFRS',
     'jppfs_cor:NetAssets': 'jpigp_cor:EquityIFRS',
     'jppfs_cor:Liabilities': 'jpigp_cor:LiabilitiesIFRS',
-    # Debt elements
+
+    # === Balance Sheet Detail ===
+    'jppfs_cor:CashAndDeposits': 'jpigp_cor:CashAndCashEquivalentsIFRS',
+    'jppfs_cor:CurrentAssets': 'jpigp_cor:CurrentAssetsIFRS',
+    'jppfs_cor:NoncurrentAssets': 'jpigp_cor:NonCurrentAssetsIFRS',
+    'jppfs_cor:PropertyPlantAndEquipment': 'jpigp_cor:PropertyPlantAndEquipmentIFRS',
+    'jppfs_cor:CurrentLiabilities': 'jpigp_cor:CurrentLiabilitiesIFRS',
+    'jppfs_cor:RetainedEarnings': 'jpigp_cor:RetainedEarningsIFRS',
+
+    # === Income Detail ===
+    'jppfs_cor:IncomeBeforeIncomeTaxes': 'jpigp_cor:ProfitLossBeforeTaxIFRS',
+    'jppfs_cor:IncomeTaxes': 'jpigp_cor:IncomeTaxExpenseIFRS',
+
+    # === Debt Detail ===
     'jppfs_cor:ShortTermLoansPayable': 'jpigp_cor:ShortTermBorrowingsIFRS',
     'jppfs_cor:LongTermLoansPayable': 'jpigp_cor:LongTermBorrowingsIFRS',
     'jppfs_cor:BondsPayable': 'jpigp_cor:BondsPayableIFRS',
@@ -285,43 +316,56 @@ def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_t
             return None
         return extract_financial(csv_files, element_id, period, is_consolidated, IFRS_FALLBACK_MAP)
 
-    # Try summary elements first, then fall back to FS elements
+    # Try summary elements first (J-GAAP then IFRS), then fall back to FS elements
+    # FS elements have their own IFRS fallback via IFRS_FALLBACK_MAP in extract_financial()
     net_sales = _coalesce(
         get_fin('net_sales_summary', 'CurrentYearDuration'),
+        get_fin('net_sales_ifrs_summary', 'CurrentYearDuration'),
         get_fin('net_sales_fs', 'CurrentYearDuration'),
     )
-    operating_income = get_fin('operating_income_fs', 'CurrentYearDuration')
+    operating_income = _coalesce(
+        get_fin('operating_income_fs', 'CurrentYearDuration'),
+        get_fin('operating_income_ifrs_summary', 'CurrentYearDuration'),
+    )
     ordinary_income = _coalesce(
         get_fin('ordinary_income_summary', 'CurrentYearDuration'),
         get_fin('ordinary_income_fs', 'CurrentYearDuration'),
     )
     net_income = _coalesce(
         get_fin('net_income_summary', 'CurrentYearDuration'),
+        get_fin('net_income_ifrs_summary', 'CurrentYearDuration'),
         get_fin('net_income_fs', 'CurrentYearDuration'),
     )
 
     # Prior year
     prior_net_sales = _coalesce(
         get_fin('net_sales_summary', 'Prior1YearDuration'),
+        get_fin('net_sales_ifrs_summary', 'Prior1YearDuration'),
         get_fin('net_sales_fs', 'Prior1YearDuration'),
     )
-    prior_operating_income = get_fin('operating_income_fs', 'Prior1YearDuration')
+    prior_operating_income = _coalesce(
+        get_fin('operating_income_fs', 'Prior1YearDuration'),
+        get_fin('operating_income_ifrs_summary', 'Prior1YearDuration'),
+    )
     prior_ordinary_income = _coalesce(
         get_fin('ordinary_income_summary', 'Prior1YearDuration'),
         get_fin('ordinary_income_fs', 'Prior1YearDuration'),
     )
     prior_net_income = _coalesce(
         get_fin('net_income_summary', 'Prior1YearDuration'),
+        get_fin('net_income_ifrs_summary', 'Prior1YearDuration'),
         get_fin('net_income_fs', 'Prior1YearDuration'),
     )
 
     # Balance sheet
     total_assets = _coalesce(
         get_fin('total_assets_summary', 'CurrentYearInstant'),
+        get_fin('total_assets_ifrs_summary', 'CurrentYearInstant'),
         get_fin('total_assets_fs', 'CurrentYearInstant'),
     )
     net_assets = _coalesce(
         get_fin('net_assets_summary', 'CurrentYearInstant'),
+        get_fin('net_assets_ifrs_summary', 'CurrentYearInstant'),
         get_fin('net_assets_fs', 'CurrentYearInstant'),
     )
     total_liabilities = get_fin('total_liabilities_fs', 'CurrentYearInstant')
@@ -361,22 +405,28 @@ def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_t
         get_fin('financing_cf_ifrs', 'CurrentYearDuration'),
     )
 
-    # Per-share metrics
+    # Per-share metrics (try J-GAAP then IFRS summary)
     patterns = get_context_patterns(is_consolidated, 'CurrentYearInstant')
     nav_str = extract_value(csv_files, ELEMENT_MAP['net_assets_per_share'], context_patterns=patterns)
     net_assets_per_share = Decimal(nav_str) if nav_str else None
 
     patterns = get_context_patterns(is_consolidated, 'CurrentYearDuration')
     eps_str = extract_value(csv_files, ELEMENT_MAP['earnings_per_share'], context_patterns=patterns)
+    if not eps_str:
+        eps_str = extract_value(csv_files, ELEMENT_MAP['earnings_per_share_ifrs'], context_patterns=patterns)
     earnings_per_share = Decimal(eps_str) if eps_str else None
 
-    # Ratios
+    # Ratios (try J-GAAP then IFRS summary)
     patterns = get_context_patterns(is_consolidated, 'CurrentYearInstant')
     equity_str = extract_value(csv_files, ELEMENT_MAP['equity_ratio'], context_patterns=patterns)
+    if not equity_str:
+        equity_str = extract_value(csv_files, ELEMENT_MAP['equity_ratio_ifrs'], context_patterns=patterns)
     equity_ratio = parse_percentage(equity_str)
 
     patterns = get_context_patterns(is_consolidated, 'CurrentYearDuration')
     roe_str = extract_value(csv_files, ELEMENT_MAP['roe'], context_patterns=patterns)
+    if not roe_str:
+        roe_str = extract_value(csv_files, ELEMENT_MAP['roe_ifrs'], context_patterns=patterns)
     roe = parse_percentage(roe_str)
 
     # Employment

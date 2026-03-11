@@ -161,6 +161,13 @@ class TestLargeHoldingReport:
         assert isinstance(report, LargeHoldingReport)
         assert report.doc_id == 'S100TEST'
 
+    def test_listed_or_otc_field(self):
+        """LargeHoldingReport has listed_or_otc field."""
+        from edinet_tools.parsers.large_holding import ELEMENT_MAP
+        report = LargeHoldingReport(doc_id='S100TEST', doc_type_code='350')
+        assert report.listed_or_otc is None
+        assert 'listed_or_otc' in ELEMENT_MAP
+
 
 class TestSecuritiesReport:
     """Test SecuritiesReport parser (Doc 120)."""
@@ -214,6 +221,38 @@ class TestSecuritiesReport:
         report = parse_securities_report(doc)
         assert isinstance(report, SecuritiesReport)
         assert report.doc_id == 'S100TEST'
+
+    def test_dataclass_has_balance_sheet_detail_fields(self):
+        """SecuritiesReport should have balance sheet and income detail fields."""
+        from edinet_tools.parsers.securities import ELEMENT_MAP
+        report = SecuritiesReport(doc_id='S100TEST', doc_type_code='120')
+        # Balance sheet detail
+        assert report.cash_and_deposits is None
+        assert report.current_assets is None
+        assert report.noncurrent_assets is None
+        assert report.property_plant_equipment is None
+        assert report.deferred_tax_assets is None
+        assert report.current_liabilities is None
+        assert report.retained_earnings is None
+        # Income detail
+        assert report.income_before_taxes is None
+        assert report.income_taxes is None
+        # Cash flow detail
+        assert report.depreciation_amortization is None
+        # Element map entries
+        for key in ['cash_and_deposits', 'current_assets', 'noncurrent_assets',
+                     'property_plant_equipment', 'income_before_taxes', 'income_taxes',
+                     'depreciation_amortization_cfo']:
+            assert key in ELEMENT_MAP, f"Missing ELEMENT_MAP key: {key}"
+
+    def test_element_map_has_ifrs_summary_entries(self):
+        """ELEMENT_MAP should include IFRS Summary elements."""
+        from edinet_tools.parsers.securities import ELEMENT_MAP
+        for key in ['net_sales_ifrs_summary', 'net_income_ifrs_summary',
+                     'total_assets_ifrs_summary', 'net_assets_ifrs_summary',
+                     'operating_income_ifrs_summary', 'earnings_per_share_ifrs',
+                     'equity_ratio_ifrs', 'roe_ifrs']:
+            assert key in ELEMENT_MAP, f"Missing ELEMENT_MAP key: {key}"
 
 
 class TestQuarterlyReport:
@@ -374,6 +413,21 @@ class TestExtraordinaryReport:
         report = parse_extraordinary_report(doc)
         assert isinstance(report, ExtraordinaryReport)
         assert report.doc_id == 'S100TEST'
+
+    def test_dataclass_has_amendment_and_contact_fields(self):
+        """ExtraordinaryReport has amendment and contact fields."""
+        from edinet_tools.parsers.extraordinary import ELEMENT_MAP
+        report = ExtraordinaryReport(
+            doc_id='S100TEST', doc_type_code='180',
+        )
+        assert report.amendment_flag is None
+        assert report.report_amendment_flag is None
+        assert report.place_of_filing is None
+        assert report.contact_person is None
+        for key in ['amendment_flag', 'report_amendment_flag',
+                     'place_of_filing_fund', 'place_of_filing_corp',
+                     'contact_person_fund', 'contact_person_corp']:
+            assert key in ELEMENT_MAP, f"Missing ELEMENT_MAP key: {key}"
 
 
 class TestTreasuryStockReport:
@@ -584,6 +638,20 @@ class TestExtractionUtilities:
         # Non-consolidated first
         patterns = ['CurrentYearInstant_NonConsolidatedMember', 'CurrentYearInstant_ConsolidatedMember']
         assert extract_value(csv_files, 'jppfs_cor:Assets', context_patterns=patterns) == '500000'
+
+    def test_extract_value_exact_context_matching(self):
+        """extract_value uses exact context matching, not substring."""
+        from edinet_tools.parsers.extraction import extract_value
+        csv_files = [{
+            'filename': 'test.csv',
+            'data': [
+                {'要素ID': 'jppfs_cor:NetSales', 'コンテキストID': 'CurrentYearDuration_NonConsolidatedMember', '値': '174000000000'},
+            ]
+        }]
+        # Bare context should NOT match _NonConsolidatedMember (was a bug: substring matching)
+        assert extract_value(csv_files, 'jppfs_cor:NetSales', context_patterns=['CurrentYearDuration']) is None
+        # Explicit NonConsolidatedMember pattern should match
+        assert extract_value(csv_files, 'jppfs_cor:NetSales', context_patterns=['CurrentYearDuration_NonConsolidatedMember']) == '174000000000'
 
     def test_extract_value_get_last(self):
         """extract_value get_last returns last occurrence."""
