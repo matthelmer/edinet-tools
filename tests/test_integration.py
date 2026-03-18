@@ -216,3 +216,8 @@ class TestEntityAutoClient:
         with patch.object(doc, 'fetch', return_value=b''):
             result = doc.parse()
             assert isinstance(result, ParsedReport)
+
+    def test_fetch_and_parse_is_exported(self):
+        """Verify fetch_and_parse is importable from the public API."""
+        from edinet_tools import fetch_and_parse
+        assert callable(fetch_and_parse)

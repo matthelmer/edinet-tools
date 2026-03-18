@@ -294,3 +294,11 @@ class TestEntityDocuments:
 
         assert len(docs) > 0
         assert all(isinstance(d, Document) for d in docs)
+
+def test_entity_has_industry_attribute():
+    """Verify Entity objects expose the industry field."""
+    from edinet_tools import entity_by_edinet_code
+    # Toyota — should have industry data in the bundled CSV
+    entity = entity_by_edinet_code('E02144')
+    assert hasattr(entity, 'industry')
+    # industry may be None for some entities, but the attribute must exist

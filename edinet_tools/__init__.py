@@ -4,13 +4,13 @@ EDINET Tools - Python package for accessing Japanese corporate financial data.
 Python library for Japanese financial disclosure data.
 """
 
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 __author__ = "Matt Helmer"
 __description__ = "Python package for accessing Japanese corporate financial data from EDINET"
 
 # Core API
 from .client import EdinetClient  # Deprecated, but kept for migration
-from ._client import configure, documents
+from ._client import configure, documents, fetch_and_parse
 from .timezone import today_jst
 from .config import SUPPORTED_DOC_TYPES as DOCUMENT_TYPES
 
@@ -52,6 +52,7 @@ __all__ = [
     # Configuration
     "configure",
     "documents",
+    "fetch_and_parse",
     "today_jst",
     "DOCUMENT_TYPES",
     "__version__",

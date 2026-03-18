@@ -194,6 +194,7 @@ def _build_entity_from_classifier(edinet_code: str, classifier: EntityClassifier
         'ticker': ticker,
         'is_listed': raw.get('is_listed', False),
         'submitter_type': raw.get('submitter_type'),
+        'industry': raw.get('industry') or None,
     }
     return Entity(data)
 
