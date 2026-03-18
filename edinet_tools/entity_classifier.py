@@ -102,7 +102,7 @@ class EntityClassifier:
                         self._fund_edinet_codes.add(edinet_code)
 
         # Load EDINET codes (Shift-JIS encoded)
-        # Columns: 0=EDINET Code, 1=Type, 2=Listed/Unlisted, 6=Name JP, 7=Name EN, 11=Securities Code
+        # Columns: 0=EDINET Code, 1=Type, 2=Listed/Unlisted, 6=Name JP, 7=Name EN, 10=Industry, 11=Securities Code
         with open(self.edinet_codes_path, 'r', encoding='cp932', errors='replace') as f:
             reader = csv.reader(f)
             next(reader)  # Skip metadata row
@@ -116,6 +116,7 @@ class EntityClassifier:
                             'is_listed': row[2].strip() == 'Listed company',
                             'name_jp': row[6].strip() if len(row) > 6 else None,
                             'name_en': row[7].strip() if len(row) > 7 else None,
+                            'industry': row[10].strip() if len(row) > 10 else None,
                             'securities_code': row[11].strip() if len(row) > 11 else None,
                         }
 

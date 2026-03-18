@@ -52,6 +52,26 @@ def configure(api_key: Optional[str] = None) -> None:
     _client = None  # Reset so next _get_client() uses new config
 
 
+def fetch_and_parse(doc_id: str, doc_type_code: str):
+    """
+    Fetch and parse a specific EDINET document by ID.
+
+    Useful when you already know the document ID (e.g., from a cached filing
+    index) and want to skip the date-based document listing.
+
+    Args:
+        doc_id: EDINET document ID (e.g., 'S100ABC')
+        doc_type_code: Document type code (e.g., '120', '180', '350')
+
+    Returns:
+        ParsedReport subclass appropriate for the document type
+    """
+    from .document import Document
+
+    doc = Document({'docID': doc_id, 'docTypeCode': doc_type_code}, client=_get_client())
+    return doc.parse()
+
+
 def documents(date: Optional[str] = None, doc_type: Optional[str] = None) -> list:
     """
     Get all documents filed on a specific date.
