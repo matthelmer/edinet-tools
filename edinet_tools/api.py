@@ -104,12 +104,18 @@ def fetch_documents_list(date: Union[str, datetime.date],
     raise Exception("Failed to fetch documents after multiple retries.")
 
 
-def fetch_document(doc_id: str, max_retries: int = 3, delay_seconds: int = 5, api_key: str = None, timeout: int = 60) -> bytes:
+def fetch_document(doc_id: str, type: int = 5, max_retries: int = 3, delay_seconds: int = 5, api_key: str = None, timeout: int = 60) -> bytes:
     """
     Retrieve a specific document from EDINET API with retries and return raw bytes.
 
     Args:
         doc_id: EDINET document ID (e.g. 'S100ABC').
+        type: EDINET document type to retrieve (default 5):
+            1 = ZIP with HTML documents (PublicDoc, AuditDoc)
+            2 = PDF
+            3 = ZIP with attachments (AttachDoc)
+            4 = ZIP with English documents (EnglishDoc)
+            5 = XBRL to CSV (default, used by parsers)
         max_retries: Maximum number of retry attempts on failure.
         delay_seconds: Kept for backwards compatibility; retries now use
             exponential backoff (2s, 4s, 8s, ... capped at 30s).
@@ -118,7 +124,7 @@ def fetch_document(doc_id: str, max_retries: int = 3, delay_seconds: int = 5, ap
     """
     url = f'https://disclosure.edinet-fsa.go.jp/api/v2/documents/{doc_id}'
     params = {
-      "type": 5,  # '5' for CSV
+      "type": type,
       "Subscription-Key": api_key or EDINET_API_KEY,
     }
     query_string = urllib.parse.urlencode(params)
