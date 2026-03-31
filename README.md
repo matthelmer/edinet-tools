@@ -1,162 +1,163 @@
-# EDINET Tools
+# edinet-tools
 
-> **Python SDK for Japanese corporate disclosure data**
-
-Access Japan's [EDINET](https://disclosure2.edinet-fsa.go.jp/) system — the official repository for securities reports, earnings, large shareholding notices, and other regulatory filings from 11,000+ Japanese companies.
+Python library for Japan's [EDINET](https://disclosure2.edinet-fsa.go.jp/) disclosure system — the official source for securities reports, shareholding notices, tender offers, and other regulatory filings from listed Japanese companies.
 
 ```python
 import edinet_tools
 
-docs = edinet_tools.documents("2026-01-20")  # Get all filings for a date
-report = docs[0].parse()                      # Parse to typed Python object
+toyota = edinet_tools.entity("7203")
+docs = toyota.documents(days=30)
+report = docs[0].parse()  # → SecuritiesReport, LargeHoldingReport, etc.
 ```
 
-## Installation
+## Install
 
 ```bash
 pip install edinet-tools
 ```
 
-## Quick Start
+Requires Python 3.10+. No heavy dependencies — just `pandas`, `python-dateutil`, `chardet`, and `python-dotenv`.
+
+## Design
+
+edinet-tools has three layers:
+
+1. **API client** — fetch document listings and download filings in any format (XBRL, PDF, HTML)
+2. **Typed parsers** — every EDINET document type routes to a named Python dataclass with structured fields
+3. **Full capture** — elements not yet mapped to typed fields are preserved in `raw_fields`, `unmapped_fields`, and `text_blocks`, so you can explore what's available and nothing is silently dropped
+
+Each parser maps known XBRL elements to typed Python fields (dates, decimals, strings). As EDINET evolves or new elements become useful, adding a field is one line in the element map and one line on the dataclass. The architecture is designed to grow incrementally without breaking existing code.
+
+## EDINET Document Types
+
+EDINET defines 42 document types spanning corporate disclosure, capital markets activity, and governance reporting. edinet-tools provides typed parsers for all of them.
+
+| Code | Family | Description |
+|------|--------|-------------|
+| 120, 130 | Securities Reports | Annual reports — financials, governance, business overview (J-GAAP + IFRS) |
+| 140, 150 | Quarterly Reports | Quarterly financials (abolished April 2024) |
+| 160, 170 | Semi-Annual Reports | Semi-annual reports, primarily investment funds |
+| 180, 190 | Extraordinary Reports | Material events — M&A, management changes, restructuring |
+| 220, 230 | Treasury Stock | Share buyback authorization and execution status |
+| 235, 236 | Internal Control | J-SOX evaluation results — internal control effectiveness |
+| 135, 136 | Confirmation Documents | CEO/CFO attestation (primarily PDF) |
+| 200, 210 | Parent Company Reports | Parent-subsidiary relationships |
+| 350, 360 | Large Shareholding | 5%+ ownership filings — filer, target, ownership percentage |
+| 370, 380 | Shareholding Changes | Position changes for large holders |
+| 240, 250 | Tender Offer Registration | Public tender offer filings |
+| 260 | Tender Offer Withdrawal | Withdrawal of tender offers |
+| 270, 280 | Tender Offer Reports | Tender offer completion — outcome, final holdings |
+| 290, 300 | Statement of Opinion | Target company's board opinion on a tender offer |
+| 310, 320 | Response to Questions | Regulatory Q&A during tender offer process |
+| 330, 340 | Exemption Application | Exemption from separate purchase prohibition |
+| 030, 040 | Securities Registration | New securities registration statements (primarily funds) |
+| 010, 020 | Securities Notification | Securities issuance notifications |
+| 050 | Registration Withdrawal | Withdrawal of securities registration |
+| 070, 080, 090 | Shelf Registration | Shelf registration for future bond/equity issuance |
+| 060 | Issuance Notification | Issuance registration notifications |
+| 100 | Issuance Supplementary | Supplementary shelf registration drawdown documents |
+| 110 | Issuance Withdrawal | Withdrawal of issuance registration |
+
+Amendments (even-numbered codes like 130, 150, 190) route to the same parser as their base type and set `is_amendment = True`.
+
+```python
+from edinet_tools import supported_doc_types, doc_type
+
+supported_doc_types()  # All 42 codes with typed parsers
+
+dt = doc_type("235")
+print(dt.name_en)  # "Internal Control Report"
+print(dt.name_jp)  # "内部統制報告書"
+```
+
+## Usage
+
+### Entity Lookup
 
 ```python
 import edinet_tools
 
-# Look up any company
 toyota = edinet_tools.entity("7203")      # By ticker
-toyota = edinet_tools.entity("Toyota")    # By name
+toyota = edinet_tools.entity("Toyota")    # By name search
 print(toyota.name, toyota.edinet_code)    # TOYOTA MOTOR CORPORATION E02144
 
-# Search companies
 banks = edinet_tools.search("bank", limit=5)
+```
 
-# Get filings (requires EDINET_API_KEY)
-docs = toyota.documents(days=30)
-for doc in docs[:3]:
-    print(f"{doc.filing_datetime}: {doc.doc_type_name}")
+### Fetching Documents
 
-# Parse a document into a typed object
-report = docs[0].parse()
-print(type(report).__name__)  # SecuritiesReport, LargeHoldingReport, etc.
+```python
+# All filings for a date (requires EDINET_API_KEY)
+docs = edinet_tools.documents("2026-01-20")
 
-# Get all documents filed on a specific date
-all_filings = edinet_tools.documents("2026-01-20")
+# Filter by company and type
+earnings = toyota.documents(doc_type="120", days=365)
+```
+
+### Parsing
+
+```python
+report = doc.parse()
+
+# Securities Report — financials with J-GAAP and IFRS support
+report.net_sales
+report.operating_cash_flow
+report.roe
+report.accounting_standard  # "Japan GAAP" or "IFRS"
+
+# Large Shareholding Report
+report.filer_name
+report.target_company
+report.ownership_pct
+
+# Tender Offer
+report.acquirer_name
+report.target_name
+report.holding_ratio_after
+
+# Any report
+report.fields()     # List available typed fields
+report.to_dict()    # Export as dictionary
+report.raw_fields   # All XBRL elements by element ID
+report.text_blocks  # Narrative text block content
+```
+
+### Download Formats
+
+```python
+from edinet_tools.api import fetch_document
+
+csv_zip = fetch_document("S100ABC")            # XBRL CSV (default)
+pdf = fetch_document("S100ABC", type=2)        # PDF
+html_zip = fetch_document("S100ABC", type=1)   # HTML documents
 ```
 
 ## Configuration
 
-Get your free API key from [EDINET](https://disclosure2.edinet-fsa.go.jp/) and set it:
+Get a free API key from [EDINET](https://disclosure2.edinet-fsa.go.jp/) ([video walkthrough](https://youtu.be/2ao-CZS-BtQ?t=63)):
 
 ```bash
 export EDINET_API_KEY=your_key_here
 ```
 
-Or create a `.env` file in your project:
-
-```dotenv
-EDINET_API_KEY=your_edinet_key
-```
-
-## Document Types
-
-All 30+ EDINET document types are supported. These common types have specialized typed parsers:
-
-| Code | Type | Parser Class |
-|------|------|--------------|
-| 120 | Securities Report | `SecuritiesReport` |
-| 140 | Quarterly Report | `QuarterlyReport` |
-| 160 | Semi-Annual Report | `SemiAnnualReport` |
-| 180 | Extraordinary Report | `ExtraordinaryReport` |
-| 220 | Treasury Stock Report | `TreasuryStockReport` |
-| 240 | Tender Offer Registration | `TenderOfferReport` |
-| 350 | Large Shareholding | `LargeHoldingReport` |
-
-All other document types parse to `RawReport` with access to the underlying XBRL data.
-
-```python
-# Filter by document type
-earnings = toyota.documents(doc_type="120")
-
-# Get document type info
-dt = edinet_tools.doc_type("120")
-print(dt.name_en)  # Securities Report
-print(dt.name_jp)  # 有価証券報告書
-```
-
-## Parsing Documents
-
-Documents parse into typed Python objects with structured fields:
-
-```python
-report = doc.parse()
-
-# Large Shareholding Report
-if isinstance(report, edinet_tools.LargeHoldingReport):
-    print(report.filer_name)
-    print(report.target_company)
-    print(report.ownership_pct)
-    print(report.purpose)
-
-# Securities Report (Japan GAAP and IFRS)
-if isinstance(report, edinet_tools.SecuritiesReport):
-    print(report.net_sales)
-    print(report.operating_cash_flow)
-    print(report.fiscal_year_end)
-    print(report.roe)
-
-# Treasury Stock Report
-if isinstance(report, edinet_tools.TreasuryStockReport):
-    print(report.filer_name)
-    print(report.ticker)
-    print(report.has_board_authorization)
-
-# Tender Offer (TOB)
-if isinstance(report, edinet_tools.TenderOfferReport):
-    print(report.acquirer_name)
-    print(report.target_name)
-    print(report.purchase_ratio)
-    print(report.holding_ratio_after)
-
-# All reports
-print(report.fields())      # List available fields
-print(report.to_dict())     # Export as dictionary
-```
-
-## Financial Data
-
-Securities Reports extract comprehensive financial data with automatic support for both **Japan GAAP** and **IFRS** accounting standards:
-
-- **Income Statement**: Revenue, operating income, net income, EPS
-- **Balance Sheet**: Assets, liabilities, equity, book value per share
-- **Debt**: Short/long-term loans, bonds payable, commercial paper, lease obligations
-- **Cash Flow**: Operating, investing, and financing cash flows
-- **Ratios**: ROE, equity ratio
-
-```python
-report = doc.parse()
-print(report.accounting_standard)        # "Japan GAAP" or "IFRS"
-print(report.operating_cash_flow)
-print(report.short_term_loans_payable)
-print(report.bonds_payable)
-```
+Or use a `.env` file. Entity lookup and parsing work without an API key — only document fetching requires one.
 
 ## Testing
 
 ```bash
-pytest tests/ -v              # Full suite (~350 tests)
-python test_runner.py --unit  # Unit tests only
+pytest tests/ -v  # 600+ tests
 ```
 
 ## Links
 
-- **PyPI**: [pypi.org/project/edinet-tools](https://pypi.org/project/edinet-tools/)
-- **GitHub**: [github.com/matthelmer/edinet-tools](https://github.com/matthelmer/edinet-tools)
-- **EDINET**: [disclosure2.edinet-fsa.go.jp](https://disclosure2.edinet-fsa.go.jp/)
+- [PyPI](https://pypi.org/project/edinet-tools/)
+- [GitHub](https://github.com/matthelmer/edinet-tools)
+- [EDINET](https://disclosure2.edinet-fsa.go.jp/)
 
 ## License
 
-MIT License
+MIT
 
 ---
 
-*Independent project, not affiliated with Japan's Financial Services Agency. Verify data independently before making financial decisions.*
+*Independent project. Not affiliated with Japan's Financial Services Agency. Verify data independently before making financial decisions.*
