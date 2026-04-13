@@ -4,13 +4,91 @@ Tests for EntityClassifier.
 Uses real FSA data files to validate classification logic.
 """
 import pytest
-from edinet_tools.entity_classifier import EntityClassifier, EntityType
+from edinet_tools.entity_classifier import (
+    EntityClassifier,
+    EntityType,
+    _EDINET_COLUMN_ALIASES,
+    _resolve_columns,
+    translate_industry_to_english,
+)
 
 
 @pytest.fixture
 def classifier():
     """Load EntityClassifier with real data."""
     return EntityClassifier()
+
+
+class TestIndustryTranslation:
+    """Test the JP→EN industry translation helper."""
+
+    def test_translates_japanese_to_english(self):
+        assert translate_industry_to_english("銀行業") == "Banks"
+        assert translate_industry_to_english("輸送用機器") == "Transportation Equipments"
+        assert translate_industry_to_english("電気機器") == "Electric Appliances"
+
+    def test_passes_through_english(self):
+        # Values already in English stay unchanged (same CSV-variant tolerance
+        # the loader needs when given an English-format file).
+        assert translate_industry_to_english("Banks") == "Banks"
+        assert translate_industry_to_english("Transportation Equipments") == "Transportation Equipments"
+
+    def test_passes_through_none(self):
+        assert translate_industry_to_english(None) is None
+
+    def test_passes_through_unknown(self):
+        # Don't guess: unknown values come back verbatim so the underlying
+        # data is never silently rewritten.
+        assert translate_industry_to_english("Some Brand New FSA Category") == "Some Brand New FSA Category"
+
+    def test_multiple_jp_values_collapse_to_others(self):
+        # Several non-industrial entity categories all translate to "Others"
+        # in the official English CSV; the helper mirrors that.
+        assert translate_industry_to_english("外国法人・組合") == "Others"
+        assert translate_industry_to_english("個人（組合発行者を除く）") == "Others"
+
+
+class TestColumnResolution:
+    """Test the header-based column resolver."""
+
+    def test_resolves_english_header(self):
+        header = [
+            "EDINET Code", "Type of Submitter", "Listed company / Unlisted company",
+            "Consolidated / NonConsolidated", "Capital stock", "account closing date",
+            "Submitter Name", "Submitter Name（alphabetic）", "Submitter Name（phonetic）",
+            "Province", "Submitter's industry", "Securities Identification Code",
+            "Submitter's Japan Corporate Number",
+        ]
+        cols = _resolve_columns(header, _EDINET_COLUMN_ALIASES)
+        assert cols["edinet_code"] == 0
+        assert cols["listed"] == 2
+        assert cols["industry"] == 10
+        assert cols["securities_code"] == 11
+
+    def test_resolves_japanese_header(self):
+        header = [
+            "ＥＤＩＮＥＴコード", "提出者種別", "上場区分", "連結の有無", "資本金", "決算日",
+            "提出者名", "提出者名（英字）", "提出者名（ヨミ）", "所在地", "提出者業種",
+            "証券コード", "提出者法人番号",
+        ]
+        cols = _resolve_columns(header, _EDINET_COLUMN_ALIASES)
+        assert cols["edinet_code"] == 0
+        assert cols["listed"] == 2
+        assert cols["industry"] == 10
+        assert cols["securities_code"] == 11
+
+    def test_missing_column_raises_clear_error(self):
+        # If FSA ever renames a column entirely (no match in any known
+        # language), the loader should fail loudly rather than silently
+        # returning wrong data indexed from the wrong column.
+        header = ["EDINET Code", "WeirdRename", "Listed company / Unlisted company"]
+        with pytest.raises(ValueError) as exc_info:
+            _resolve_columns(header, _EDINET_COLUMN_ALIASES)
+        msg = str(exc_info.value)
+        # Error message identifies which logical field is missing so the
+        # maintainer knows exactly what to update.
+        assert "submitter_type" in msg
+        assert "Type of Submitter" in msg  # shows the tried aliases
 
 
 class TestEntityClassifierLoading:
@@ -74,25 +152,39 @@ class TestListedCompanyClassification:
 class TestFundClassification:
     """Test classification of investment funds."""
 
-    def test_fund_issuer_detected(self, classifier):
-        """Fund issuers should be classified as FUND."""
-        # Get a known fund issuer from the loaded data
-        fund_issuers = list(classifier._fund_edinet_codes)
-        assert len(fund_issuers) > 0
+    def test_pure_fund_issuer_detected(self, classifier):
+        """A fund issuer that is not also listed should classify as FUND."""
+        # Find a fund issuer that is NOT also listed in the EDINET registry.
+        for code in classifier._fund_edinet_codes:
+            entity = classifier._edinet_entities.get(code)
+            if not entity or not entity['is_listed']:
+                assert classifier.is_fund(code)
+                assert classifier.get_entity_type(code) == EntityType.FUND
+                return
+        pytest.fail("No pure (non-listed) fund issuer found in registry")
 
-        # Test first fund issuer
-        fund_code = fund_issuers[0]
-        assert classifier.is_fund(fund_code)
-        assert classifier.get_entity_type(fund_code) == EntityType.FUND
+    def test_listed_company_takes_precedence_over_fund_registry(self, classifier):
+        """
+        Some listed companies (e.g. Credit Saison, JAFCO) also appear in the
+        fund registry because they have issued fund products. They should
+        classify as LISTED_COMPANY, not FUND — that is what investors care
+        about.
 
-    def test_fund_not_listed(self, classifier):
-        """Fund issuers should not be classified as listed companies."""
-        fund_issuers = list(classifier._fund_edinet_codes)
-        if fund_issuers:
-            # Note: A fund issuer might also be in edinet_entities as a company,
-            # but get_entity_type should return FUND (checked first)
-            fund_code = fund_issuers[0]
-            assert classifier.get_entity_type(fund_code) == EntityType.FUND
+        Regression test for the fund-precedence bug fixed in 0.5.1.
+        """
+        # Credit Saison (E03041, ticker 8253) — credit card / consumer finance,
+        # listed on TSE Prime, also issued fund products historically.
+        assert classifier.is_fund('E03041'), \
+            "Credit Saison should still be in the fund registry"
+        assert classifier.get_entity_type('E03041') == EntityType.LISTED_COMPANY, \
+            "Credit Saison should classify as LISTED_COMPANY despite fund-registry membership"
+
+        # JAFCO Group (E04806, ticker 8595) — venture capital firm, listed
+        # on TSE Prime, issues PE/VC funds.
+        assert classifier.is_fund('E04806'), \
+            "JAFCO should still be in the fund registry"
+        assert classifier.get_entity_type('E04806') == EntityType.LISTED_COMPANY, \
+            "JAFCO should classify as LISTED_COMPANY despite fund-registry membership"
 
 
 class TestUnknownEntities:

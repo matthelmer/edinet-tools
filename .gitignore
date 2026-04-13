@@ -12,7 +12,6 @@ venv
 *.csv
 !edinet_tools/data/*.csv
 *.zip
-scripts/
 
 # Build artifacts
 build/
