@@ -6,12 +6,128 @@ Uses two official data sources:
 - FundcodeDlInfo.csv: Investment fund registry
 
 IMPORTANT: Uses official data only. No keyword matching.
+
+FSA serves both English and Japanese variants of these CSVs depending
+on which download endpoint produced the file. The schemas are identical
+(same column order, same row-by-row data) — only the column headers
+and a handful of translatable values differ. The loader resolves columns
+by header name (trying both language variants) so it works against either
+variant and fails loudly if a column is ever renamed.
 """
 from enum import Enum
 from pathlib import Path
 import csv
 import re
 import glob
+
+
+# --- CSV schema resolution ---------------------------------------------------
+#
+# For each logical field, list the known header names in priority order.
+# At load time we find whichever header appears and remember its column
+# index. This is robust to the EN/JP format split (FSA serves Japanese
+# from the default download endpoint as of 2026-04) and will fail with a
+# clear error if FSA ever renames a column entirely.
+
+_EDINET_COLUMN_ALIASES = {
+    "edinet_code":     ("EDINET Code",                         "ＥＤＩＮＥＴコード"),
+    "submitter_type":  ("Type of Submitter",                   "提出者種別"),
+    "listed":          ("Listed company / Unlisted company",   "上場区分"),
+    "name_jp":         ("Submitter Name",                      "提出者名"),
+    "name_en":         ("Submitter Name（alphabetic）",         "提出者名（英字）"),
+    "industry":        ("Submitter's industry",                "提出者業種"),
+    "securities_code": ("Securities Identification Code",      "証券コード"),
+}
+
+_FUND_COLUMN_ALIASES = {
+    "edinet_code": ("EDINET Code", "ＥＤＩＮＥＴコード"),
+}
+
+# Known value synonyms for the listed-status column. The English variant
+# writes "Listed company" / "Unlisted company"; the Japanese variant writes
+# "上場" / "非上場".
+_LISTED_VALUES = frozenset(("Listed company", "上場"))
+
+# JP → EN translation for the industry column. FSA's Japanese CSV uses
+# these 39 values; they collapse to 34 distinct English values (5 entity-
+# type variants — foreign entity, individual, etc. — all translate to
+# "Others" in the English CSV). Extracted from matched EN/JP snapshots.
+_INDUSTRY_JP_TO_EN = {
+    "その他製品": "Other Products",
+    "その他金融業": "Other Financing Business",
+    "ガラス・土石製品": "Glass & Ceramics Products",
+    "ゴム製品": "Rubber Products",
+    "サービス業": "Services",
+    "パルプ・紙": "Pulp & Paper",
+    "不動産業": "Real Estate",
+    "保険業": "Insurance",
+    "倉庫・運輸関連": "Warehousing & Harbor Transportation Services",
+    "個人（組合発行者を除く）": "Others",
+    "個人（非居住者）（組合発行者を除く）": "Others",
+    "内国法人・組合（有価証券報告書等の提出義務者以外）": "Others",
+    "化学": "Chemicals",
+    "医薬品": "Pharmaceutical",
+    "卸売業": "Wholesale Trade",
+    "外国政府等": "Others",
+    "外国法人・組合": "Others",
+    "外国法人・組合（有価証券報告書等の提出義務者以外）": "Others",
+    "小売業": "Retail Trade",
+    "建設業": "Construction",
+    "情報・通信業": "Information & Communication",
+    "機械": "Machinery",
+    "水産・農林業": "Fishery, Agriculture & Forestry",
+    "海運業": "Marine Transportation",
+    "石油・石炭製品": "Oil & Coal Products",
+    "空運業": "Air Transportation",
+    "精密機器": "Precision Instruments",
+    "繊維製品": "Textiles & Apparels",
+    "証券、商品先物取引業": "Securities & Commodity Futures",
+    "輸送用機器": "Transportation Equipments",
+    "金属製品": "Metal Products",
+    "鉄鋼": "Iron & Steel",
+    "鉱業": "Mining",
+    "銀行業": "Banks",
+    "陸運業": "Land Transportation",
+    "電気・ガス業": "Electric Power & Gas",
+    "電気機器": "Electric Appliances",
+    "非鉄金属": "Nonferrous Metals",
+    "食料品": "Foods",
+}
+
+
+def _resolve_columns(header: list[str], aliases: dict[str, tuple]) -> dict[str, int]:
+    """Map each logical field to its column index in ``header``.
+
+    For each (field, alias-tuple) pair, scan the header for the first
+    alias that appears and record its index. Raises ValueError naming the
+    missing field if none of a field's aliases are found — so FSA schema
+    changes fail loudly rather than silently returning wrong data.
+    """
+    positions: dict[str, int] = {}
+    for field, alias_tuple in aliases.items():
+        for alias in alias_tuple:
+            if alias in header:
+                positions[field] = header.index(alias)
+                break
+        else:
+            raise ValueError(
+                f"No column found for {field!r} in CSV header. "
+                f"Tried aliases {alias_tuple!r}. Got header: {header!r}. "
+                f"FSA may have changed the schema — update _EDINET_COLUMN_ALIASES."
+            )
+    return positions
+
+
+def translate_industry_to_english(value: str | None) -> str | None:
+    """Translate a Japanese industry value to its English equivalent.
+
+    Returns the input unchanged if it's already English (or any unknown
+    value). Useful for downstream code that normalizes industry strings
+    without caring which CSV variant the underlying data came from.
+    """
+    if value is None:
+        return None
+    return _INDUSTRY_JP_TO_EN.get(value, value)
 
 
 class EntityType(Enum):
@@ -89,36 +205,56 @@ class EntityClassifier:
         self._fund_edinet_codes = set()
         self._edinet_entities = {}  # edinet_code -> entity info
 
-        # Load fund codes (Shift-JIS encoded)
-        # Column 7 is the EDINET code of the fund issuer
+        # Load fund codes (Shift-JIS encoded). We only need the issuer's
+        # EDINET code from this file, but we still resolve it by header so
+        # that a schema change surfaces immediately instead of silently
+        # indexing the wrong column.
         with open(self.fund_codes_path, 'r', encoding='cp932', errors='replace') as f:
             reader = csv.reader(f)
-            next(reader)  # Skip metadata row
-            next(reader)  # Skip header row
+            next(reader, None)  # metadata row (download date, count)
+            header = next(reader, None)
+            if header is None:
+                raise ValueError(f"Empty fund codes file: {self.fund_codes_path}")
+            fund_col = _resolve_columns(header, _FUND_COLUMN_ALIASES)
+            idx_edinet = fund_col["edinet_code"]
             for row in reader:
-                if len(row) >= 8:
-                    edinet_code = row[7].strip()
-                    if edinet_code.startswith('E'):
-                        self._fund_edinet_codes.add(edinet_code)
+                if len(row) <= idx_edinet:
+                    continue
+                edinet_code = row[idx_edinet].strip()
+                if edinet_code.startswith('E'):
+                    self._fund_edinet_codes.add(edinet_code)
 
-        # Load EDINET codes (Shift-JIS encoded)
-        # Columns: 0=EDINET Code, 1=Type, 2=Listed/Unlisted, 6=Name JP, 7=Name EN, 10=Industry, 11=Securities Code
+        # Load EDINET codes (Shift-JIS encoded). Resolve every column by
+        # header alias so the loader handles both EN and JP CSV variants.
         with open(self.edinet_codes_path, 'r', encoding='cp932', errors='replace') as f:
             reader = csv.reader(f)
-            next(reader)  # Skip metadata row
-            next(reader)  # Skip header row
+            next(reader, None)  # metadata row
+            header = next(reader, None)
+            if header is None:
+                raise ValueError(f"Empty EDINET codes file: {self.edinet_codes_path}")
+            col = _resolve_columns(header, _EDINET_COLUMN_ALIASES)
+            max_idx = max(col.values())
             for row in reader:
-                if len(row) >= 7:
-                    edinet_code = row[0].strip()
-                    if edinet_code.startswith('E'):
-                        self._edinet_entities[edinet_code] = {
-                            'submitter_type': row[1].strip(),
-                            'is_listed': row[2].strip() == 'Listed company',
-                            'name_jp': row[6].strip() if len(row) > 6 else None,
-                            'name_en': row[7].strip() if len(row) > 7 else None,
-                            'industry': row[10].strip() if len(row) > 10 else None,
-                            'securities_code': row[11].strip() if len(row) > 11 else None,
-                        }
+                if len(row) <= max_idx:
+                    continue
+                edinet_code = row[col["edinet_code"]].strip()
+                if not edinet_code.startswith('E'):
+                    continue
+                industry_raw = row[col["industry"]].strip() or None
+                self._edinet_entities[edinet_code] = {
+                    'submitter_type': row[col["submitter_type"]].strip(),
+                    'is_listed': row[col["listed"]].strip() in _LISTED_VALUES,
+                    'name_jp': row[col["name_jp"]].strip() or None,
+                    'name_en': row[col["name_en"]].strip() or None,
+                    # Industry values may be Japanese or English depending
+                    # on CSV variant. Normalize `industry` to English for
+                    # stable downstream behavior (backward compatible with
+                    # the 0.5.0 shape) and preserve the raw Japanese value
+                    # separately.
+                    'industry': translate_industry_to_english(industry_raw),
+                    'industry_jp': industry_raw,
+                    'securities_code': row[col["securities_code"]].strip() or None,
+                }
 
     def get_entity_type(self, edinet_code: str) -> EntityType:
         """
@@ -129,16 +265,28 @@ class EntityClassifier:
 
         Returns:
             EntityType classification
+
+        Note:
+            Some listed companies (e.g. Credit Saison E03041, JAFCO E04806)
+            also appear in the fund registry because they have issued fund
+            products. For investors they are listed equities, not funds, so
+            listed-company status from the EDINET registry takes precedence
+            over fund-registry membership.
         """
         if not edinet_code:
             return EntityType.UNKNOWN
 
-        # Check if it's a fund issuer first (fund issuers are in both lists)
+        entity = self._edinet_entities.get(edinet_code)
+
+        # Listed status from the EDINET registry wins, even if the entity
+        # also appears in the fund registry.
+        if entity and entity['is_listed']:
+            return EntityType.LISTED_COMPANY
+
+        # Fund registry takes precedence over unlisted classification.
         if edinet_code in self._fund_edinet_codes:
             return EntityType.FUND
 
-        # Check EDINET registry
-        entity = self._edinet_entities.get(edinet_code)
         if not entity:
             return EntityType.UNKNOWN
 
@@ -147,11 +295,7 @@ class EntityClassifier:
         if '個人' in entity['submitter_type']:
             return EntityType.INDIVIDUAL
 
-        # Listed vs unlisted company
-        if entity['is_listed']:
-            return EntityType.LISTED_COMPANY
-        else:
-            return EntityType.UNLISTED_COMPANY
+        return EntityType.UNLISTED_COMPANY
 
     def is_fund(self, edinet_code: str) -> bool:
         """Check if entity is an investment fund issuer."""

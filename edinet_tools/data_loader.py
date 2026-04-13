@@ -137,12 +137,15 @@ class EdinetDataLoader:
             encodings_to_try = ['shift_jis', 'utf-8', 'cp932', 'euc-jp']
             working_encoding = None
             
+            # Header line contains either the English column name "EDINET Code"
+            # or the Japanese full-width equivalent "ＥＤＩＮＥＴコード".
+            header_markers = ("EDINET Code", "ＥＤＩＮＥＴコード")
             for encoding in encodings_to_try:
                 try:
                     with open(self.edinet_codes_file, 'r', encoding=encoding) as f:
                         # Read first few lines to check if encoding works
                         lines = f.readlines()
-                        if len(lines) > 1 and 'EDINET Code' in lines[1]:
+                        if len(lines) > 1 and any(m in lines[1] for m in header_markers):
                             working_encoding = encoding
                             logger.info(f"Successfully opened EDINET codes file with {encoding} encoding")
                             break
@@ -153,49 +156,64 @@ class EdinetDataLoader:
                 logger.error("Could not decode EDINET codes file with any encoding")
                 return []
             
-            # Now process the file with the working encoding
+            # Now process the file with the working encoding. FSA serves
+            # both English and Japanese variants of this CSV; both have
+            # identical schema and row order but use different column
+            # headers and translated values for a few fields. Resolve
+            # columns by header alias via the shared helper in
+            # entity_classifier so the loader handles either variant and
+            # fails loudly if FSA ever renames a column.
+            from .entity_classifier import (
+                _EDINET_COLUMN_ALIASES,
+                _LISTED_VALUES,
+                _resolve_columns,
+                translate_industry_to_english,
+            )
+
             with open(self.edinet_codes_file, 'r', encoding=working_encoding) as f:
-                lines = f.readlines()
-                
-                # Skip metadata line if present, find the header line
-                header_line_idx = 0
-                for i, line in enumerate(lines):
-                    if 'EDINET Code' in line:
-                        header_line_idx = i
-                        break
-                
-                # Parse CSV starting from header line
-                csv_content = ''.join(lines[header_line_idx:])
-                reader = csv.DictReader(csv_content.splitlines())
-                
+                reader = csv.reader(f)
+                next(reader, None)  # metadata row (date, count)
+                header = next(reader, None)
+                if header is None:
+                    logger.error("EDINET codes file has no header row")
+                    return []
+                col = _resolve_columns(header, _EDINET_COLUMN_ALIASES)
+                max_idx = max(col.values())
+
                 for row in reader:
-                    # Extract key fields
-                    edinet_code = row.get("EDINET Code", "").strip()
-                    name_ja = row.get("Submitter Name", "").strip()
-                    name_en = row.get("Submitter Name（alphabetic）", "").strip()
-                    securities_code = row.get("Securities Identification Code", "").strip()
-                    industry = row.get("Submitter's industry", "").strip()
-                    listed_status = row.get("Listed company / Unlisted company", "").strip()
-                    
+                    if len(row) <= max_idx:
+                        continue
+
+                    edinet_code = row[col["edinet_code"]].strip()
+                    name_ja = row[col["name_jp"]].strip()
+                    name_en = row[col["name_en"]].strip()
+                    securities_code = row[col["securities_code"]].strip()
+                    industry_raw = row[col["industry"]].strip()
+                    listed_status = row[col["listed"]].strip()
+
                     # Skip if missing essential data
                     if not edinet_code or not name_ja:
                         continue
-                    
+
                     # Use translation if available and no English name provided
                     if not name_en and name_ja in translations:
                         name_en = translations[name_ja]
-                    
-                    # Build company record
+
+                    # Normalize industry to English so downstream search
+                    # works the same against either CSV variant.
+                    industry_en = translate_industry_to_english(industry_raw)
+
                     company = {
                         'edinet_code': edinet_code,
                         'ticker': securities_code if securities_code else None,
                         'name_ja': name_ja,
                         'name_en': name_en if name_en else name_ja,  # Fallback to Japanese
-                        'industry': industry,
-                        'listed': listed_status == "Listed company",
+                        'industry': industry_en or "",
+                        'industry_jp': industry_raw or "",
+                        'listed': listed_status in _LISTED_VALUES,
                         'search_text': f"{name_ja} {name_en} {securities_code}".lower()
                     }
-                    
+
                     companies.append(company)
             
             logger.info(f"Processed {len(companies)} companies from EDINET data")
