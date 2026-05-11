@@ -86,8 +86,15 @@ class EntityClassifier:
 
     def _load_data(self):
         """Load and index both CSV files."""
+        from .normalize import normalize_for_matching
+
         self._fund_edinet_codes = set()
         self._edinet_entities = {}  # edinet_code -> entity info
+
+        # Reverse indexes for O(1) lookups
+        self._by_normalized_name = {}      # normalized name -> list[edinet_code]
+        self._by_securities_code = {}      # securities_code -> edinet_code
+        self._by_corporate_number = {}     # 法人番号 -> edinet_code
 
         # Load fund codes (Shift-JIS encoded)
         # Column 7 is the EDINET code of the fund issuer
@@ -112,17 +119,44 @@ class EntityClassifier:
             for row in reader:
                 if len(row) >= 7:
                     edinet_code = row[0].strip()
-                    if edinet_code.startswith('E'):
-                        self._edinet_entities[edinet_code] = {
-                            'submitter_type': row[1].strip(),
-                            'is_listed': row[2].strip() == 'Listed company',
-                            'name_jp': row[6].strip() if len(row) > 6 else None,
-                            'name_en': row[7].strip() if len(row) > 7 else None,
-                            'name_phonetic': row[8].strip() if len(row) > 8 else None,
-                            'industry': row[10].strip() if len(row) > 10 else None,
-                            'securities_code': row[11].strip() if len(row) > 11 else None,
-                            'corporate_number': row[12].strip() if len(row) > 12 else None,
-                        }
+                    if not edinet_code.startswith('E'):
+                        continue
+
+                    name_jp = row[6].strip() if len(row) > 6 else None
+                    name_en = row[7].strip() if len(row) > 7 else None
+                    name_phonetic = row[8].strip() if len(row) > 8 else None
+                    securities_code = row[11].strip() if len(row) > 11 else None
+                    corporate_number = row[12].strip() if len(row) > 12 else None
+
+                    # Pre-compute normalized form for substring-scan fallback
+                    normalized_jp = normalize_for_matching(name_jp)
+                    normalized_en = normalize_for_matching(name_en)
+
+                    self._edinet_entities[edinet_code] = {
+                        'submitter_type': row[1].strip(),
+                        'is_listed': row[2].strip() == 'Listed company',
+                        'name_jp': name_jp,
+                        'name_en': name_en,
+                        'name_phonetic': name_phonetic,
+                        'industry': row[10].strip() if len(row) > 10 else None,
+                        'securities_code': securities_code,
+                        'corporate_number': corporate_number,
+                        '_normalized': normalized_jp,    # primary
+                        '_normalized_en': normalized_en, # fallback for EN-only queries
+                    }
+
+                    # Build reverse indexes
+                    if normalized_jp:
+                        self._by_normalized_name.setdefault(normalized_jp, []).append(edinet_code)
+                    if normalized_en and normalized_en != normalized_jp:
+                        self._by_normalized_name.setdefault(normalized_en, []).append(edinet_code)
+                    if securities_code:
+                        self._by_securities_code[securities_code] = edinet_code
+                        # Also index the 4-digit form (strip trailing 0 for 5-digit-ending-in-0 codes)
+                        if len(securities_code) == 5 and securities_code.endswith('0'):
+                            self._by_securities_code[securities_code[:4]] = edinet_code
+                    if corporate_number:
+                        self._by_corporate_number[corporate_number] = edinet_code
 
     def get_entity_type(self, edinet_code: str) -> EntityType:
         """
