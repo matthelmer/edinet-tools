@@ -25,17 +25,26 @@ def test_full_width_digits_folded():
     assert normalize_for_matching("１２３") == "123"
 
 
-def test_ideographic_space_stripped():
-    # full-width space U+3000 between surname and given name
-    assert normalize_for_matching("稲葉　進") == "稲葉進"
+def test_ideographic_space_folded_to_ascii():
+    # full-width space U+3000 between surname and given name -> ASCII space
+    assert normalize_for_matching("稲葉　進") == "稲葉 進"
 
 
-def test_ascii_space_stripped():
-    assert normalize_for_matching("Toyota Motor") == "toyotamotor"
+def test_ascii_space_preserved():
+    # whitespace is load-bearing in English names (separates words);
+    # preserved as single ASCII space.
+    assert normalize_for_matching("Toyota Motor") == "toyota motor"
 
 
-def test_mixed_whitespace_stripped():
-    assert normalize_for_matching("日本　生命 保険") == "日本生命保険"
+def test_whitespace_runs_collapsed():
+    # multiple/mixed whitespace -> single ASCII space
+    assert normalize_for_matching("日本　生命 保険") == "日本 生命 保険"
+    assert normalize_for_matching("Toyota   Motor") == "toyota motor"
+
+
+def test_leading_trailing_whitespace_stripped():
+    assert normalize_for_matching("  Toyota  ") == "toyota"
+    assert normalize_for_matching("　日本　") == "日本"
 
 
 def test_kabushiki_kaisha_gaiji_folded():

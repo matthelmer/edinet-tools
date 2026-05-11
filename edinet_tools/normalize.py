@@ -14,8 +14,18 @@ def normalize_for_matching(s):
          ㈱ U+3231 to '(株)', etc.).
       2. Common kabushiki-gaisha rewrites: '(株)' -> '株式会社',
          '(有)' -> '有限会社'.
-      3. Strip all internal whitespace.
+      3. Collapse runs of whitespace into a single ASCII space; strip
+         leading and trailing whitespace.
       4. Lowercase.
+
+    Whitespace is preserved (not stripped) because in English names it
+    separates words and is load-bearing for substring matching — e.g.
+    stripping would let a query 'Toyota' match 'Toyo Tanso' via the
+    collapsed form 'toyotanso'. In Japanese, NFKC already folds the
+    ideographic space U+3000 to ASCII space, so '稲葉　進' and '稲葉 進'
+    collapse to the same key. The rare no-space form '稲葉進' does NOT
+    collapse to the spaced form — Layer 2 callers needing that handle
+    it via additional pre-search stripping.
 
     Idempotent: normalize_for_matching(normalize_for_matching(x)) ==
     normalize_for_matching(x).
@@ -34,5 +44,5 @@ def normalize_for_matching(s):
     s = unicodedata.normalize('NFKC', s)
     s = s.replace('(株)', '株式会社')
     s = s.replace('(有)', '有限会社')
-    s = ''.join(s.split())
+    s = ' '.join(s.split())
     return s.lower()

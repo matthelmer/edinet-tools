@@ -349,3 +349,76 @@ def test_entity_by_corporate_number_empty():
     assert edinet_tools.entity_by_corporate_number("") is None
     assert edinet_tools.entity_by_corporate_number(None) is None
     assert edinet_tools.entity_by_corporate_number("abc") is None
+
+
+def test_search_smbc_half_width_finds_full_width_catalog():
+    """Prod-data regression: half-width SMBC query finds full-width catalog entry.
+
+    Catalog stores ＳＭＢＣ日興証券株式会社 (full-width SMBC); corpjapan
+    extraction often yields SMBC日興証券株式会社 (half-width). Pre-v0.6.0
+    these don't match; after NFKC normalization they collapse to the
+    same key and resolve to E23615.
+    """
+    import edinet_tools
+    results = edinet_tools.search_entities("SMBC日興証券株式会社")
+    codes = [e.edinet_code for e in results]
+    assert "E23615" in codes, f"Expected E23615 in results, got: {codes}"
+
+
+def test_search_full_width_ufj_matches():
+    """株式会社三菱UFJ銀行 (half-width) finds E03533 (catalog has full-width ＵＦＪ)."""
+    import edinet_tools
+    results = edinet_tools.search_entities("株式会社三菱UFJ銀行")
+    codes = [e.edinet_code for e in results]
+    assert "E03533" in codes
+
+
+def test_search_kabushiki_gaiji_matches():
+    """㈱ in query matches 株式会社 in catalog."""
+    import edinet_tools
+    # JPモルガン証券㈱ should find E20021 (catalog: ＪＰモルガン証券株式会社)
+    results = edinet_tools.search_entities("JPモルガン証券㈱")
+    codes = [e.edinet_code for e in results]
+    assert "E20021" in codes
+
+
+def test_search_empty_returns_empty_list():
+    """Empty / whitespace-only query returns empty list."""
+    import edinet_tools
+    assert edinet_tools.search_entities("") == []
+    assert edinet_tools.search_entities("   ") == []
+    assert edinet_tools.search_entities("　　") == []  # full-width spaces
+
+
+def test_search_no_match_returns_empty_list():
+    """Query that matches no entity returns empty list."""
+    import edinet_tools
+    assert edinet_tools.search_entities("zzz-not-a-real-entity-xyz") == []
+
+
+def test_search_respects_limit():
+    """limit parameter caps the returned list."""
+    import edinet_tools
+    results = edinet_tools.search_entities("株式会社", limit=5)
+    assert len(results) <= 5
+
+
+def test_search_toyota_still_works():
+    """Regression: existing 'Toyota' test still passes after rewrite."""
+    import edinet_tools
+    results = edinet_tools.search_entities("Toyota", limit=10)
+    codes = [e.edinet_code for e in results]
+    assert "E02144" in codes
+
+
+def test_search_exact_match_is_fast():
+    """Performance canary: exact-match path completes in under 0.1s for 100 calls."""
+    import edinet_tools
+    import time
+    # Warm-up to ensure classifier is loaded (load time isn't what we're measuring)
+    edinet_tools.search_entities("Toyota Motor Corporation", limit=1)
+    start = time.perf_counter()
+    for _ in range(100):
+        edinet_tools.search_entities("Toyota Motor Corporation", limit=1)
+    elapsed = time.perf_counter() - start
+    assert elapsed < 0.1, f"100 calls took {elapsed:.3f}s, expected <0.1s"
