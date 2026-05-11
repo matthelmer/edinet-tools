@@ -191,10 +191,12 @@ def _build_entity_from_classifier(edinet_code: str, classifier: EntityClassifier
         'edinet_code': edinet_code,
         'name_jp': raw.get('name_jp', ''),
         'name_en': raw.get('name_en') or None,
+        'name_phonetic': raw.get('name_phonetic') or None,
         'ticker': ticker,
         'is_listed': raw.get('is_listed', False),
         'submitter_type': raw.get('submitter_type'),
         'industry': raw.get('industry') or None,
+        'corporate_number': raw.get('corporate_number') or None,
     }
     return Entity(data)
 

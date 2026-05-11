@@ -302,3 +302,27 @@ def test_entity_has_industry_attribute():
     entity = entity_by_edinet_code('E02144')
     assert hasattr(entity, 'industry')
     # industry may be None for some entities, but the attribute must exist
+
+
+def test_entity_has_phonetic_attribute():
+    """Regression: Entity.name_phonetic should be populated for known entities."""
+    import edinet_tools
+    # E03533 = 株式会社三菱ＵＦＪ銀行; CSV col 8 = カブシキガイシャミツビシユーエフジェイギンコウ
+    e = edinet_tools.entity_by_edinet_code("E03533")
+    assert e is not None
+    assert e.name_phonetic is not None
+    assert len(e.name_phonetic) > 0
+    # Phonetic field is katakana
+    assert any('゠' <= c <= 'ヿ' for c in e.name_phonetic), \
+        f"Expected katakana in phonetic name, got: {e.name_phonetic!r}"
+
+
+def test_entity_has_corporate_number_attribute():
+    """Regression: Entity.corporate_number should be populated for known entities."""
+    import edinet_tools
+    # E03533 = 株式会社三菱ＵＦＪ銀行; CSV col 12 = 5010001008846
+    e = edinet_tools.entity_by_edinet_code("E03533")
+    assert e is not None
+    assert e.corporate_number == "5010001008846"
+    assert len(e.corporate_number) == 13
+    assert e.corporate_number.isdigit()
