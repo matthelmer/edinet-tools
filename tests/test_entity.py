@@ -422,3 +422,73 @@ def test_search_exact_match_is_fast():
         edinet_tools.search_entities("Toyota Motor Corporation", limit=1)
     elapsed = time.perf_counter() - start
     assert elapsed < 0.1, f"100 calls took {elapsed:.3f}s, expected <0.1s"
+
+
+import csv as _csv_module
+from pathlib import Path as _Path
+
+
+def _load_name_variants_fixture():
+    """Load tests/data/name_variants.csv as a list of pytest.param tuples."""
+    fixture_path = _Path(__file__).parent / 'data' / 'name_variants.csv'
+    rows = []
+    with open(fixture_path, 'r', encoding='utf-8') as f:
+        reader = _csv_module.DictReader(f)
+        for row in reader:
+            xfail_marker = row.get('xfail', '').strip().lower() == 'xfail'
+            marks = (pytest.mark.xfail(reason=row['scenario']),) if xfail_marker else ()
+            rows.append(pytest.param(
+                row['query'],
+                row['expected_edinet_code'],
+                id=row['scenario'],
+                marks=marks,
+            ))
+    return rows
+
+
+@pytest.mark.parametrize("query,expected_code", _load_name_variants_fixture())
+def test_search_variants(query, expected_code):
+    """Variant regression: each row in name_variants.csv asserts that
+    search_entities(query) returns expected_code among the top results.
+
+    Passing rows assert v0.6.0 normalization resolves the variance.
+    xfail rows document scope boundaries (structural variance, punctuation,
+    symbols, abbreviations) deliberately left for future work.
+    """
+    import edinet_tools
+    results = edinet_tools.search_entities(query, limit=10)
+    codes = [e.edinet_code for e in results]
+    assert expected_code in codes, \
+        f"Expected {expected_code} in results for {query!r}, got: {codes}"
+
+
+def test_search_homonym_returns_multiple():
+    """When multiple EDINET codes share a normalized name, search_entities
+    returns all of them. Common for Japanese individual filers and for
+    parent/subsidiary entities sharing an English name."""
+    import edinet_tools
+    from edinet_tools.entity_classifier import EntityClassifier
+    from edinet_tools.normalize import normalize_for_matching
+    c = EntityClassifier()
+    homonyms = [(k, v) for k, v in c._by_normalized_name.items() if len(v) > 1]
+    if not homonyms:
+        pytest.skip("No homonym pairs in catalog")
+    normalized_name, codes = homonyms[0]
+    # Reconstruct a query that produces this normalized key. The collision
+    # may be on the JP side, the EN side, or both — find which.
+    query = None
+    for code in codes:
+        raw = c._edinet_entities[code]
+        if normalize_for_matching(raw.get('name_jp')) == normalized_name:
+            query = raw['name_jp']
+            break
+        if normalize_for_matching(raw.get('name_en')) == normalized_name:
+            query = raw['name_en']
+            break
+    assert query is not None, "Could not reconstruct a query for the homonym set"
+    results = edinet_tools.search_entities(query, limit=20)
+    result_codes = {e.edinet_code for e in results}
+    intersection = set(codes) & result_codes
+    assert len(intersection) >= 2, \
+        f"Homonym query {query!r} (norm: {normalized_name!r}) returned {result_codes}, " \
+        f"expected at least 2 of {codes}"

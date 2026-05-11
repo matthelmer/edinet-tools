@@ -11,6 +11,7 @@ venv
 *downloads
 *.csv
 !edinet_tools/data/*.csv
+!tests/data/*.csv
 *.zip
 scripts/
 
