@@ -30,6 +30,7 @@ from .entity import (
     fund,
     funds_by_issuer,
 )
+from .normalize import normalize_for_matching
 from .document import Document
 from .doc_types import DocType, doc_type, list_doc_types, doc_types
 
@@ -72,6 +73,7 @@ __all__ = [
     "Fund",
     "fund",
     "funds_by_issuer",
+    "normalize_for_matching",
     # Documents
     "Document",
     "DocType",
