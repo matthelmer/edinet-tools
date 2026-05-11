@@ -462,6 +462,56 @@ def test_search_variants(query, expected_code):
         f"Expected {expected_code} in results for {query!r}, got: {codes}"
 
 
+def test_entity_by_ticker_alphanumeric_192A():
+    """Alphanumeric ticker (192A class) resolves to its entity."""
+    import edinet_tools
+    e = edinet_tools.entity_by_ticker("192A")
+    assert e is not None
+    assert e.edinet_code == "E37627"
+
+
+def test_entity_by_ticker_alphanumeric_262A():
+    import edinet_tools
+    e = edinet_tools.entity_by_ticker("262A")
+    assert e is not None
+    assert e.edinet_code == "E03492"
+
+
+def test_entity_by_ticker_numeric_still_works():
+    """Regression: existing 4-digit numeric lookup (Toyota 7203) still works."""
+    import edinet_tools
+    e = edinet_tools.entity_by_ticker("7203")
+    assert e is not None
+    assert e.edinet_code == "E02144"
+
+
+def test_entity_by_ticker_with_T_suffix():
+    """Regression: .T suffix is stripped."""
+    import edinet_tools
+    e = edinet_tools.entity_by_ticker("7203.T")
+    assert e is not None
+    assert e.edinet_code == "E02144"
+
+
+def test_entity_by_ticker_unknown_returns_none():
+    """Unknown ticker returns None."""
+    import edinet_tools
+    assert edinet_tools.entity_by_ticker("9999") is None
+
+
+def test_entity_by_ticker_is_fast():
+    """Performance canary: 100 lookups under 0.1s (was O(N) scan over 11k rows)."""
+    import edinet_tools
+    import time
+    # Warm-up
+    edinet_tools.entity_by_ticker("7203")
+    start = time.perf_counter()
+    for _ in range(100):
+        edinet_tools.entity_by_ticker("7203")
+    elapsed = time.perf_counter() - start
+    assert elapsed < 0.1, f"100 ticker lookups took {elapsed:.3f}s"
+
+
 def test_search_homonym_returns_multiple():
     """When multiple EDINET codes share a normalized name, search_entities
     returns all of them. Common for Japanese individual filers and for

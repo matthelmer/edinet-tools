@@ -235,25 +235,36 @@ def entity_by_ticker(ticker: str) -> Entity | None:
     """
     Look up an entity by stock ticker.
 
+    Handles 4-digit numeric (e.g. '7203'), 5-digit numeric with trailing
+    zero ('72030'), alphanumeric ('192A', '263A'), and the `.T` suffix
+    convention ('7203.T').
+
     Args:
-        ticker: Stock ticker (e.g., "7203" or "7203.T")
+        ticker: Stock ticker.
 
     Returns:
-        Entity object or None if not found
+        Entity object or None if not found.
     """
+    if not ticker:
+        return None
+
     # Strip .T or .t suffix if present (Tokyo Stock Exchange suffix)
     if ticker.upper().endswith('.T'):
         ticker = ticker[:-2]
 
     classifier = _get_classifier()
 
-    # Build ticker -> edinet_code index
-    for edinet_code, raw in classifier._edinet_entities.items():
-        securities_code = classifier.get_securities_code(edinet_code)
-        if securities_code == ticker:
-            return _build_entity_from_classifier(edinet_code, classifier)
-
-    return None
+    # O(1) lookup via reverse index. The load step indexed both the
+    # catalog 5-char form (e.g. '72030', '192A0') and the 4-char form
+    # for codes ending in 0.
+    edinet_code = classifier._by_securities_code.get(ticker)
+    if edinet_code is None:
+        # Try the 5-char form with trailing 0 (for cases where caller
+        # passed a 4-char form but only the 5-char form was indexed)
+        edinet_code = classifier._by_securities_code.get(ticker + '0')
+    if edinet_code is None:
+        return None
+    return _build_entity_from_classifier(edinet_code, classifier)
 
 
 def entity_by_corporate_number(num: str | None) -> Entity | None:
