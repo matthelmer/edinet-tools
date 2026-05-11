@@ -24,6 +24,7 @@ from .entity import (
     entity_by_ticker,
     entity_by_edinet_code,
     entity_by_code,  # Shorter alias
+    entity_by_corporate_number,
     search_entities,
     search,
     Fund,
@@ -68,6 +69,7 @@ __all__ = [
     "entity_by_ticker",
     "entity_by_edinet_code",
     "entity_by_code",  # Shorter alias
+    "entity_by_corporate_number",
     "search_entities",
     "search",
     "Fund",

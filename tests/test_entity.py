@@ -326,3 +326,26 @@ def test_entity_has_corporate_number_attribute():
     assert e.corporate_number == "5010001008846"
     assert len(e.corporate_number) == 13
     assert e.corporate_number.isdigit()
+
+
+def test_entity_by_corporate_number_known():
+    """Known 法人番号 returns the corresponding entity."""
+    import edinet_tools
+    # E03533 = 株式会社三菱ＵＦＪ銀行, 法人番号 5010001008846
+    e = edinet_tools.entity_by_corporate_number("5010001008846")
+    assert e is not None
+    assert e.edinet_code == "E03533"
+
+
+def test_entity_by_corporate_number_unknown():
+    """Unknown 法人番号 returns None."""
+    import edinet_tools
+    assert edinet_tools.entity_by_corporate_number("9999999999999") is None
+
+
+def test_entity_by_corporate_number_empty():
+    """Empty / None / malformed inputs return None."""
+    import edinet_tools
+    assert edinet_tools.entity_by_corporate_number("") is None
+    assert edinet_tools.entity_by_corporate_number(None) is None
+    assert edinet_tools.entity_by_corporate_number("abc") is None

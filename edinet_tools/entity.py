@@ -256,6 +256,30 @@ def entity_by_ticker(ticker: str) -> Entity | None:
     return None
 
 
+def entity_by_corporate_number(num: str | None) -> Entity | None:
+    """
+    Look up an entity by Japan Corporate Number (法人番号).
+
+    The 法人番号 is a 13-digit identifier issued by Japan's National Tax
+    Agency. It is globally unique within Japan and never reused, making
+    it the canonical disambiguator when name-based resolution is ambiguous.
+
+    Args:
+        num: 13-digit Japan Corporate Number, or None.
+
+    Returns:
+        Entity object or None if not found / not assigned in catalog.
+    """
+    if not num or not isinstance(num, str):
+        return None
+
+    classifier = _get_classifier()
+    edinet_code = classifier._by_corporate_number.get(num)
+    if edinet_code is None:
+        return None
+    return _build_entity_from_classifier(edinet_code, classifier)
+
+
 def search_entities(query: str, limit: int = 10) -> list[Entity]:
     """
     Search for entities by name.
