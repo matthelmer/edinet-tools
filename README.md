@@ -77,9 +77,16 @@ print(dt.name_jp)  # "内部統制報告書"
 ```python
 import edinet_tools
 
-toyota = edinet_tools.entity("7203")      # By ticker
+toyota = edinet_tools.entity("7203")      # By ticker (digit or alphanumeric)
 toyota = edinet_tools.entity("Toyota")    # By name search
+toyota = edinet_tools.entity("E02144")    # By EDINET code
 print(toyota.name, toyota.edinet_code)    # TOYOTA MOTOR CORPORATION E02144
+
+# Look up by Japan Corporate Number (法人番号)
+toyota = edinet_tools.entity_by_corporate_number("1180301018771")
+
+# Name search handles full-width/half-width, gaiji (㈱), and middle-dot variants
+mufg = edinet_tools.search("三菱UFJ銀行")  # matches the catalog's ＵＦＪ form too
 
 banks = edinet_tools.search("bank", limit=5)
 ```
@@ -145,11 +152,12 @@ Or use a `.env` file. Entity lookup and parsing work without an API key — only
 ## Testing
 
 ```bash
-pytest tests/ -v  # 600+ tests
+pytest tests/ -v  # 660+ tests
 ```
 
 ## Links
 
+- [Changelog](CHANGELOG.md)
 - [PyPI](https://pypi.org/project/edinet-tools/)
 - [GitHub](https://github.com/matthelmer/edinet-tools)
 - [EDINET](https://disclosure2.edinet-fsa.go.jp/)
