@@ -210,3 +210,16 @@ class TestReverseIndexes:
         assert '_normalized' in raw
         assert isinstance(raw['_normalized'], str)
         assert len(raw['_normalized']) > 0
+
+    def test_is_listed_handles_both_csv_languages(self, classifier):
+        """FSA has used both 'Listed company' (English) and '上場' (Japanese)
+        in the catalog's 上場区分 column at different points. The classifier
+        must accept either form."""
+        # Toyota is canonically a listed company. Whichever language the
+        # bundled CSV currently uses, this assertion must hold.
+        assert classifier.is_listed("E02144"), \
+            "Toyota (E02144) must be classified as listed regardless of " \
+            "whether the catalog uses 'Listed company' or '上場'"
+        stats = classifier.stats
+        assert stats['listed_companies'] > 1000, \
+            f"Expected >1000 listed companies, got {stats['listed_companies']}"

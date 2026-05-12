@@ -132,9 +132,12 @@ class EntityClassifier:
                     normalized_jp = normalize_for_matching(name_jp)
                     normalized_en = normalize_for_matching(name_en)
 
+                    # FSA's CSV has used both English ('Listed company') and
+                    # Japanese ('上場') forms in the 上場区分 column at different
+                    # times. Accept either.
                     self._edinet_entities[edinet_code] = {
                         'submitter_type': row[1].strip(),
-                        'is_listed': row[2].strip() == 'Listed company',
+                        'is_listed': row[2].strip() in ('Listed company', '上場'),
                         'name_jp': name_jp,
                         'name_en': name_en,
                         'name_phonetic': name_phonetic,
