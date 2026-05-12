@@ -30,13 +30,15 @@ import glob
 # clear error if FSA ever renames a column entirely.
 
 _EDINET_COLUMN_ALIASES = {
-    "edinet_code":     ("EDINET Code",                         "ＥＤＩＮＥＴコード"),
-    "submitter_type":  ("Type of Submitter",                   "提出者種別"),
-    "listed":          ("Listed company / Unlisted company",   "上場区分"),
-    "name_jp":         ("Submitter Name",                      "提出者名"),
-    "name_en":         ("Submitter Name（alphabetic）",         "提出者名（英字）"),
-    "industry":        ("Submitter's industry",                "提出者業種"),
-    "securities_code": ("Securities Identification Code",      "証券コード"),
+    "edinet_code":      ("EDINET Code",                         "ＥＤＩＮＥＴコード"),
+    "submitter_type":   ("Type of Submitter",                   "提出者種別"),
+    "listed":           ("Listed company / Unlisted company",   "上場区分"),
+    "name_jp":          ("Submitter Name",                      "提出者名"),
+    "name_en":          ("Submitter Name（alphabetic）",         "提出者名（英字）"),
+    "name_phonetic":    ("Submitter Name（phonetic）",           "提出者名（ヨミ）"),
+    "industry":         ("Submitter's industry",                "提出者業種"),
+    "securities_code":  ("Securities Identification Code",      "証券コード"),
+    "corporate_number": ("Submitter's Japan Corporate Number",  "提出者法人番号"),
 }
 
 _FUND_COLUMN_ALIASES = {
@@ -202,8 +204,15 @@ class EntityClassifier:
 
     def _load_data(self):
         """Load and index both CSV files."""
+        from .normalize import normalize_for_matching
+
         self._fund_edinet_codes = set()
         self._edinet_entities = {}  # edinet_code -> entity info
+
+        # Reverse indexes for O(1) lookups (v0.6.0)
+        self._by_normalized_name = {}      # normalized name -> list[edinet_code]
+        self._by_securities_code = {}      # securities_code -> edinet_code
+        self._by_corporate_number = {}     # 法人番号 -> edinet_code
 
         # Load fund codes (Shift-JIS encoded). We only need the issuer's
         # EDINET code from this file, but we still resolve it by header so
@@ -240,12 +249,24 @@ class EntityClassifier:
                 edinet_code = row[col["edinet_code"]].strip()
                 if not edinet_code.startswith('E'):
                     continue
+
+                name_jp = row[col["name_jp"]].strip() or None
+                name_en = row[col["name_en"]].strip() or None
+                name_phonetic = row[col["name_phonetic"]].strip() or None
+                securities_code = row[col["securities_code"]].strip() or None
+                corporate_number = row[col["corporate_number"]].strip() or None
                 industry_raw = row[col["industry"]].strip() or None
+
+                # Pre-compute normalized forms for substring-scan fallback
+                normalized_jp = normalize_for_matching(name_jp)
+                normalized_en = normalize_for_matching(name_en)
+
                 self._edinet_entities[edinet_code] = {
                     'submitter_type': row[col["submitter_type"]].strip(),
                     'is_listed': row[col["listed"]].strip() in _LISTED_VALUES,
-                    'name_jp': row[col["name_jp"]].strip() or None,
-                    'name_en': row[col["name_en"]].strip() or None,
+                    'name_jp': name_jp,
+                    'name_en': name_en,
+                    'name_phonetic': name_phonetic,
                     # Industry values may be Japanese or English depending
                     # on CSV variant. Normalize `industry` to English for
                     # stable downstream behavior (backward compatible with
@@ -253,8 +274,34 @@ class EntityClassifier:
                     # separately.
                     'industry': translate_industry_to_english(industry_raw),
                     'industry_jp': industry_raw,
-                    'securities_code': row[col["securities_code"]].strip() or None,
+                    'securities_code': securities_code,
+                    'corporate_number': corporate_number,
+                    '_normalized': normalized_jp,    # primary
+                    '_normalized_en': normalized_en, # fallback for EN-only queries
                 }
+
+                # Build reverse indexes — index each name under BOTH its
+                # whitespace-preserved form and its whitespace-collapsed form.
+                # This recovers individual names like "伊藤翔太" vs "伊藤 翔太"
+                # without false-positives in the substring-fallback scan
+                # (which uses the whitespace-preserved form on both sides).
+                seen_keys = set()
+                for n in (normalized_jp, normalized_en):
+                    if not n or n in seen_keys:
+                        continue
+                    seen_keys.add(n)
+                    self._by_normalized_name.setdefault(n, []).append(edinet_code)
+                    n_nows = ''.join(n.split())  # whitespace-collapsed form
+                    if n_nows and n_nows != n and n_nows not in seen_keys:
+                        seen_keys.add(n_nows)
+                        self._by_normalized_name.setdefault(n_nows, []).append(edinet_code)
+                if securities_code:
+                    self._by_securities_code[securities_code] = edinet_code
+                    # Also index the 4-digit form (strip trailing 0 for 5-digit-ending-in-0 codes)
+                    if len(securities_code) == 5 and securities_code.endswith('0'):
+                        self._by_securities_code[securities_code[:4]] = edinet_code
+                if corporate_number:
+                    self._by_corporate_number[corporate_number] = edinet_code
 
     def get_entity_type(self, edinet_code: str) -> EntityType:
         """

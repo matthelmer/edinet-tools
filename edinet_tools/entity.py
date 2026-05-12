@@ -191,10 +191,12 @@ def _build_entity_from_classifier(edinet_code: str, classifier: EntityClassifier
         'edinet_code': edinet_code,
         'name_jp': raw.get('name_jp', ''),
         'name_en': raw.get('name_en') or None,
+        'name_phonetic': raw.get('name_phonetic') or None,
         'ticker': ticker,
         'is_listed': raw.get('is_listed', False),
         'submitter_type': raw.get('submitter_type'),
         'industry': raw.get('industry') or None,
+        'corporate_number': raw.get('corporate_number') or None,
     }
     return Entity(data)
 
@@ -233,25 +235,60 @@ def entity_by_ticker(ticker: str) -> Entity | None:
     """
     Look up an entity by stock ticker.
 
+    Handles 4-digit numeric (e.g. '7203'), 5-digit numeric with trailing
+    zero ('72030'), alphanumeric ('192A', '263A'), and the `.T` suffix
+    convention ('7203.T').
+
     Args:
-        ticker: Stock ticker (e.g., "7203" or "7203.T")
+        ticker: Stock ticker.
 
     Returns:
-        Entity object or None if not found
+        Entity object or None if not found.
     """
+    if not ticker:
+        return None
+
     # Strip .T or .t suffix if present (Tokyo Stock Exchange suffix)
     if ticker.upper().endswith('.T'):
         ticker = ticker[:-2]
 
     classifier = _get_classifier()
 
-    # Build ticker -> edinet_code index
-    for edinet_code, raw in classifier._edinet_entities.items():
-        securities_code = classifier.get_securities_code(edinet_code)
-        if securities_code == ticker:
-            return _build_entity_from_classifier(edinet_code, classifier)
+    # O(1) lookup via reverse index. The load step indexed both the
+    # catalog 5-char form (e.g. '72030', '192A0') and the 4-char form
+    # for codes ending in 0.
+    edinet_code = classifier._by_securities_code.get(ticker)
+    if edinet_code is None:
+        # Try the 5-char form with trailing 0 (for cases where caller
+        # passed a 4-char form but only the 5-char form was indexed)
+        edinet_code = classifier._by_securities_code.get(ticker + '0')
+    if edinet_code is None:
+        return None
+    return _build_entity_from_classifier(edinet_code, classifier)
 
-    return None
+
+def entity_by_corporate_number(num: str | None) -> Entity | None:
+    """
+    Look up an entity by Japan Corporate Number (法人番号).
+
+    The 法人番号 is a 13-digit identifier issued by Japan's National Tax
+    Agency. It is globally unique within Japan and never reused, making
+    it the canonical disambiguator when name-based resolution is ambiguous.
+
+    Args:
+        num: 13-digit Japan Corporate Number, or None.
+
+    Returns:
+        Entity object or None if not found / not assigned in catalog.
+    """
+    if not num or not isinstance(num, str):
+        return None
+
+    classifier = _get_classifier()
+    edinet_code = classifier._by_corporate_number.get(num)
+    if edinet_code is None:
+        return None
+    return _build_entity_from_classifier(edinet_code, classifier)
 
 
 def search_entities(query: str, limit: int = 10) -> list[Entity]:
@@ -263,6 +300,11 @@ def search_entities(query: str, limit: int = 10) -> list[Entity]:
     2. Name starts with query
     3. Listed companies over unlisted
     4. Query appears earlier in name
+
+    Names and queries are normalized via normalize_for_matching() before
+    comparison — NFKC width-folding, (株)/(有) rewrites, whitespace strip,
+    lowercase — so visually-identical strings with different encodings
+    match correctly.
 
     Args:
         query: Search string (matches Japanese or English names)
@@ -277,52 +319,71 @@ def search_entities(query: str, limit: int = 10) -> list[Entity]:
     if not query or not query.strip():
         return []
 
+    from .normalize import normalize_for_matching
+
     classifier = _get_classifier()
+    q_norm = normalize_for_matching(query)
+
+    # Post-normalize empty guard (e.g., query was all whitespace variants)
+    if not q_norm:
+        return []
+
+    # Exact-match path (O(1)): hit the reverse index first.
+    # Try the whitespace-preserved form first; if that misses, also try the
+    # whitespace-collapsed form. This handles the case where the query and
+    # catalog use different spacing conventions (common for Japanese
+    # individual names: "伊藤 翔太" vs "伊藤翔太").
+    exact_codes = classifier._by_normalized_name.get(q_norm, [])
+    if not exact_codes:
+        q_nows = ''.join(q_norm.split())
+        if q_nows and q_nows != q_norm:
+            exact_codes = classifier._by_normalized_name.get(q_nows, [])
+    if exact_codes:
+        # Rank within the exact-match set: listed > unlisted, then name length
+        ranked = []
+        for code in exact_codes:
+            raw = classifier._edinet_entities[code]
+            listed_penalty = 0 if raw.get('is_listed') else 500
+            name_len = len(raw.get('name_en') or raw.get('name_jp') or '')
+            ranked.append((listed_penalty, name_len, code))
+        ranked.sort(key=lambda x: (x[0], x[1]))
+        results = []
+        for _, _, code in ranked[:limit]:
+            e = _build_entity_from_classifier(code, classifier)
+            if e:
+                results.append(e)
+        return results
+
+    # Substring-scan fallback (O(N)): use pre-normalized forms on both sides
     matches = []
-    query_lower = query.lower()
-
     for edinet_code, raw in classifier._edinet_entities.items():
-        name_jp = raw.get('name_jp', '')
-        name_en = raw.get('name_en', '') or ''
-        name_jp_lower = name_jp.lower()
-        name_en_lower = name_en.lower()
+        norm_jp = raw.get('_normalized', '')
+        norm_en = raw.get('_normalized_en', '')
 
-        # Check if query matches either name (case-insensitive)
-        if query_lower in name_jp_lower or query_lower in name_en_lower:
-            # Calculate relevance score (lower is better)
-            score = 1000  # Base score
+        if q_norm in norm_jp or q_norm in norm_en:
+            score = 1000  # Base score (only reached if not exact — exact was index-handled above)
 
-            # Exact match (highest priority)
-            if name_en_lower == query_lower or name_jp_lower == query_lower:
-                score = 0
             # Name starts with query
-            elif name_en_lower.startswith(query_lower) or name_jp_lower.startswith(query_lower):
+            if norm_en.startswith(q_norm) or norm_jp.startswith(q_norm):
                 score = 100
-            # Query position in name (earlier is better)
             else:
-                pos_en = name_en_lower.find(query_lower) if query_lower in name_en_lower else 999
-                pos_jp = name_jp_lower.find(query_lower) if query_lower in name_jp_lower else 999
+                pos_en = norm_en.find(q_norm) if q_norm in norm_en else 999
+                pos_jp = norm_jp.find(q_norm) if q_norm in norm_jp else 999
                 score = 200 + min(pos_en, pos_jp)
 
-            # Prefer listed companies
             if not raw.get('is_listed', False):
                 score += 500
 
-            # Prefer shorter English names as tiebreaker (more likely to be "main" entity)
-            # Using English name because searches are typically in English
-            name_len = len(name_en) if name_en else len(name_jp) if name_jp else 999
+            name_len = len(raw.get('name_en') or '') or len(raw.get('name_jp') or '') or 999
             matches.append((score, name_len, edinet_code))
 
-    # Sort by score, then name length (lower is better)
     matches.sort(key=lambda x: (x[0], x[1]))
 
-    # Build Entity objects for top results
     results = []
     for score, name_len, edinet_code in matches[:limit]:
-        entity_obj = _build_entity_from_classifier(edinet_code, classifier)
-        if entity_obj:
-            results.append(entity_obj)
-
+        e = _build_entity_from_classifier(edinet_code, classifier)
+        if e:
+            results.append(e)
     return results
 
 

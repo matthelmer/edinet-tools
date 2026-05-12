@@ -267,3 +267,51 @@ class TestRepr:
         assert 'EntityClassifier' in repr_str
         assert 'entities=' in repr_str
         assert 'funds=' in repr_str
+
+
+class TestReverseIndexes:
+    """v0.6.0 — reverse indexes for O(1) lookup."""
+
+    def test_reverse_index_by_normalized_name_built(self, classifier):
+        """The _by_normalized_name reverse index is populated after load."""
+        assert hasattr(classifier, '_by_normalized_name')
+        assert isinstance(classifier._by_normalized_name, dict)
+        assert len(classifier._by_normalized_name) > 1000
+        # Each value is a list of EDINET codes (lists, not strings — homonyms possible)
+        for key, value in list(classifier._by_normalized_name.items())[:5]:
+            assert isinstance(value, list)
+            assert all(v.startswith('E') for v in value)
+
+    def test_reverse_index_by_securities_code_built(self, classifier):
+        """The _by_securities_code reverse index is populated and maps to EDINET codes."""
+        assert hasattr(classifier, '_by_securities_code')
+        assert isinstance(classifier._by_securities_code, dict)
+        assert len(classifier._by_securities_code) > 1000
+
+    def test_reverse_index_by_corporate_number_built(self, classifier):
+        """The _by_corporate_number reverse index is populated."""
+        assert hasattr(classifier, '_by_corporate_number')
+        assert isinstance(classifier._by_corporate_number, dict)
+        # E03533 → 5010001008846
+        assert classifier._by_corporate_number.get("5010001008846") == "E03533"
+
+    def test_normalized_form_stored_per_entity(self, classifier):
+        """Each entity in _edinet_entities has a _normalized field used by the substring scan."""
+        raw = classifier._edinet_entities.get("E02144")  # Toyota
+        assert raw is not None
+        assert '_normalized' in raw
+        assert isinstance(raw['_normalized'], str)
+        assert len(raw['_normalized']) > 0
+
+    def test_is_listed_handles_both_csv_languages(self, classifier):
+        """FSA has used both 'Listed company' (English) and '上場' (Japanese)
+        in the catalog's 上場区分 column at different points. The classifier
+        must accept either form."""
+        # Toyota is canonically a listed company. Whichever language the
+        # bundled CSV currently uses, this assertion must hold.
+        assert classifier.is_listed("E02144"), \
+            "Toyota (E02144) must be classified as listed regardless of " \
+            "whether the catalog uses 'Listed company' or '上場'"
+        stats = classifier.stats
+        assert stats['listed_companies'] > 1000, \
+            f"Expected >1000 listed companies, got {stats['listed_companies']}"

@@ -1,0 +1,23 @@
+query,expected_edinet_code,scenario,xfail
+日本生命保険相互会社,E06125,baseline-japanese-name,
+株式会社三菱ＵＦＪ銀行,E03533,full-width-latin-UFJ,
+株式会社三菱UFJ銀行,E03533,half-width-latin-UFJ,
+株式会社三井住友銀行,E03617,baseline-bank-name,
+株式会社みずほ銀行,E03532,baseline-bank-name-mizuho,
+明治安田生命保険相互会社,E06369,baseline-insurer,
+SMBC日興証券株式会社,E23615,smbc-prefix-half-width,
+ＳＭＢＣ日興証券株式会社,E23615,smbc-prefix-full-width,
+JPモルガン証券株式会社,E20021,jp-prefix-half-width,
+JPモルガン証券㈱,E20021,jp-prefix-gaiji-suffix,
+ＪＰモルガン証券株式会社,E20021,jp-prefix-full-width,
+LINEヤフー株式会社,E05000,english-prefix-line,
+KDDI株式会社,E04425,acronym-prefix-kddi,
+GMOインターネットグループ株式会社,E05041,gmo-prefix,
+SBIホールディングス株式会社,E05159,sbi-prefix,
+Toyota,E02144,english-substring-match,
+TOYOTA,E02144,english-uppercase,
+toyota motor,E02144,english-substring-lowercase,
+株式会社みずほ銀行（信託口）,E03532,structural-trailing-paren-jp,xfail
+株式会社みずほ銀行(信託口),E03532,structural-trailing-paren-en,xfail
+Co Ltd,E03533,punctuation-variance-co-ltd,xfail
+J P Morgan,E20021,punctuation-variance-jp,xfail
