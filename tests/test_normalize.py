@@ -67,6 +67,14 @@ def test_full_width_parens_folded():
     assert normalize_for_matching("みずほ銀行（信託口）") == "みずほ銀行(信託口)"
 
 
+def test_middle_dot_stripped():
+    # ・ (U+30FB katakana middle dot) is a transliteration separator with
+    # inconsistent presence across data sources. Stripped so 'モルガン・スタンレー'
+    # and 'モルガンスタンレー' collapse to the same key.
+    assert normalize_for_matching("モルガン・スタンレー") == "モルガンスタンレー"
+    assert normalize_for_matching("モルガン・スタンレー") == normalize_for_matching("モルガンスタンレー")
+
+
 def test_smbc_variants_collapse():
     # Real-world variance from corpjapan prod data:
     # catalog stores ＳＭＢＣ (full-width); extraction yields SMBC (half-width).

@@ -44,5 +44,10 @@ def normalize_for_matching(s):
     s = unicodedata.normalize('NFKC', s)
     s = s.replace('(株)', '株式会社')
     s = s.replace('(有)', '有限会社')
+    # Strip katakana middle dot (・ U+30FB) and Latin middle dot (· U+00B7).
+    # In Japanese company names these are transliteration separators with
+    # inconsistent presence across data sources — 'モルガン・スタンレー' and
+    # 'モルガンスタンレー' refer to the same entity.
+    s = s.replace('・', '').replace('·', '')
     s = ' '.join(s.split())
     return s.lower()
