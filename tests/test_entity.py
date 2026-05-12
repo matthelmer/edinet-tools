@@ -373,6 +373,30 @@ def test_search_full_width_ufj_matches():
     assert "E03533" in codes
 
 
+def test_search_individual_name_space_variance_query_no_space():
+    """Query without internal space finds catalog entry with full-width space.
+
+    Real case: shareholder lists may render '伊藤翔太' (no space) but the
+    catalog has '伊藤　翔太' (with U+3000). NFKC folds the catalog space
+    to ASCII; bidirectional whitespace handling must still bridge them.
+    """
+    import edinet_tools
+    results = edinet_tools.search_entities("伊藤翔太")
+    codes = [e.edinet_code for e in results]
+    assert "E36920" in codes, f"Expected E36920 in results, got: {codes}"
+
+
+def test_search_individual_name_space_variance_query_with_space():
+    """Query with full-width space finds catalog entry with no space.
+
+    Real case: query '代永　衛' (U+3000) vs catalog '代永衛' (no space).
+    """
+    import edinet_tools
+    results = edinet_tools.search_entities("代永　衛")
+    codes = [e.edinet_code for e in results]
+    assert "E10888" in codes, f"Expected E10888 in results, got: {codes}"
+
+
 def test_search_kabushiki_gaiji_matches():
     """㈱ in query matches 株式会社 in catalog."""
     import edinet_tools

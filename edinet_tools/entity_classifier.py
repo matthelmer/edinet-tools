@@ -145,11 +145,21 @@ class EntityClassifier:
                         '_normalized_en': normalized_en, # fallback for EN-only queries
                     }
 
-                    # Build reverse indexes
-                    if normalized_jp:
-                        self._by_normalized_name.setdefault(normalized_jp, []).append(edinet_code)
-                    if normalized_en and normalized_en != normalized_jp:
-                        self._by_normalized_name.setdefault(normalized_en, []).append(edinet_code)
+                    # Build reverse indexes — index each name under BOTH its
+                    # whitespace-preserved form and its whitespace-collapsed form.
+                    # This recovers individual names like "伊藤翔太" vs "伊藤 翔太"
+                    # without false-positive in the substring-fallback scan
+                    # (which uses the whitespace-preserved form on both sides).
+                    seen_keys = set()
+                    for n in (normalized_jp, normalized_en):
+                        if not n or n in seen_keys:
+                            continue
+                        seen_keys.add(n)
+                        self._by_normalized_name.setdefault(n, []).append(edinet_code)
+                        n_nows = ''.join(n.split())  # whitespace-collapsed form
+                        if n_nows and n_nows != n and n_nows not in seen_keys:
+                            seen_keys.add(n_nows)
+                            self._by_normalized_name.setdefault(n_nows, []).append(edinet_code)
                     if securities_code:
                         self._by_securities_code[securities_code] = edinet_code
                         # Also index the 4-digit form (strip trailing 0 for 5-digit-ending-in-0 codes)

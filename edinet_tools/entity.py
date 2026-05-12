@@ -328,8 +328,16 @@ def search_entities(query: str, limit: int = 10) -> list[Entity]:
     if not q_norm:
         return []
 
-    # Exact-match path (O(1)): hit the reverse index first
+    # Exact-match path (O(1)): hit the reverse index first.
+    # Try the whitespace-preserved form first; if that misses, also try the
+    # whitespace-collapsed form. This handles the case where the query and
+    # catalog use different spacing conventions (common for Japanese
+    # individual names: "伊藤 翔太" vs "伊藤翔太").
     exact_codes = classifier._by_normalized_name.get(q_norm, [])
+    if not exact_codes:
+        q_nows = ''.join(q_norm.split())
+        if q_nows and q_nows != q_norm:
+            exact_codes = classifier._by_normalized_name.get(q_nows, [])
     if exact_codes:
         # Rank within the exact-match set: listed > unlisted, then name length
         ranked = []
