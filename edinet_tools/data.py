@@ -254,9 +254,12 @@ class CompanyLookup:
                     if similarity > 0.6:  # 60% similarity threshold
                         score = max(score, int(similarity * 80))
             
-            # Industry/category match
-            industry = company.get('industry', '').lower()
-            if query in industry:
+            # Industry/category match. Match against both English and
+            # Japanese forms so users can search in either language
+            # regardless of which CSV variant produced the cache.
+            industry_en = company.get('industry', '').lower()
+            industry_jp = company.get('industry_jp', '').lower()
+            if (query in industry_en) or (industry_jp and query in industry_jp):
                 score = max(score, 50)
             
             if score > 0:

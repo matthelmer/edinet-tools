@@ -73,11 +73,22 @@ class TestCompanySearch:
         assert results[0]['ticker'] == '72030'
     
     def test_industry_search(self):
-        """Test searching by industry."""
+        """Test searching by industry.
+
+        FSA's current download endpoint serves industries in Japanese, but
+        the loader normalizes them to English (via the translation map in
+        entity_classifier) before caching. Search matches against both the
+        normalized English form and the raw Japanese form, so queries in
+        either language return results.
+        """
         results = search_companies('Banks')
         assert len(results) > 0
-        banking_found = any('Banks' in r.get('industry', '') for r in results)
-        assert banking_found
+        assert any('Banks' in r.get('industry', '') for r in results)
+
+    def test_industry_search_japanese(self):
+        """Industry search should also match the raw Japanese value."""
+        results = search_companies('銀行業')
+        assert len(results) > 0
     
     def test_no_results(self):
         """Test search with no results."""
