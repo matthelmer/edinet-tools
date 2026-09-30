@@ -6,7 +6,10 @@ without inline files. Facts are the root's children that carry a `contextRef`; e
 written with the instance's own prefixes. A `...TextBlock` value is escaped HTML: `html` keeps it
 and `value` is its plain text by the same rule as the inline reader (`html_to_text`). The instance
 cannot tell a text block filed unescaped from an escaped one; for plain text the two rules give
-the same value (`plain_text_block_value`), and only `html` differs (None inline).
+the same value (`plain_text_block_value`), and only `html` differs (None inline). The reverse
+also holds: an element escaped in the inline XBRL whose name does not end in TextBlock
+(S100YWY3, `...:NoteRegardingResearchAndDevelopments`) comes back from this reader as the raw
+HTML string, where the inline reader gives its plain text. Prefer source='xbrl'.
 A document with a DOCTYPE or ENTITY declaration is refused before parsing; package members are
 size-capped. Definitions are scoped per instance file, one filing each (see XbrlFacts); defined
 twice inside one file, a context or unit must be defined identically.
