@@ -58,15 +58,58 @@ class XbrlFact:
     format: Optional[str] = None
     footnote_refs: tuple = ()
     source_file: str = ""
+    # The filing (target instance) the fact belongs to, named as its .xbrl instance; set by the
+    # package readers. Its context and unit resolve in contexts_by_filing[filing].
+    filing: str = ""
 
 
 @dataclass
 class XbrlFacts:
+    """Facts plus their definitions.
+
+    A package can hold several filings (an investment trust's fund and each series), each an
+    inline set and an instance of its own, and they may define the same context ID differently
+    (S100YO5B: entity G14704-000 / -001 / -002). Definitions are scoped per filing:
+    `contexts_by_filing` / `units_by_filing` / `footnotes_by_filing` hold each filing's own, and
+    a fact resolves in its own filing's. `contexts` / `units` / `footnotes` are the package-wide
+    view: the IDs every filing that defines them defines identically (an ID defined differently
+    in two filings is only in the per-filing maps). Inside one filing a conflicting redefinition
+    is refused."""
+
     facts: list = field(default_factory=list)
     contexts: dict = field(default_factory=dict)
     units: dict = field(default_factory=dict)
     footnotes: dict = field(default_factory=dict)
     source_files: list = field(default_factory=list)
+    contexts_by_filing: dict = field(default_factory=dict)
+    units_by_filing: dict = field(default_factory=dict)
+    footnotes_by_filing: dict = field(default_factory=dict)
+
+
+def add_filing(merged: XbrlFacts, part: XbrlFacts, filing: str) -> None:
+    """Add one filing's facts and definitions to a package-level XbrlFacts, then rebuild the
+    package-wide view (an ID stays there only while every filing defines it identically)."""
+    from dataclasses import replace
+
+    if filing in merged.contexts_by_filing:
+        raise UnsupportedInlineXBRL(f"filing {filing!r} appears twice in the package")
+    merged.facts.extend(replace(f, filing=filing) for f in part.facts)
+    merged.contexts_by_filing[filing] = dict(part.contexts)
+    merged.units_by_filing[filing] = dict(part.units)
+    merged.footnotes_by_filing[filing] = dict(part.footnotes)
+    for attr in ("contexts", "units", "footnotes"):
+        agreed: dict = {}
+        clashed: set = set()
+        for defs in getattr(merged, attr + "_by_filing").values():
+            for k, v in defs.items():
+                if k in clashed:
+                    continue
+                if k in agreed and agreed[k] != v:
+                    del agreed[k]
+                    clashed.add(k)
+                else:
+                    agreed[k] = v
+        setattr(merged, attr, agreed)
 
 
 # --- html_to_text ----------------------------------------------------------------------------

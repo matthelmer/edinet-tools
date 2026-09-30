@@ -39,7 +39,6 @@ __all__ = ["SOURCES", "extract_rows_from_package", "facts_to_rows"]
 SOURCES = XBRL_SOURCES
 _NIL = "－"
 _LINE_BREAK_RE = re.compile(r"[\r\n]")
-_IXBRL_NAME_RE = re.compile(r"^\d+_(?:header|honbun)_(.+)_ixbrl\.htm$")
 
 
 def _csv_plain(value: str) -> str:
@@ -84,18 +83,6 @@ def facts_to_rows(facts: XbrlFacts, source: str) -> list:
     return rows
 
 
-def _filing_name(directory_files: list, inline_names: list) -> str:
-    """The name of the instance a set of inline documents forms: the `.xbrl` beside them, or
-    the stem their file names share."""
-    instances = [posixpath.basename(n) for n in directory_files if n.endswith(".xbrl")]
-    if len(instances) == 1:
-        return instances[0]
-    stems = {m.group(1) for m in map(_IXBRL_NAME_RE.match, inline_names) if m}
-    if len(stems) == 1:
-        return stems.pop() + ".xbrl"
-    return sorted(inline_names)[0]
-
-
 def extract_rows_from_package(zip_bytes: bytes, source: str = "xbrl") -> list:
     """Rows from an EDINET type=1 package, in `extract_csv_from_zip`'s shape.
 
@@ -105,22 +92,18 @@ def extract_rows_from_package(zip_bytes: bytes, source: str = "xbrl") -> list:
     has no such files or uses a feature the reader does not implement."""
     source = normalize_source(source)
     if source == "xbrl":
-        names, members = read_package_members(
+        _names, members = read_package_members(
             zip_bytes, lambda n: n.endswith("_ixbrl.htm") and not _is_audit(n)
         )
         groups = group_inline_documents(members)
         if not groups:
             raise UnsupportedInlineXBRL("no inline XBRL (*_ixbrl.htm) in the package")
+        # one entry per filing, as the CSV gives one file per instance; each filing's facts
+        # resolve against its own definitions
         out = []
-        for directory in sorted(groups):
-            facts = read_inline_xbrl(groups[directory])
-            in_dir = [n for n in names if posixpath.dirname(n) == directory]
-            out.append(
-                {
-                    "filename": _filing_name(in_dir, list(groups[directory])),
-                    "data": facts_to_rows(facts, source),
-                }
-            )
+        for directory, filing in sorted(groups):
+            facts = read_inline_xbrl(groups[(directory, filing)])
+            out.append({"filename": filing, "data": facts_to_rows(facts, source)})
         return out
     _names, members = read_package_members(
         zip_bytes, lambda n: n.endswith(".xbrl") and not _is_audit(n)

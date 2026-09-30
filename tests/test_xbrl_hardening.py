@@ -135,7 +135,9 @@ def _package(members):
     return buf.getvalue()
 
 
-def test_audit_documents_that_redefine_a_context_fail_when_included():
+def test_audit_documents_that_redefine_a_context_keep_their_own_definition():
+    """Definitions are scoped per filing: the auditor's filing may define an id its own way.
+    (Before the corpus run this raised; investment-trust packages do exactly this.)"""
     audit = ixdoc(
         "",
         header="<ix:header><ix:resources>"
@@ -149,8 +151,10 @@ def test_audit_documents_that_redefine_a_context_fail_when_included():
         }
     )
     assert read_inline_xbrl_package(pkg).contexts["FilingDateInstant"].instant == "2026-07-24"
-    with pytest.raises(UnsupportedInlineXBRL, match="FilingDateInstant"):
-        read_inline_xbrl_package(pkg, include_audit=True)
+    r = read_inline_xbrl_package(pkg, include_audit=True)
+    assert r.contexts_by_filing["x.xbrl"]["FilingDateInstant"].instant == "2026-07-24"
+    assert r.contexts_by_filing["jpaud-x.xbrl"]["FilingDateInstant"].instant == "2020-01-01"
+    assert "FilingDateInstant" not in r.contexts
 
 
 def test_real_package_with_audit_included_still_reads():

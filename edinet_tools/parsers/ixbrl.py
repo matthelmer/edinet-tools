@@ -27,7 +27,8 @@ accepted as a lenient extension (no EDINET filing seen uses them).
 
 Safety: a document with a DOCTYPE or ENTITY declaration is refused before parsing, and package
 members are size-capped before they are read (`_xbrl_model.read_package_members`). Contexts,
-units and footnotes defined twice must be defined identically.
+units and footnotes are scoped per filing (see XbrlFacts); defined twice inside one filing's
+documents, they must be defined identically.
 """
 
 from __future__ import annotations
@@ -45,6 +46,7 @@ from ._xbrl_model import (
     XbrlContext,
     XbrlFact,
     XbrlFacts,
+    add_filing,
     html_to_text,
     plain_text_block_value,
     put_unique,
@@ -458,7 +460,7 @@ def _is_audit(name: str) -> bool:
 
 
 def inline_documents_in_package(zip_bytes: bytes, include_audit: bool = False) -> dict:
-    """{directory: {file name: bytes}} of the package's `*_ixbrl.htm` files. The auditor's
+    """{(directory, filing): {file name: bytes}} of the package's `*_ixbrl.htm` files. The auditor's
     documents (XBRL/AuditDoc, `jpaud*`) are left out unless asked for, as the CSV path leaves
     out `jpaud*.csv`."""
     _names, members = read_package_members(
@@ -468,37 +470,43 @@ def inline_documents_in_package(zip_bytes: bytes, include_audit: bool = False) -
     return group_inline_documents(members)
 
 
+# EDINET names each inline document <order>_<kind>_<stem>_ixbrl.htm (kind: header, honbun,
+# bsdata, pldata, ...); every document of one filing shares the stem of its instance, <stem>.xbrl.
+_IXBRL_NAME_RE = re.compile(r"^\d+_[A-Za-z]+_(.+)_ixbrl\.htm$")
+
+
+def filing_of(name: str) -> str:
+    """The filing an inline document belongs to, named as its instance: '<stem>.xbrl'."""
+    base = posixpath.basename(name)
+    m = _IXBRL_NAME_RE.match(base)
+    stem = m.group(1) if m else base[: -len("_ixbrl.htm")]
+    return stem + ".xbrl"
+
+
 def group_inline_documents(members: dict) -> dict:
-    """{directory: {file name: bytes}} from {path: bytes} of `*_ixbrl.htm` members."""
+    """{(directory, filing): {file name: bytes}} from {path: bytes} of `*_ixbrl.htm` members.
+    One group per filing: a directory may hold several (a fund and each of its series)."""
     groups: dict = {}
     for name, data in members.items():
-        groups.setdefault(posixpath.dirname(name), {})[posixpath.basename(name)] = data
+        key = (posixpath.dirname(name), filing_of(name))
+        groups.setdefault(key, {})[posixpath.basename(name)] = data
     return groups
 
 
 def read_inline_xbrl_package(zip_bytes: bytes, include_audit: bool = False) -> XbrlFacts:
-    """Facts from every inline XBRL document of an EDINET type=1 package (PublicDoc; AuditDoc
-    only with include_audit). Each directory is one filing; their facts are concatenated."""
+    """Facts from every inline XBRL filing of an EDINET type=1 package (PublicDoc; AuditDoc
+    only with include_audit). Each filing's documents are read as one set against its own
+    definitions (see XbrlFacts); the filings' facts are concatenated, each tagged `filing`."""
     groups = inline_documents_in_package(zip_bytes, include_audit=include_audit)
     if not groups:
         raise UnsupportedInlineXBRL("no inline XBRL (*_ixbrl.htm) in the package")
     merged = XbrlFacts()
-    for directory in sorted(groups):
-        part = read_inline_xbrl(groups[directory])
-        merged.facts.extend(_with_source(f, f"{directory}/{f.source_file}") for f in part.facts)
-        merge_definitions(merged, part, directory)
+    for directory, filing in sorted(groups):
+        part = read_inline_xbrl(groups[(directory, filing)])
+        part.facts = [_with_source(f, f"{directory}/{f.source_file}") for f in part.facts]
+        add_filing(merged, part, filing)
         merged.source_files.extend(f"{directory}/{n}" for n in part.source_files)
     return merged
-
-
-def merge_definitions(merged: XbrlFacts, part: XbrlFacts, where: str) -> None:
-    """Contexts, units and footnotes of `part` into `merged`, refusing conflicting ids."""
-    for k, v in part.contexts.items():
-        put_unique(merged.contexts, k, v, f"{where}: context")
-    for k, v in part.units.items():
-        put_unique(merged.units, k, v, f"{where}: unit")
-    for k, v in part.footnotes.items():
-        put_unique(merged.footnotes, k, v, f"{where}: footnote")
 
 
 def _with_source(fact: XbrlFact, source: str) -> XbrlFact:

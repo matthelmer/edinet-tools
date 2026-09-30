@@ -35,9 +35,18 @@ DOCS = {
     "S100YRDM": "350",
     "S100YD3H": "350",
     "S100YWE2": "160",
+    # three filings in one package (fund + two series), same context ids defined per filing
+    "S100YO5B": "040",
 }
 # Facts per package (PublicDoc), equal to the CSV's row count and the instance's.
-FACT_COUNTS = {"S100Y4NW": 121, "S100Y8GB": 275, "S100YRDM": 369, "S100YD3H": 369, "S100YWE2": 365}
+FACT_COUNTS = {
+    "S100Y4NW": 121,
+    "S100Y8GB": 275,
+    "S100YRDM": 369,
+    "S100YD3H": 369,
+    "S100YWE2": 365,
+    "S100YO5B": 261,
+}
 
 
 def type1(doc):
@@ -48,7 +57,10 @@ def type1(doc):
 
 
 def fact_key(f):
-    value = normalize_space(f.value) if f.html is not None else f.value
+    # a text section compares with whitespace removed; the instance cannot tell an unescaped
+    # text block from an escaped one, so a ...TextBlock counts as text on both sides
+    text = f.html is not None or "TextBlock" in f.element_id
+    value = normalize_space(f.value) if text else f.value
     return (f.element_id, f.context_id, f.unit_id, f.decimals, f.nil, value)
 
 
@@ -187,6 +199,7 @@ EXPECTED_DIFFS = {
     "S100YRDM": {"whitespace": 16},
     "S100YD3H": {"whitespace": 11},
     "S100YWE2": {"whitespace": 94},
+    "S100YO5B": {"whitespace": 207, "beyond_30000": 6},
 }
 
 

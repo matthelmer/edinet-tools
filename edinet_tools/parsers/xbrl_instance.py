@@ -8,7 +8,8 @@ and `value` is its plain text by the same rule as the inline reader (`html_to_te
 cannot tell a text block filed unescaped from an escaped one; for plain text the two rules give
 the same value (`plain_text_block_value`), and only `html` differs (None inline).
 A document with a DOCTYPE or ENTITY declaration is refused before parsing; package members are
-size-capped; contexts and units defined twice must be defined identically.
+size-capped. Definitions are scoped per instance file, one filing each (see XbrlFacts); defined
+twice inside one file, a context or unit must be defined identically.
 
 Tuples, and any root child other than a fact, a context, a unit, the schema reference, role
 references or a footnote link, raise `UnsupportedInlineXBRL`. Footnote links are not read (the
@@ -26,11 +27,12 @@ from ._xbrl_model import (
     XbrlFact,
     XbrlFacts,
     html_to_text,
+    add_filing,
     put_unique,
     read_package_members,
     refuse_dtd,
 )
-from .ixbrl import XBRLI, XSI, _is_audit, _local, merge_definitions, read_context, read_unit
+from .ixbrl import XBRLI, XSI, _is_audit, _local, read_context, read_unit
 
 __all__ = ["UnsupportedInlineXBRL", "read_instance", "read_instance_package"]
 
@@ -110,7 +112,6 @@ def read_instance_package(zip_bytes: bytes, include_audit: bool = False) -> Xbrl
     merged = XbrlFacts()
     for n in sorted(members):
         part = read_instance(members[n], name=posixpath.basename(n))
-        merged.facts.extend(part.facts)
-        merge_definitions(merged, part, n)
+        add_filing(merged, part, posixpath.basename(n))
         merged.source_files.append(n)
     return merged
