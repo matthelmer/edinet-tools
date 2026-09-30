@@ -25,3 +25,4 @@ dist/
 !README.md
 !CHANGELOG.md
 !MIGRATING.md
+!tests/fixtures/xbrl/*.zip

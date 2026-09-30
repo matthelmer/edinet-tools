@@ -1,0 +1,9 @@
+Real EDINET packages (public documents), downloaded 2026-09-30 from
+https://api.edinet-fsa.go.jp/api/v2/documents/<docID>?type=1 (the filing: inline XBRL + instance)
+and ?type=5 (EDINET's CSV conversion). Stored unmodified.
+
+S100Y4NW  Doc 240 tender offer registration (purpose section longer than the CSV's 30,000-character cut)
+S100Y8GB  Doc 350 joint 5% report, two holders, a trading table per holder
+S100YRDM  Doc 350 joint 5% report, three holders, holder 3 reports under Item 2 (discretionary accounts)
+S100YD3H  Doc 350 joint 5% report
+S100YWE2  Doc 160 semi-annual report (with AuditDoc)
