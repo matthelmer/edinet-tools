@@ -27,15 +27,17 @@ from .extraction import (
 )
 
 
-# The stock (株券又は投資証券等) lines of the holdings table, one per paragraph of
-# Article 27-23(3): 本文 (main clause), 第1号 and 第2号 (discretionary accounts).
-# shares_held is their sum; warrants and convertibles are other lines and are
-# only in total_held (TotalNumberOfStocksEtcHeld). Element IDs as filed
-# (S100YRDM, S100YD3H, S100Y8GB).
+# The stock (株券又は投資証券等) lines of the holdings table: every one the jplvh
+# taxonomy defines under Article 27-23(3) — 本文 (main clause), 第1号, 第2号
+# (discretionary accounts) and 第3号. shares_held is their sum; warrants and
+# convertibles are other lines and are only in total_held
+# (TotalNumberOfStocksEtcHeld). Checked against the element names the fixtures'
+# presentation and definition linkbases reference (tests pin the set).
 STOCK_LINE_ELEMENTS = (
     'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233MainClause',
     'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233Item1',
     'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233Item2',
+    'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233Item3',
 )
 
 # XBRL Element ID mappings for Doc 350 (Large Holding Reports)
@@ -117,7 +119,7 @@ class JointHolder:
     workplace_address: str | None = None
 
     # Ownership counts. shares_held counts SHARES only: the stock lines under 本文,
-    # 第1号 and 第2号 of §27-23 Para 3 summed (0.9.0; before, the 本文 line only, so
+    # 第1号, 第2号 and 第3号 of §27-23 Para 3 summed (0.9.0; before, the 本文 line only, so
     # a holder reporting under 第2号 — discretionary accounts — read None). None when
     # no stock line is filed. Warrants and convertible bonds are the 本文 lines.
     shares_held: int | None = None
@@ -154,7 +156,7 @@ class LargeHoldingReport(ParsedReport):
     target_ticker: str | None = None
     listed_or_otc: str | None = None
 
-    # Ownership. shares_held: the group's shares (stock lines 本文 + 第1号 + 第2号;
+    # Ownership. shares_held: the group's shares (every stock line, 本文 + 第1-3号;
     # 0.9.0 — before, TotalNumberOfStocksEtcHeld). total_held: the group's
     # 保有株券等の数（総数）, potential shares included (0.9.0).
     shares_held: int | None = None

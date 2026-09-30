@@ -147,3 +147,42 @@ def test_s100y8gb_trading_table_cells_are_separated(source):
 def test_joint_holders_stay_hashable():
     r = parsed("S100Y8GB", "csv")
     assert len({h for h in r.joint_holders}) == 2
+
+
+def test_stock_lines_are_every_one_the_filings_taxonomy_defines():
+    """STOCK_LINE_ELEMENTS equals the set of StocksOrInvestmentSecuritiesEtc Article 27-23(3)
+    elements the fixtures' presentation and definition linkbases reference (edinet-tools
+    ships no jplvh taxonomy data to check against)."""
+    import re
+    import zipfile
+
+    from edinet_tools.parsers.large_holding import STOCK_LINE_ELEMENTS
+
+    found = set()
+    for p in FIXTURES.glob("*_type1.zip"):
+        with zipfile.ZipFile(p) as z:
+            for n in z.namelist():
+                if n.endswith(("_pre.xml", "_def.xml")):
+                    found |= set(
+                        re.findall(
+                            r"StocksOrInvestmentSecuritiesEtcArticle27233\w+",
+                            z.read(n).decode("utf-8"),
+                        )
+                    )
+    assert found == {e.split(":")[1] for e in STOCK_LINE_ELEMENTS}
+    assert len(found) == 4
+
+
+def test_item_3_stock_is_counted_in_shares_held():
+    r = _lh(
+        [
+            (STOCK + "MainClause", H1, "1000"),
+            (STOCK + "Item3", H1, "250"),
+            (TOTAL, H1, "1250"),
+            (STOCK + "MainClause", "FilingDateInstant", "1000"),
+            (STOCK + "Item3", "FilingDateInstant", "250"),
+            (TOTAL, "FilingDateInstant", "1250"),
+        ]
+    )
+    assert (r.joint_holders[0].shares_held, r.joint_holders[0].total_held) == (1250, 1250)
+    assert (r.shares_held, r.total_held) == (1250, 1250)
