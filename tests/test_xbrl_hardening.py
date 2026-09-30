@@ -206,3 +206,112 @@ def test_source_vocabulary():
     assert parse_xbrl(pkg, "350", source="ixbrl").shares_held == 10709600
     with pytest.raises(ValueError, match="source"):
         parse_xbrl(pkg, "350", source="csv")
+
+
+# re-review: a forged zip header cannot bypass the size caps
+
+
+def _forged_zip(real_size: int, claimed_size: int, name="XBRL/PublicDoc/x_ixbrl.htm") -> bytes:
+    """A zip whose one member inflates to real_size bytes but whose headers claim claimed_size."""
+    import struct
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        with zf.open(name, "w", force_zip64=False) as w:
+            chunk = b"\0" * (1 << 20)
+            for _ in range(real_size >> 20):
+                w.write(chunk)
+    data = bytearray(buf.getvalue())
+    # local header: uncompressed size at offset 22
+    assert data[:4] == b"PK\x03\x04"
+    struct.pack_into("<I", data, 22, claimed_size)
+    # central directory entry: uncompressed size at offset 24
+    cd = data.rfind(b"PK\x01\x02")
+    struct.pack_into("<I", data, cd + 24, claimed_size)
+    return bytes(data)
+
+
+def test_forged_file_size_cannot_inflate_past_the_cap(monkeypatch):
+    """300 MB of zeros (~300 KB compressed) claiming 10 bytes: refused, reading only what the
+    header claims plus at most one bounded chunk, never the whole stream."""
+    pkg = _forged_zip(300 << 20, 10)
+    assert len(pkg) < 1 << 20
+    reads = []
+    real_open = zipfile.ZipFile.open
+
+    def counting_open(self, *a, **kw):
+        f = real_open(self, *a, **kw)
+        real_read = f.read
+
+        def read(n=-1):
+            assert n is not None and 0 < n <= _xbrl_model.READ_CHUNK_BYTES, n
+            out = real_read(n)
+            reads.append(len(out))
+            return out
+
+        f.read = read
+        return f
+
+    monkeypatch.setattr(zipfile.ZipFile, "open", counting_open)
+    with pytest.raises(UnsupportedInlineXBRL, match="corrupt|too large"):
+        read_inline_xbrl_package(pkg)
+    assert sum(reads) <= _xbrl_model.READ_CHUNK_BYTES + 10
+
+
+def test_bytes_that_arrive_count_against_the_member_cap(monkeypatch):
+    """Caps apply to bytes actually inflated, not only to the declared size."""
+    monkeypatch.setattr(_xbrl_model, "MAX_MEMBER_BYTES", 3 << 20)
+    pkg = _forged_zip(8 << 20, 2 << 20)  # claims 2 MB (under the cap), inflates to 8 MB
+    with pytest.raises(UnsupportedInlineXBRL, match="corrupt|too large"):
+        read_inline_xbrl_package(pkg)
+
+
+def test_forged_zip_peak_memory_stays_small():
+    """Run in a fresh process and bound its peak RSS."""
+    import subprocess
+    import sys
+    import textwrap
+
+    code = textwrap.dedent("""
+        import resource, sys
+        from tests.test_xbrl_hardening import _forged_zip
+        from edinet_tools.parsers.ixbrl import read_inline_xbrl_package, UnsupportedInlineXBRL
+        pkg = _forged_zip(300 << 20, 10)
+        before = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        try:
+            read_inline_xbrl_package(pkg)
+        except UnsupportedInlineXBRL:
+            pass
+        after = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        scale = 1 if sys.platform == "darwin" else 1024  # bytes on macOS, KB on Linux
+        print((after - before) * scale)
+        """)
+    root = Path(__file__).parent.parent
+    out = subprocess.run(
+        [sys.executable, "-c", code], cwd=root, capture_output=True, text=True, check=True
+    )
+    grew = int(out.stdout.strip().splitlines()[-1])
+    assert grew < 64 << 20, grew
+
+
+def test_a_corrupt_member_raises_a_clear_error():
+    pkg = bytearray(_package({"XBRL/PublicDoc/0101010_honbun_x_ixbrl.htm": ixdoc("") * 50}))
+    # flip bytes inside the stored/deflated data to break the CRC
+    i = pkg.find(b"<html") if b"<html" in pkg else 200
+    end = i + 5
+    pkg[i:end] = b"XXXXX"
+    with pytest.raises(UnsupportedInlineXBRL, match="corrupt"):
+        read_inline_xbrl_package(bytes(pkg))
+
+
+# re-review: UTF-16 without a BOM
+
+
+@pytest.mark.parametrize("codec", ["utf-16-le", "utf-16-be"])
+def test_utf16_without_bom_carrying_a_dtd_is_refused(codec):
+    data = '<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE x [<!ENTITY a "b">]><x/>'.encode(codec)
+    assert data[:2] not in (b"\xff\xfe", b"\xfe\xff")
+    with pytest.raises(UnsupportedInlineXBRL, match="DOCTYPE|ENTITY"):
+        read_inline_xbrl({"a_ixbrl.htm": data})
+    with pytest.raises(UnsupportedInlineXBRL, match="DOCTYPE|ENTITY"):
+        read_instance(data)

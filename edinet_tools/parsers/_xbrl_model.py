@@ -16,6 +16,7 @@ import html
 import io
 import re
 import zipfile
+import zlib
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from typing import Optional
@@ -190,10 +191,13 @@ def normalize_source(source: str) -> str:
 
 # --- safety ------------------------------------------------------------------------------------
 
-# Uncompressed-size caps for what a reader takes out of a package, checked on each member's
-# ZipInfo.file_size before it is read (zipfile never inflates past that size).
+# Uncompressed-size caps for what a reader takes out of a package. A member's declared
+# ZipInfo.file_size is checked first, but a forged header can lie, so every member is also
+# read through zf.open() in READ_CHUNK_BYTES pieces and the bytes that actually arrive are
+# counted against both caps; nothing is inflated beyond one chunk past a cap.
 MAX_MEMBER_BYTES = 200 * 1024 * 1024
 MAX_TOTAL_BYTES = 1024 * 1024 * 1024
+READ_CHUNK_BYTES = 1024 * 1024
 
 _DTD_RE = re.compile(rb"<!\s*(DOCTYPE|ENTITY)", re.IGNORECASE)
 
@@ -204,6 +208,10 @@ def refuse_dtd(data: bytes, name: str) -> None:
     candidates = [data]
     if data[:2] in (b"\xff\xfe", b"\xfe\xff"):
         candidates.append(data.decode("utf-16", errors="replace").encode("utf-8"))
+    if b"\x00" in data:
+        # UTF-16 (or UTF-32) without a BOM, which expat detects on its own: the ASCII of a
+        # declaration survives with its NUL bytes removed.
+        candidates.append(data.replace(b"\x00", b""))
     for c in candidates:
         m = _DTD_RE.search(c)
         if m:
@@ -211,10 +219,41 @@ def refuse_dtd(data: bytes, name: str) -> None:
             raise UnsupportedInlineXBRL(f"{name}: a {kind} declaration is refused")
 
 
+def _read_capped(zf: zipfile.ZipFile, info: zipfile.ZipInfo, budget: list) -> bytes:
+    """One member, read in bounded chunks; budget[0] is what the package may still inflate."""
+    parts = []
+    size = 0
+    try:
+        with zf.open(info) as f:
+            while True:
+                chunk = f.read(READ_CHUNK_BYTES)
+                if not chunk:
+                    break
+                size += len(chunk)
+                budget[0] -= len(chunk)
+                if size > MAX_MEMBER_BYTES:
+                    raise UnsupportedInlineXBRL(
+                        f"{info.filename}: too large (over {MAX_MEMBER_BYTES} bytes uncompressed)"
+                    )
+                if budget[0] < 0:
+                    raise UnsupportedInlineXBRL(
+                        f"package too large (over {MAX_TOTAL_BYTES} bytes uncompressed)"
+                    )
+                parts.append(chunk)
+    except (zipfile.BadZipFile, zlib.error, EOFError, OSError) as e:
+        raise UnsupportedInlineXBRL(f"{info.filename}: corrupt zip member ({e})") from None
+    return b"".join(parts)
+
+
 def read_package_members(zip_bytes: bytes, wanted) -> tuple:
-    """(namelist, {name: bytes}) for the members `wanted(name)` selects, opening the zip once
-    and enforcing MAX_MEMBER_BYTES / MAX_TOTAL_BYTES before reading anything."""
-    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+    """(namelist, {name: bytes}) for the members `wanted(name)` selects, opening the zip once.
+    Declared sizes are checked against MAX_MEMBER_BYTES / MAX_TOTAL_BYTES before anything is
+    read, and the bytes that actually arrive are counted against both as they are read."""
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(zip_bytes))
+    except zipfile.BadZipFile as e:
+        raise UnsupportedInlineXBRL(f"not a readable zip ({e})") from None
+    with zf:
         infos = [i for i in zf.infolist() if "__MACOSX" not in i.filename and wanted(i.filename)]
         total = 0
         for info in infos:
@@ -228,7 +267,8 @@ def read_package_members(zip_bytes: bytes, wanted) -> tuple:
             raise UnsupportedInlineXBRL(
                 f"package too large ({total} bytes uncompressed; limit {MAX_TOTAL_BYTES})"
             )
-        return zf.namelist(), {i.filename: zf.read(i) for i in infos}
+        budget = [MAX_TOTAL_BYTES]
+        return zf.namelist(), {i.filename: _read_capped(zf, i, budget) for i in infos}
 
 
 def put_unique(mapping: dict, key, value, what: str) -> None:
