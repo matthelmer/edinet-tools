@@ -27,12 +27,18 @@ from .extraction import (
 )
 
 
-# The stock (株券又は投資証券等) lines of the holdings table: every one the jplvh
-# taxonomy defines under Article 27-23(3) — 本文 (main clause), 第1号, 第2号
-# (discretionary accounts) and 第3号. shares_held is their sum; warrants and
-# convertibles are other lines and are only in total_held
-# (TotalNumberOfStocksEtcHeld). Checked against the element names the fixtures'
-# presentation and definition linkbases reference (tests pin the set).
+# The 株券又は投資証券等 (stock or investment securities) lines of the holdings
+# table: every one the jplvh taxonomy defines under Article 27-23(3) — 本文 (main
+# clause), 第1号, 第2号 (discretionary accounts) and 第3号. stock_lines_held is
+# their sum BEFORE any deduction. The other security lines (株券預託証券,
+# 株券信託受益証券, warrants, convertibles, ...) are not included. Checked against
+# the element names the fixtures' presentation and definition linkbases reference
+# (tests pin the set).
+#
+# shares_held is not derived from these: it is the filing's own 保有株券等の数（総数）
+# (TotalNumberOfStocksEtcHeld) = the gross holding across every security line,
+# less shares sold on margin (NumberOfStocksEtcToDeductAsSoldOnMarginTrading), less
+# shares counted twice between joint holders. Neither figure bounds the other.
 STOCK_LINE_ELEMENTS = (
     'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233MainClause',
     'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233Item1',
@@ -60,9 +66,9 @@ ELEMENT_MAP = {
     'target_ticker': 'jplvh_cor:SecurityCodeOfIssuer',
 
     # Ownership Data
-    # 保有株券等の数（総数）: every security, potential shares included. shares_held
-    # (stock only) is the sum of STOCK_LINE_ELEMENTS, see _stock_sum.
-    'total_held': 'jplvh_cor:TotalNumberOfStocksEtcHeld',
+    # 保有株券等の数（総数）: the gross holding less margin-sale and joint-holder
+    # deductions, as filed (see STOCK_LINE_ELEMENTS above).
+    'shares_held': 'jplvh_cor:TotalNumberOfStocksEtcHeld',
     'ownership_pct': 'jplvh_cor:HoldingRatioOfShareCertificatesEtc',
     'prior_ownership_pct': 'jplvh_cor:HoldingRatioOfShareCertificatesEtcPerLastReport',
     'shares_outstanding': 'jplvh_cor:TotalNumberOfOutstandingStocksEtc',
@@ -118,17 +124,20 @@ class JointHolder:
     workplace_name: str | None = None
     workplace_address: str | None = None
 
-    # Ownership counts. shares_held counts SHARES only: the stock lines under 本文,
-    # 第1号, 第2号 and 第3号 of §27-23 Para 3 summed (0.9.0; before, the 本文 line only, so
-    # a holder reporting under 第2号 — discretionary accounts — read None). None when
-    # no stock line is filed. Warrants and convertible bonds are the 本文 lines.
+    # Ownership counts. shares_held is the holder's 保有株券等の数（総数）
+    # (TotalNumberOfStocksEtcHeld) in its own context, as filed: the gross holding
+    # across every security line, less shares sold on margin, less shares counted twice
+    # between joint holders (0.9.0; before, the 本文 stock line only, so a holder
+    # reporting under 第2号 — discretionary accounts — read None). Warrants and
+    # convertible bonds are their 本文 lines.
     shares_held: int | None = None
     warrants_held: int | None = None
     convertible_bonds_held: int | None = None
 
-    # 保有株券等の数（総数） (TotalNumberOfStocksEtcHeld, 0.9.0): every security the
-    # holder counts, potential shares (warrants, convertibles) included.
-    total_held: int | None = None
+    # The holder's 株券又は投資証券等 lines (本文, 第1号, 第2号, 第3号) summed, BEFORE the
+    # margin-sale and joint-holder deductions; other security lines (株券預託証券 etc.)
+    # are not included. None when no such line is filed (0.9.0).
+    stock_lines_held: int | None = None
 
     # The holder's own text sections (key -> text), e.g. its 60-day trading table (0.9.0).
     # Excluded from hashing and equality so JointHolder stays hashable.
@@ -156,15 +165,17 @@ class LargeHoldingReport(ParsedReport):
     target_ticker: str | None = None
     listed_or_otc: str | None = None
 
-    # Ownership. shares_held: the group's shares (every stock line, 本文 + 第1-3号;
-    # 0.9.0 — before, TotalNumberOfStocksEtcHeld). total_held: the group's
-    # 保有株券等の数（総数）, potential shares included (0.9.0).
+    # Ownership. shares_held: the group's 保有株券等の数（総数） as filed
+    # (TotalNumberOfStocksEtcHeld): the gross holding less margin-sale and
+    # joint-holder deductions. stock_lines_held (0.9.0): the group's
+    # 株券又は投資証券等 lines summed before those deductions; other security lines
+    # are not included.
     shares_held: int | None = None
     ownership_pct: Decimal | None = None
     prior_ownership_pct: Decimal | None = None
     ownership_change: Decimal | None = None
     shares_outstanding: int | None = None
-    total_held: int | None = None
+    stock_lines_held: int | None = None
 
     # Intent (raw text, no interpretation)
     purpose: str | None = None
@@ -355,8 +366,8 @@ def _sum_or_none(values) -> int | None:
     return sum(present) if present else None
 
 
-def _group_shares(csv_files: list) -> int | None:
-    """The group's shares: each stock line read by `_group_value`'s tiers, summed.
+def _group_stock_lines(csv_files: list) -> int | None:
+    """The group's stock lines before deductions: each read by `_group_value`'s tiers, summed.
     None when no stock line is filed, and None (never a partial sum) when a line
     has a number on some row but no group figure could be read for it."""
     parts = []
@@ -445,7 +456,7 @@ _HOLDER_FIELDS: dict[str, tuple[tuple[str, ...], type]] = {
     'representative_title': (('jplvh_cor:JobTitleOfRepresentative',), str),
     'workplace_name': (('jplvh_cor:NameOfEmployer',), str),
     'workplace_address': (('jplvh_cor:AddressOfEmployer',), str),
-    'total_held': (('jplvh_cor:TotalNumberOfStocksEtcHeld',), int),
+    'shares_held': (('jplvh_cor:TotalNumberOfStocksEtcHeld',), int),
     'warrants_held': (('jplvh_cor:SubscriptionRightsToSharesArticle27233MainClause',), int),
     'convertible_bonds_held': (('jplvh_cor:ConvertibleBondsArticle27233MainClause',), int),
 }
@@ -551,7 +562,7 @@ def _extract_joint_holders(csv_files: list, by_context: dict | None = None) -> l
                 if value is not None:
                     fields[attr] = value
                     break
-        fields['shares_held'] = _sum_or_none(
+        fields['stock_lines_held'] = _sum_or_none(
             _normalize_holder_value(raw[key].get(e), int) for e in STOCK_LINE_ELEMENTS
         )
         blocks: dict[str, str] = {}
@@ -664,8 +675,8 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
         listed_or_otc=get('listed_or_otc'),
 
         # Ownership
-        shares_held=_group_shares(csv_files),
-        total_held=parse_int(_group_value(csv_files, 'total_held')),
+        shares_held=parse_int(_group_value(csv_files, 'shares_held')),
+        stock_lines_held=_group_stock_lines(csv_files),
         ownership_pct=ownership_pct,
         prior_ownership_pct=prior_ownership_pct,
         ownership_change=ownership_change,

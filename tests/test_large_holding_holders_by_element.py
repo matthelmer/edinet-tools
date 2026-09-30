@@ -36,10 +36,11 @@ SOURCES = ["csv", "ixbrl", "instance"]
 def test_s100yrdm_three_share_counts_including_dalton_under_item_2(source):
     r = parsed("S100YRDM", source)
     assert [h.shares_held for h in r.joint_holders] == [3269300, 1250000, 6190300]
-    assert sum(h.shares_held for h in r.joint_holders) == r.shares_held == 10709600
-    # all three hold only stock: shares equal the 総数 total
-    assert [h.total_held for h in r.joint_holders] == [3269300, 1250000, 6190300]
-    assert r.total_held == 10709600
+    # the group figure is the filing's own 総数 row, not a sum
+    assert r.shares_held == 10709600
+    # no deductions on this filing: the stock lines before deductions equal 総数
+    assert [h.stock_lines_held for h in r.joint_holders] == [3269300, 1250000, 6190300]
+    assert r.stock_lines_held == 10709600
     assert (
         r.joint_holders[2].name_jp
         == "ダルトン・インベストメンツ・インク（Dalton Investments, Inc.）"
@@ -82,36 +83,50 @@ def test_holder_fields_are_keyed_by_element_not_item_name():
     assert (h.name_jp, h.edinet_code, h.warrants_held) == ("甲株式会社", "E1", 200)
 
 
-def test_shares_held_counts_stock_only_and_total_held_includes_warrants():
-    """shares_held is the stock lines (本文 + 第1号 + 第2号); total_held is 総数, which
-    includes potential shares (warrants, convertibles)."""
+MARGIN = "jplvh_cor:NumberOfStocksEtcToDeductAsSoldOnMarginTrading"
+
+
+def test_shares_held_is_the_filed_total_after_a_margin_sale_deduction():
+    """shares_held is 総数 as filed (TotalNumberOfStocksEtcHeld): the gross holding less
+    shares sold on margin and less shares counted twice between joint holders.
+    stock_lines_held is the stock lines before any deduction."""
     r = _lh(
         [
             (STOCK + "MainClause", H1, "1000"),
-            (STOCK + "Item1", H1, "－"),
             (STOCK + "Item2", H1, "300"),
-            (WARRANTS_MAIN, H1, "200"),
-            (TOTAL, H1, "1500"),
+            (MARGIN, H1, "100"),
+            (TOTAL, H1, "1200"),
             (STOCK + "MainClause", H2, "400"),
             (TOTAL, H2, "400"),
-            # group (un-dimensioned) rows
             (STOCK + "MainClause", "FilingDateInstant", "1400"),
             (STOCK + "Item2", "FilingDateInstant", "300"),
-            (TOTAL, "FilingDateInstant", "1900"),
+            (MARGIN, "FilingDateInstant", "100"),
+            (TOTAL, "FilingDateInstant", "1600"),
         ]
     )
     h1, h2 = r.joint_holders
-    assert (h1.shares_held, h1.total_held, h1.warrants_held) == (1300, 1500, 200)
-    assert h1.shares_held < h1.total_held
-    assert (h2.shares_held, h2.total_held) == (400, 400)
-    assert (r.shares_held, r.total_held) == (1700, 1900)
+    assert (h1.shares_held, h1.stock_lines_held) == (1200, 1300)
+    assert h1.stock_lines_held > h1.shares_held
+    assert (h2.shares_held, h2.stock_lines_held) == (400, 400)
+    assert (r.shares_held, r.stock_lines_held) == (1600, 1700)
 
 
-def test_shares_held_is_none_when_no_stock_line_is_filed():
-    """No stock line, no share count: the total is never used in its place."""
+def test_stock_lines_held_is_none_when_no_stock_line_is_filed():
     r = _lh([(TOTAL, H1, "1200")])
-    assert r.joint_holders[0].shares_held is None and r.joint_holders[0].total_held == 1200
-    assert r.shares_held is None and r.total_held == 1200
+    assert r.joint_holders[0].shares_held == 1200 and r.joint_holders[0].stock_lines_held is None
+    assert r.shares_held == 1200 and r.stock_lines_held is None
+
+
+@pytest.mark.parametrize("doc", ["S100YRDM", "S100YD3H", "S100Y8GB"])
+@pytest.mark.parametrize("source", SOURCES)
+def test_group_shares_held_is_the_filings_own_total(doc, source):
+    r = parsed(doc, source)
+    filed = {
+        f.value
+        for f in r.raw_facts
+        if f.element_id == TOTAL and f.context_id == "FilingDateInstant"
+    }
+    assert filed == {str(r.shares_held)}
 
 
 def test_japanese_dei_name_is_preferred_over_the_plain_name_row():
@@ -173,7 +188,7 @@ def test_stock_lines_are_every_one_the_filings_taxonomy_defines():
     assert len(found) == 4
 
 
-def test_item_3_stock_is_counted_in_shares_held():
+def test_item_3_stock_is_counted_in_stock_lines_held():
     r = _lh(
         [
             (STOCK + "MainClause", H1, "1000"),
@@ -184,5 +199,5 @@ def test_item_3_stock_is_counted_in_shares_held():
             (TOTAL, "FilingDateInstant", "1250"),
         ]
     )
-    assert (r.joint_holders[0].shares_held, r.joint_holders[0].total_held) == (1250, 1250)
-    assert (r.shares_held, r.total_held) == (1250, 1250)
+    assert (r.joint_holders[0].stock_lines_held, r.joint_holders[0].shares_held) == (1250, 1250)
+    assert (r.stock_lines_held, r.shares_held) == (1250, 1250)
