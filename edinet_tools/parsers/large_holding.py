@@ -27,6 +27,17 @@ from .extraction import (
 )
 
 
+# The stock (株券又は投資証券等) lines of the holdings table, one per paragraph of
+# Article 27-23(3): 本文 (main clause), 第1号 and 第2号 (discretionary accounts).
+# shares_held is their sum; warrants and convertibles are other lines and are
+# only in total_held (TotalNumberOfStocksEtcHeld). Element IDs as filed
+# (S100YRDM, S100YD3H, S100Y8GB).
+STOCK_LINE_ELEMENTS = (
+    'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233MainClause',
+    'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233Item1',
+    'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233Item2',
+)
+
 # XBRL Element ID mappings for Doc 350 (Large Holding Reports)
 # Validated against jplvh_cor taxonomy
 ELEMENT_MAP = {
@@ -47,7 +58,9 @@ ELEMENT_MAP = {
     'target_ticker': 'jplvh_cor:SecurityCodeOfIssuer',
 
     # Ownership Data
-    'shares_held': 'jplvh_cor:TotalNumberOfStocksEtcHeld',
+    # 保有株券等の数（総数）: every security, potential shares included. shares_held
+    # (stock only) is the sum of STOCK_LINE_ELEMENTS, see _stock_sum.
+    'total_held': 'jplvh_cor:TotalNumberOfStocksEtcHeld',
     'ownership_pct': 'jplvh_cor:HoldingRatioOfShareCertificatesEtc',
     'prior_ownership_pct': 'jplvh_cor:HoldingRatioOfShareCertificatesEtcPerLastReport',
     'shares_outstanding': 'jplvh_cor:TotalNumberOfOutstandingStocksEtc',
@@ -103,14 +116,17 @@ class JointHolder:
     workplace_name: str | None = None
     workplace_address: str | None = None
 
-    # Ownership counts. shares_held is the holder's 保有株券等の数（総数）
-    # (TotalNumberOfStocksEtcHeld, 0.9.0): every clause of §27-23 Para 3 (本文 and
-    # Items 1-3), so a holder reporting under Item 2 (discretionary accounts) is no
-    # longer None. Before 0.9.0 it was the 本文 share line only. Warrants and
-    # convertible bonds stay the 本文 lines.
+    # Ownership counts. shares_held counts SHARES only: the stock lines under 本文,
+    # 第1号 and 第2号 of §27-23 Para 3 summed (0.9.0; before, the 本文 line only, so
+    # a holder reporting under 第2号 — discretionary accounts — read None). None when
+    # no stock line is filed. Warrants and convertible bonds are the 本文 lines.
     shares_held: int | None = None
     warrants_held: int | None = None
     convertible_bonds_held: int | None = None
+
+    # 保有株券等の数（総数） (TotalNumberOfStocksEtcHeld, 0.9.0): every security the
+    # holder counts, potential shares (warrants, convertibles) included.
+    total_held: int | None = None
 
     # The holder's own text sections (key -> text), e.g. its 60-day trading table (0.9.0).
     # Excluded from hashing and equality so JointHolder stays hashable.
@@ -138,12 +154,15 @@ class LargeHoldingReport(ParsedReport):
     target_ticker: str | None = None
     listed_or_otc: str | None = None
 
-    # Ownership
+    # Ownership. shares_held: the group's shares (stock lines 本文 + 第1号 + 第2号;
+    # 0.9.0 — before, TotalNumberOfStocksEtcHeld). total_held: the group's
+    # 保有株券等の数（総数）, potential shares included (0.9.0).
     shares_held: int | None = None
     ownership_pct: Decimal | None = None
     prior_ownership_pct: Decimal | None = None
     ownership_change: Decimal | None = None
     shares_outstanding: int | None = None
+    total_held: int | None = None
 
     # Intent (raw text, no interpretation)
     purpose: str | None = None
@@ -295,7 +314,7 @@ def _all_holders_zero(csv_files: list, element_id: str) -> str | None:
         return None
 
 
-def _group_value(csv_files: list, key: str) -> str | None:
+def _group_value(csv_files: list, key: str, element_id: str | None = None) -> str | None:
     """A holding figure for the whole group.
 
     Tier 1: the un-dimensioned (total) row. Tier 2, single-filer filings only:
@@ -313,7 +332,7 @@ def _group_value(csv_files: list, key: str) -> str | None:
     joint filing (375 of 400 sampled filings since 2024 disagreed with the
     filed total-context prior).
     """
-    element_id = ELEMENT_MAP[key]
+    element_id = element_id or ELEMENT_MAP[key]
     v = _first_value(csv_files, element_id, _is_total_context)
     if v is not _ABSENT:
         return v
@@ -327,6 +346,28 @@ def _group_value(csv_files: list, key: str) -> str | None:
         if v is not _ABSENT:
             return v
     return extract_value(csv_files, element_id)
+
+
+def _sum_or_none(values) -> int | None:
+    present = [v for v in values if v is not None]
+    return sum(present) if present else None
+
+
+def _group_shares(csv_files: list) -> int | None:
+    """The group's shares: each stock line read by `_group_value`'s tiers, summed.
+    None when no stock line is filed, and None (never a partial sum) when a line
+    has a number on some row but no group figure could be read for it."""
+    parts = []
+    for element_id in STOCK_LINE_ELEMENTS:
+        v = parse_int(_group_value(csv_files, None, element_id))
+        if v is None and any(
+            parse_int(row.get('値')) is not None
+            for f in csv_files or [] for row in f.get('data', []) or []
+            if row.get('要素ID') == element_id
+        ):
+            return None
+        parts.append(v)
+    return _sum_or_none(parts)
 
 
 def _primary_holder_value(csv_files: list, key: str) -> str | None:
@@ -402,11 +443,13 @@ _HOLDER_FIELDS: dict[str, tuple[tuple[str, ...], type]] = {
     'representative_title': (('jplvh_cor:JobTitleOfRepresentative',), str),
     'workplace_name': (('jplvh_cor:NameOfEmployer',), str),
     'workplace_address': (('jplvh_cor:AddressOfEmployer',), str),
-    'shares_held': (('jplvh_cor:TotalNumberOfStocksEtcHeld',), int),
+    'total_held': (('jplvh_cor:TotalNumberOfStocksEtcHeld',), int),
     'warrants_held': (('jplvh_cor:SubscriptionRightsToSharesArticle27233MainClause',), int),
     'convertible_bonds_held': (('jplvh_cor:ConvertibleBondsArticle27233MainClause',), int),
 }
-_HOLDER_ELEMENTS = frozenset(e for elements, _t in _HOLDER_FIELDS.values() for e in elements)
+_HOLDER_ELEMENTS = frozenset(
+    [e for elements, _t in _HOLDER_FIELDS.values() for e in elements] + list(STOCK_LINE_ELEMENTS)
+)
 
 # Japanese null markers used in Doc 350 holder rows.
 # Superset of extraction.py's `_NUMERIC_NULL_PLACEHOLDERS` for the dash family;
@@ -506,6 +549,9 @@ def _extract_joint_holders(csv_files: list, by_context: dict | None = None) -> l
                 if value is not None:
                     fields[attr] = value
                     break
+        fields['shares_held'] = _sum_or_none(
+            _normalize_holder_value(raw[key].get(e), int) for e in STOCK_LINE_ELEMENTS
+        )
         blocks: dict[str, str] = {}
         for ctx in contexts[key]:
             for k, v in by_context.get(ctx, {}).items():
@@ -616,7 +662,8 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
         listed_or_otc=get('listed_or_otc'),
 
         # Ownership
-        shares_held=parse_int(_group_value(csv_files, 'shares_held')),
+        shares_held=_group_shares(csv_files),
+        total_held=parse_int(_group_value(csv_files, 'total_held')),
         ownership_pct=ownership_pct,
         prior_ownership_pct=prior_ownership_pct,
         ownership_change=ownership_change,

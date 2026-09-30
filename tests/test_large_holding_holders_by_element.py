@@ -37,6 +37,9 @@ def test_s100yrdm_three_share_counts_including_dalton_under_item_2(source):
     r = parsed("S100YRDM", source)
     assert [h.shares_held for h in r.joint_holders] == [3269300, 1250000, 6190300]
     assert sum(h.shares_held for h in r.joint_holders) == r.shares_held == 10709600
+    # all three hold only stock: shares equal the 総数 total
+    assert [h.total_held for h in r.joint_holders] == [3269300, 1250000, 6190300]
+    assert r.total_held == 10709600
     assert (
         r.joint_holders[2].name_jp
         == "ダルトン・インベストメンツ・インク（Dalton Investments, Inc.）"
@@ -50,35 +53,65 @@ def test_s100yd3h_dalton_share_count(source):
     assert all(h.shares_held is not None for h in r.joint_holders)
 
 
+H1 = "FilingDateInstant_jplvh010000-lvh_E99999-000FilerLargeVolumeHolder1Member"
+H2 = "FilingDateInstant_jplvh010000-lvh_E99999-000FilerLargeVolumeHolder2Member"
+STOCK = "jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233"
+WARRANTS_MAIN = "jplvh_cor:SubscriptionRightsToSharesArticle27233MainClause"
+TOTAL = "jplvh_cor:TotalNumberOfStocksEtcHeld"
+
+
+def _lh(rows):
+    data = [{"要素ID": e, "項目名": "", "コンテキストID": c, "値": v} for e, c, v in rows]
+    return parse_large_holding(
+        csv_files=[{"filename": "x", "data": data}], doc_id="X", doc_type_code="350"
+    )
+
+
 def test_holder_fields_are_keyed_by_element_not_item_name():
     """The XBRL rows carry no item name; the holder parser must not need one."""
-    ctx = "FilingDateInstant_jplvh010000-lvh_E99999-000FilerLargeVolumeHolder1Member"
-    rows = [
-        {"要素ID": "jplvh_cor:Name", "項目名": "", "コンテキストID": ctx, "値": "甲株式会社"},
-        {"要素ID": "jplvh_cor:EDINETCodeDEI", "項目名": "", "コンテキストID": ctx, "値": "E1"},
-        {
-            "要素ID": "jplvh_cor:TotalNumberOfStocksEtcHeld",
-            "項目名": "",
-            "コンテキストID": ctx,
-            "値": "1200",
-        },
-        {
-            "要素ID": "jplvh_cor:SubscriptionRightsToSharesArticle27233MainClause",
-            "項目名": "",
-            "コンテキストID": ctx,
-            "値": "200",
-        },
-    ]
-    r = parse_large_holding(
-        csv_files=[{"filename": "x", "data": rows}], doc_id="X", doc_type_code="350"
+    r = _lh(
+        [
+            ("jplvh_cor:Name", H1, "甲株式会社"),
+            ("jplvh_cor:EDINETCodeDEI", H1, "E1"),
+            (STOCK + "MainClause", H1, "1000"),
+            (WARRANTS_MAIN, H1, "200"),
+            (TOTAL, H1, "1200"),
+        ]
     )
     (h,) = r.joint_holders
-    assert (h.name_jp, h.edinet_code, h.shares_held, h.warrants_held) == (
-        "甲株式会社",
-        "E1",
-        1200,
-        200,
+    assert (h.name_jp, h.edinet_code, h.warrants_held) == ("甲株式会社", "E1", 200)
+
+
+def test_shares_held_counts_stock_only_and_total_held_includes_warrants():
+    """shares_held is the stock lines (本文 + 第1号 + 第2号); total_held is 総数, which
+    includes potential shares (warrants, convertibles)."""
+    r = _lh(
+        [
+            (STOCK + "MainClause", H1, "1000"),
+            (STOCK + "Item1", H1, "－"),
+            (STOCK + "Item2", H1, "300"),
+            (WARRANTS_MAIN, H1, "200"),
+            (TOTAL, H1, "1500"),
+            (STOCK + "MainClause", H2, "400"),
+            (TOTAL, H2, "400"),
+            # group (un-dimensioned) rows
+            (STOCK + "MainClause", "FilingDateInstant", "1400"),
+            (STOCK + "Item2", "FilingDateInstant", "300"),
+            (TOTAL, "FilingDateInstant", "1900"),
+        ]
     )
+    h1, h2 = r.joint_holders
+    assert (h1.shares_held, h1.total_held, h1.warrants_held) == (1300, 1500, 200)
+    assert h1.shares_held < h1.total_held
+    assert (h2.shares_held, h2.total_held) == (400, 400)
+    assert (r.shares_held, r.total_held) == (1700, 1900)
+
+
+def test_shares_held_is_none_when_no_stock_line_is_filed():
+    """No stock line, no share count: the total is never used in its place."""
+    r = _lh([(TOTAL, H1, "1200")])
+    assert r.joint_holders[0].shares_held is None and r.joint_holders[0].total_held == 1200
+    assert r.shares_held is None and r.total_held == 1200
 
 
 def test_japanese_dei_name_is_preferred_over_the_plain_name_row():
