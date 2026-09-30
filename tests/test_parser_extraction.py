@@ -453,7 +453,7 @@ class TestLargeHoldingExtraction:
         rows = self._base_rows() + [
             # Real-EDINET-shape: primary filer's contribution under Holder1Member
             make_csv_row(
-                'jplvh_cor:NumberOfStocksOrEquityHeld',
+                'jplvh_cor:TotalNumberOfStocksEtcHeld',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder1Member',
                 '5000000',
             ),
@@ -474,12 +474,12 @@ class TestLargeHoldingExtraction:
         """
         rows = self._base_rows() + [
             make_csv_row(
-                'jplvh_cor:NumberOfStocksOrEquityHeld',
+                'jplvh_cor:TotalNumberOfStocksEtcHeld',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder1Member',
                 '3000000',
             ),
             make_csv_row(
-                'jplvh_cor:NumberOfStocksOrEquityHeld',
+                'jplvh_cor:TotalNumberOfStocksEtcHeld',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder2Member',
                 '2000000',
             ),
@@ -492,7 +492,7 @@ class TestLargeHoldingExtraction:
         """3 co-reporters (Holder1+2+3 all present) is joint."""
         rows = self._base_rows() + [
             make_csv_row(
-                'jplvh_cor:NumberOfStocksOrEquityHeld',
+                'jplvh_cor:TotalNumberOfStocksEtcHeld',
                 f'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder{n}Member',
                 '1000000',
             )
@@ -506,7 +506,7 @@ class TestLargeHoldingExtraction:
         """Two-digit holder numbers (e.g. Holder12Member) are recognized as joint."""
         rows = self._base_rows() + [
             make_csv_row(
-                'jplvh_cor:NumberOfStocksOrEquityHeld',
+                'jplvh_cor:TotalNumberOfStocksEtcHeld',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder12Member',
                 '500000',
             ),
@@ -527,58 +527,58 @@ class TestLargeHoldingExtraction:
         rows = self._base_rows() + [
             # Holder 1 — primary, corporate
             make_csv_row(
-                'jplvh_cor:NameOfReporter',
+                'jplvh_cor:Name',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder1Member',
                 'プライマリ株式会社',
                 '氏名又は名称',
             ),
             make_csv_row(
-                'jplvh_cor:EdinetCodeOfReporter',
+                'jplvh_cor:EDINETCodeDEI',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder1Member',
                 'E11111',
                 'EDINETコード、大量保有DEI',
             ),
             make_csv_row(
-                'jplvh_cor:NumberOfStocksOrEquityHeld',
+                'jplvh_cor:TotalNumberOfStocksEtcHeld',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder1Member',
                 '1000000',
                 '株券又は投資証券等、法第27条の23第3項本文',
             ),
             # Holder 2 — co-reporter, individual
             make_csv_row(
-                'jplvh_cor:NameOfReporter',
+                'jplvh_cor:Name',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder2Member',
                 '田中　太郎',
                 '氏名又は名称',
             ),
             make_csv_row(
-                'jplvh_cor:EdinetCodeOfReporter',
+                'jplvh_cor:EDINETCodeDEI',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder2Member',
                 'E22222',
                 'EDINETコード、大量保有DEI',
             ),
             make_csv_row(
-                'jplvh_cor:NumberOfStocksOrEquityHeld',
+                'jplvh_cor:TotalNumberOfStocksEtcHeld',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder2Member',
                 '500000',
                 '株券又は投資証券等、法第27条の23第3項本文',
             ),
             # Holder 3 — co-reporter, corporate
             make_csv_row(
-                'jplvh_cor:NameOfReporter',
+                'jplvh_cor:Name',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder3Member',
                 'サードコ株式会社',
                 '氏名又は名称',
             ),
             make_csv_row(
-                'jplvh_cor:NumberOfStocksOrEquityHeld',
+                'jplvh_cor:TotalNumberOfStocksEtcHeld',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder3Member',
                 '250000',
                 '株券又は投資証券等、法第27条の23第3項本文',
             ),
             # Holder 4 — co-reporter, corporate, only name
             make_csv_row(
-                'jplvh_cor:NameOfReporter',
+                'jplvh_cor:Name',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder4Member',
                 'フォース株式会社',
                 '氏名又は名称',
@@ -606,13 +606,13 @@ class TestLargeHoldingExtraction:
         a 1-element list; is_joint_filing stays False."""
         rows = self._base_rows() + [
             make_csv_row(
-                'jplvh_cor:NameOfReporter',
+                'jplvh_cor:Name',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder1Member',
                 'ソロ株式会社',
                 '氏名又は名称',
             ),
             make_csv_row(
-                'jplvh_cor:NumberOfStocksOrEquityHeld',
+                'jplvh_cor:TotalNumberOfStocksEtcHeld',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder1Member',
                 '3000000',
                 '株券又は投資証券等、法第27条の23第3項本文',
@@ -640,26 +640,26 @@ class TestLargeHoldingExtraction:
         identity/ownership but with holder_number populated."""
         rows = self._base_rows() + [
             make_csv_row(
-                'jplvh_cor:NameOfReporter',
+                'jplvh_cor:Name',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder1Member',
                 'プライマリ株式会社',
                 '氏名又は名称',
             ),
             make_csv_row(
-                'jplvh_cor:NumberOfStocksOrEquityHeld',
+                'jplvh_cor:TotalNumberOfStocksEtcHeld',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder1Member',
                 '1000000',
                 '株券又は投資証券等、法第27条の23第3項本文',
             ),
             # Holder 2 — all NULL markers
             make_csv_row(
-                'jplvh_cor:NameOfReporter',
+                'jplvh_cor:Name',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder2Member',
                 '－',
                 '氏名又は名称',
             ),
             make_csv_row(
-                'jplvh_cor:NumberOfStocksOrEquityHeld',
+                'jplvh_cor:TotalNumberOfStocksEtcHeld',
                 'FilingDateInstant_jplvh030000-lvh_E99001-000FilerLargeVolumeHolder2Member',
                 '－',
                 '株券又は投資証券等、法第27条の23第3項本文',
