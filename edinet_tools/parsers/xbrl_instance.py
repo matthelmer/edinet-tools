@@ -4,7 +4,11 @@ Standard library only (`xml.etree`). The instance is what EDINET generates from 
 documents; this reader is the inline reader's cross-check and `source='instance'` for a package
 without inline files. Facts are the root's children that carry a `contextRef`; element IDs are
 written with the instance's own prefixes. A `...TextBlock` value is escaped HTML: `html` keeps it
-and `value` is its plain text by the same rule as the inline reader (`html_to_text`).
+and `value` is its plain text by the same rule as the inline reader (`html_to_text`). The instance
+cannot tell a text block filed unescaped from an escaped one; for plain text the two rules give
+the same value (`plain_text_block_value`), and only `html` differs (None inline).
+A document with a DOCTYPE or ENTITY declaration is refused before parsing; package members are
+size-capped; contexts and units defined twice must be defined identically.
 
 Tuples, and any root child other than a fact, a context, a unit, the schema reference, role
 references or a footnote link, raise `UnsupportedInlineXBRL`. Footnote links are not read (the
@@ -16,10 +20,17 @@ from __future__ import annotations
 import io
 import posixpath
 import xml.etree.ElementTree as ET
-import zipfile
 
-from ._xbrl_model import UnsupportedInlineXBRL, XbrlFact, XbrlFacts, html_to_text
-from .ixbrl import XBRLI, XSI, _is_audit, _local, read_context, read_unit
+from ._xbrl_model import (
+    UnsupportedInlineXBRL,
+    XbrlFact,
+    XbrlFacts,
+    html_to_text,
+    put_unique,
+    read_package_members,
+    refuse_dtd,
+)
+from .ixbrl import XBRLI, XSI, _is_audit, _local, merge_definitions, read_context, read_unit
 
 __all__ = ["UnsupportedInlineXBRL", "read_instance", "read_instance_package"]
 
@@ -29,6 +40,7 @@ _LINK_CHILDREN = frozenset({"schemaRef", "roleRef", "arcroleRef", "footnoteLink"
 
 def read_instance(data: bytes, name: str = "") -> XbrlFacts:
     """Facts, contexts and units of one XBRL instance document."""
+    refuse_dtd(data, name or "instance")
     prefixes: dict = {}
     events = ET.iterparse(io.BytesIO(data), events=("start-ns",))
     for _event, (prefix, uri) in events:
@@ -45,9 +57,9 @@ def read_instance(data: bytes, name: str = "") -> XbrlFacts:
         ns, local = _local(el.tag)
         if ns == XBRLI and local == "context":
             ctx = read_context(el)
-            result.contexts[ctx.id] = ctx
+            put_unique(result.contexts, ctx.id, ctx, f"{name}: context")
         elif ns == XBRLI and local == "unit":
-            result.units[el.get("id")] = read_unit(el)
+            put_unique(result.units, el.get("id"), read_unit(el), f"{name}: unit")
         elif ns == LINK and local in _LINK_CHILDREN:
             continue
         elif el.get("contextRef") is not None:
@@ -90,19 +102,15 @@ def read_instance(data: bytes, name: str = "") -> XbrlFacts:
 def read_instance_package(zip_bytes: bytes, include_audit: bool = False) -> XbrlFacts:
     """Facts from every `.xbrl` instance of an EDINET type=1 package (the auditor's left out
     unless asked for, as the CSV path leaves out `jpaud*.csv`), concatenated in path order."""
+    _names, members = read_package_members(
+        zip_bytes, lambda n: n.endswith(".xbrl") and (include_audit or not _is_audit(n))
+    )
+    if not members:
+        raise UnsupportedInlineXBRL("no XBRL instance (*.xbrl) in the package")
     merged = XbrlFacts()
-    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
-        names = sorted(
-            n
-            for n in zf.namelist()
-            if n.endswith(".xbrl") and "__MACOSX" not in n and (include_audit or not _is_audit(n))
-        )
-        if not names:
-            raise UnsupportedInlineXBRL("no XBRL instance (*.xbrl) in the package")
-        for n in names:
-            part = read_instance(zf.read(n), name=posixpath.basename(n))
-            merged.facts.extend(part.facts)
-            merged.contexts.update(part.contexts)
-            merged.units.update(part.units)
-            merged.source_files.append(n)
+    for n in sorted(members):
+        part = read_instance(members[n], name=posixpath.basename(n))
+        merged.facts.extend(part.facts)
+        merge_definitions(merged, part, n)
+        merged.source_files.append(n)
     return merged

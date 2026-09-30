@@ -9,7 +9,8 @@ the rest by name:
 - `ix:nonNumeric`: plain (the concatenated text) or `escape="true"` (a text section: `html` kept
   as filed, `value` the plain text with cell tabs); nested ix tags contribute their text;
   `ix:exclude` content is removed; `continuedAt` chains through `ix:continuation`, across the
-  package's documents.
+  package's documents. A `...TextBlock` filed unescaped reads by `plain_text_block_value`, the
+  rule the instance reader shares.
 - `ix:footnote`: kept in `XbrlFacts.footnotes` (id -> text) and on each citing fact's
   `footnote_refs`. Not rows: EDINET's CSV carries no footnotes, and in the instance they sit in
   a footnote link, not among the facts.
@@ -21,6 +22,12 @@ that is not defined, or displayed text that does not fit its format raises
 
 EDINET's documents declare Inline XBRL 1.0 (`http://www.xbrl.org/2008/inlineXBRL`) and the
 2011-07-31 transformation registry; 1.1 (`.../2013/inlineXBRL`) is read by the same rules.
+`ix:continuation` / `continuedAt` are Inline XBRL 1.1 features; under the 1.0 namespace they are
+accepted as a lenient extension (no EDINET filing seen uses them).
+
+Safety: a document with a DOCTYPE or ENTITY declaration is refused before parsing, and package
+members are size-capped before they are read (`_xbrl_model.read_package_members`). Contexts,
+units and footnotes defined twice must be defined identically.
 """
 
 from __future__ import annotations
@@ -30,7 +37,6 @@ import io
 import posixpath
 import re
 import xml.etree.ElementTree as ET
-import zipfile
 from decimal import Decimal, InvalidOperation
 
 from ._xbrl_model import (
@@ -40,6 +46,10 @@ from ._xbrl_model import (
     XbrlFact,
     XbrlFacts,
     html_to_text,
+    plain_text_block_value,
+    put_unique,
+    read_package_members,
+    refuse_dtd,
 )
 
 __all__ = [
@@ -78,7 +88,7 @@ _DIGITS = str.maketrans("０１２３４５６７８９", "0123456789")
 # optional decimal fraction after a dot.
 _NUMDOTDECIMAL_RE = re.compile(r"^[0-9]{1,3}(?:[,  ]?[0-9]{3})*(?:\.[0-9]+)?$")
 _PLAIN_DECIMAL_RE = re.compile(r"^[0-9]+(?:\.[0-9]+)?$")
-_DATE_CJK_RE = re.compile(r"^([0-9]{1,4})\s*年\s*([0-9]{1,2})\s*月\s*([0-9]{1,2})\s*日$")
+_DATE_CJK_RE = re.compile(r"^([0-9]{4})\s*年\s*([0-9]{1,2})\s*月\s*([0-9]{1,2})\s*日$")
 _DATE_ERA_RE = re.compile(
     r"^(明治|大正|昭和|平成|令和)\s*([0-9]{1,2}|元)\s*年\s*([0-9]{1,2})\s*月\s*([0-9]{1,2})\s*日$"
 )
@@ -139,6 +149,7 @@ class _Doc:
     def __init__(self, name: str, data: bytes):
         self.name = name
         self.nsmap: dict = {}
+        refuse_dtd(data, name)
         events = ET.iterparse(io.BytesIO(data), events=("start-ns",))
         for _event, (prefix, uri) in events:
             if prefix in self.nsmap and self.nsmap[prefix] != uri:
@@ -184,9 +195,9 @@ class _Reader:
             ns, local = _local(el.tag)
             if ns == XBRLI and local == "context":
                 ctx = read_context(el)
-                self.result.contexts[ctx.id] = ctx
+                put_unique(self.result.contexts, ctx.id, ctx, f"{doc.name}: context")
             elif ns == XBRLI and local == "unit":
-                self.result.units[el.get("id")] = read_unit(el)
+                put_unique(self.result.units, el.get("id"), read_unit(el), f"{doc.name}: unit")
             elif ns == "http://www.xbrl.org/2003/linkbase" and local in ("roleRef", "arcroleRef"):
                 continue
             else:
@@ -314,7 +325,7 @@ class _Reader:
             except (InvalidOperation, ValueError):
                 raise UnsupportedInlineXBRL(f"{doc.name}: scale {scale!r} on {name}") from None
             value = format(number, "f")
-            if sign == "-":
+            if sign == "-" and number != 0:
                 value = "-" + value
             return XbrlFact(value=value, **common)
 
@@ -336,6 +347,8 @@ class _Reader:
         text = "".join(self._text(e) for _d, e in chain)
         if transform:
             text = transform(text)
+        elif name.rpartition(":")[2].endswith("TextBlock"):
+            text = plain_text_block_value(text)
         return XbrlFact(value=text, **common)
 
     # -- driver ----------------------------------------------------------------------------
@@ -362,7 +375,7 @@ class _Reader:
                     fid = el.get("footnoteID") or el.get("id")
                     if not fid:
                         raise UnsupportedInlineXBRL(f"{doc.name}: ix:footnote without an id")
-                    self.result.footnotes[fid] = self._text(el)
+                    put_unique(self.result.footnotes, fid, self._text(el), f"{doc.name}: footnote")
                 elif local in ("nonFraction", "nonNumeric"):
                     fact_elements.append((doc, el, local))
         # Pass 2: facts, in document order.
@@ -447,14 +460,18 @@ def inline_documents_in_package(zip_bytes: bytes, include_audit: bool = False) -
     """{directory: {file name: bytes}} of the package's `*_ixbrl.htm` files. The auditor's
     documents (XBRL/AuditDoc, `jpaud*`) are left out unless asked for, as the CSV path leaves
     out `jpaud*.csv`."""
+    _names, members = read_package_members(
+        zip_bytes,
+        lambda n: n.endswith("_ixbrl.htm") and (include_audit or not _is_audit(n)),
+    )
+    return group_inline_documents(members)
+
+
+def group_inline_documents(members: dict) -> dict:
+    """{directory: {file name: bytes}} from {path: bytes} of `*_ixbrl.htm` members."""
     groups: dict = {}
-    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
-        for name in zf.namelist():
-            if not name.endswith("_ixbrl.htm") or "__MACOSX" in name:
-                continue
-            if _is_audit(name) and not include_audit:
-                continue
-            groups.setdefault(posixpath.dirname(name), {})[posixpath.basename(name)] = zf.read(name)
+    for name, data in members.items():
+        groups.setdefault(posixpath.dirname(name), {})[posixpath.basename(name)] = data
     return groups
 
 
@@ -468,11 +485,19 @@ def read_inline_xbrl_package(zip_bytes: bytes, include_audit: bool = False) -> X
     for directory in sorted(groups):
         part = read_inline_xbrl(groups[directory])
         merged.facts.extend(_with_source(f, f"{directory}/{f.source_file}") for f in part.facts)
-        merged.contexts.update(part.contexts)
-        merged.units.update(part.units)
-        merged.footnotes.update(part.footnotes)
+        merge_definitions(merged, part, directory)
         merged.source_files.extend(f"{directory}/{n}" for n in part.source_files)
     return merged
+
+
+def merge_definitions(merged: XbrlFacts, part: XbrlFacts, where: str) -> None:
+    """Contexts, units and footnotes of `part` into `merged`, refusing conflicting ids."""
+    for k, v in part.contexts.items():
+        put_unique(merged.contexts, k, v, f"{where}: context")
+    for k, v in part.units.items():
+        put_unique(merged.units, k, v, f"{where}: unit")
+    for k, v in part.footnotes.items():
+        put_unique(merged.footnotes, k, v, f"{where}: footnote")
 
 
 def _with_source(fact: XbrlFact, source: str) -> XbrlFact:

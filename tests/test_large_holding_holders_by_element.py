@@ -29,7 +29,7 @@ def parsed(doc, source):
     return parse_xbrl((FIXTURES / f"{doc}_type1.zip").read_bytes(), "350", source=source)
 
 
-SOURCES = ["csv", "ixbrl", "instance"]
+SOURCES = ["csv", "xbrl", "instance"]
 
 
 @pytest.mark.parametrize("source", SOURCES)
@@ -153,7 +153,7 @@ def test_s100y8gb_each_holder_keeps_its_own_trading_table(source):
     assert r.text_blocks[TRADES] == second.text_blocks[TRADES]
 
 
-@pytest.mark.parametrize("source", ["ixbrl", "instance"])
+@pytest.mark.parametrize("source", ["xbrl", "instance"])
 def test_s100y8gb_trading_table_cells_are_separated(source):
     first = parsed("S100Y8GB", source).joint_holders[0]
     assert "令和8年5月19日\t株券\t90,000\t0.29\t市場内\t処分" in first.text_blocks[TRADES]

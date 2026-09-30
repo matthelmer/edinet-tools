@@ -117,7 +117,8 @@ class Document:
 
         Args:
             source: 'csv' (default) reads EDINET's CSV conversion (type=5), as before.
-                'xbrl' reads the filing's own inline XBRL (type=1): text sections in full,
+                'xbrl' (alias 'ixbrl') reads the filing's own inline XBRL (type=1): text
+                sections in full,
                 a tab between table cells, per-holder sections, real period dates.
                 'instance' reads the XBRL instance EDINET generates beside it (type=1).
 

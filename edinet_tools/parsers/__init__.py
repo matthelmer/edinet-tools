@@ -29,6 +29,7 @@ from .confirmation import ConfirmationReport, parse_confirmation
 from .parent_company import ParentCompanyReport, parse_parent_company
 from .large_holding_change import LargeHoldingChangeReport, parse_large_holding_change
 from .extraction import extract_rows_from_package
+from ._xbrl_model import normalize_source
 
 
 # Doc type codes that have typed parsers (not raw fallback).
@@ -62,10 +63,6 @@ _SUPPORTED_CODES: frozenset[str] = frozenset({
     "350", "360",          # Large shareholding + amendment
     "370", "380",          # Large shareholding change + amendment
 })
-
-
-# Document.parse(source=...) -> the rows source extract_rows_from_package reads.
-_XBRL_SOURCES = {'xbrl': 'ixbrl', 'instance': 'instance'}
 
 
 def _parser_for(doc_type_code):
@@ -134,22 +131,28 @@ def parse(document, source: str = 'csv') -> ParsedReport:
     Args:
         document: Document object with doc_id, doc_type_code, etc.
         source: 'csv' (default: EDINET's CSV conversion, type=5), 'xbrl' (the filing's
-            inline XBRL, type=1) or 'instance' (the XBRL instance, type=1).
+            inline XBRL, type=1; 'ixbrl' is an alias) or 'instance' (the XBRL instance,
+            type=1).
 
     Returns:
         ParsedReport subclass appropriate for the document type
     """
-    if source != 'csv' and source not in _XBRL_SOURCES:
-        raise ValueError(f"source must be 'csv', 'xbrl' or 'instance', not {source!r}")
+    if source != 'csv':
+        try:
+            source = normalize_source(source)
+        except ValueError:
+            raise ValueError(
+                f"source must be 'csv', 'xbrl' (alias 'ixbrl') or 'instance', not {source!r}"
+            ) from None
     parser = _parser_for(document.doc_type_code) or parse_raw
     if source == 'csv':
         return parser(document)
-    csv_files = extract_rows_from_package(document.fetch(type=1), source=_XBRL_SOURCES[source])
+    csv_files = extract_rows_from_package(document.fetch(type=1), source=source)
     return parser(document, csv_files=csv_files,
                   doc_id=document.doc_id, doc_type_code=document.doc_type_code)
 
 
-def parse_xbrl(zip_bytes: bytes, doc_type_code: str, source: str = 'ixbrl',
+def parse_xbrl(zip_bytes: bytes, doc_type_code: str, source: str = 'xbrl',
                doc_id: str | None = None) -> ParsedReport:
     """
     Parse an EDINET type=1 package already in hand (the filing's own XBRL).
@@ -157,7 +160,8 @@ def parse_xbrl(zip_bytes: bytes, doc_type_code: str, source: str = 'ixbrl',
     Args:
         zip_bytes: the package's bytes (EDINET download type=1)
         doc_type_code: e.g. '350'; selects the typed parser (RawReport when none)
-        source: 'ixbrl' (the inline XBRL, default) or 'instance' (the .xbrl instance)
+        source: 'xbrl' (the inline XBRL, default; 'ixbrl' is an alias) or 'instance'
+            (the .xbrl instance)
         doc_id: optional EDINET document ID to carry on the report
 
     Returns:

@@ -37,7 +37,9 @@ def test_parse_default_is_the_csv_as_before():
     assert report.source_files[0].endswith(".csv")
 
 
-@pytest.mark.parametrize("source,row_source", [("xbrl", "ixbrl"), ("instance", "instance")])
+@pytest.mark.parametrize(
+    "source,row_source", [("xbrl", "xbrl"), ("ixbrl", "xbrl"), ("instance", "instance")]
+)
 def test_parse_xbrl_sources_fetch_the_filing_type_1(source, row_source):
     doc, client = document()
     report = doc.parse(source=source)

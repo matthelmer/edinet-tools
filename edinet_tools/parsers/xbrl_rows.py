@@ -11,7 +11,7 @@ from taxonomy files the reader does not read: 項目名, 相対年度, 連結・
 with a unit ('－' without one, as the CSV).
 
 Added: html (a text section's HTML as filed, else None), decimals, scale, sign, nil,
-period_start, period_end, instant (the context's real dates), source ('ixbrl' / 'instance').
+period_start, period_end, instant (the context's real dates), source ('xbrl' / 'instance').
 
 A plain string's 値 follows the CSV's rule (no-break space -> space, line breaks dropped) so
 names compare equal across sources; the reader's XbrlFact keeps it as filed. A text section's 値
@@ -21,18 +21,22 @@ run-together cells), and it is not cut at 30,000 characters.
 
 from __future__ import annotations
 
-import io
 import posixpath
 import re
-import zipfile
 
-from ._xbrl_model import UnsupportedInlineXBRL, XbrlFacts
-from .ixbrl import _is_audit, inline_documents_in_package, read_inline_xbrl
+from ._xbrl_model import (
+    XBRL_SOURCES,
+    UnsupportedInlineXBRL,
+    XbrlFacts,
+    normalize_source,
+    read_package_members,
+)
+from .ixbrl import _is_audit, group_inline_documents, read_inline_xbrl
 from .xbrl_instance import read_instance
 
 __all__ = ["SOURCES", "extract_rows_from_package", "facts_to_rows"]
 
-SOURCES = ("ixbrl", "instance")
+SOURCES = XBRL_SOURCES
 _NIL = "－"
 _LINE_BREAK_RE = re.compile(r"[\r\n]")
 _IXBRL_NAME_RE = re.compile(r"^\d+_(?:header|honbun)_(.+)_ixbrl\.htm$")
@@ -92,37 +96,41 @@ def _filing_name(directory_files: list, inline_names: list) -> str:
     return sorted(inline_names)[0]
 
 
-def extract_rows_from_package(zip_bytes: bytes, source: str = "ixbrl") -> list:
+def extract_rows_from_package(zip_bytes: bytes, source: str = "xbrl") -> list:
     """Rows from an EDINET type=1 package, in `extract_csv_from_zip`'s shape.
 
-    source='ixbrl' reads the inline XBRL (what the filer submitted); source='instance' reads
-    the `.xbrl` instance EDINET generates beside it. Raises UnsupportedInlineXBRL when the
-    package has no such files or uses a feature the reader does not implement."""
-    if source not in SOURCES:
-        raise ValueError(f"source must be one of {SOURCES}, not {source!r}")
-    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
-        names = zf.namelist()
+    source='xbrl' (alias 'ixbrl') reads the inline XBRL (what the filer submitted);
+    source='instance' reads the `.xbrl` instance EDINET generates beside it. The zip is
+    opened once and its members size-capped. Raises UnsupportedInlineXBRL when the package
+    has no such files or uses a feature the reader does not implement."""
+    source = normalize_source(source)
+    if source == "xbrl":
+        names, members = read_package_members(
+            zip_bytes, lambda n: n.endswith("_ixbrl.htm") and not _is_audit(n)
+        )
+        groups = group_inline_documents(members)
+        if not groups:
+            raise UnsupportedInlineXBRL("no inline XBRL (*_ixbrl.htm) in the package")
         out = []
-        if source == "ixbrl":
-            groups = inline_documents_in_package(zip_bytes)
-            if not groups:
-                raise UnsupportedInlineXBRL("no inline XBRL (*_ixbrl.htm) in the package")
-            for directory in sorted(groups):
-                facts = read_inline_xbrl(groups[directory])
-                in_dir = [n for n in names if posixpath.dirname(n) == directory]
-                out.append(
-                    {
-                        "filename": _filing_name(in_dir, list(groups[directory])),
-                        "data": facts_to_rows(facts, source),
-                    }
-                )
-            return out
-        instances = sorted(n for n in names if n.endswith(".xbrl") and not _is_audit(n))
-        if not instances:
-            raise UnsupportedInlineXBRL("no XBRL instance (*.xbrl) in the package")
-        for n in instances:
-            name = posixpath.basename(n)
+        for directory in sorted(groups):
+            facts = read_inline_xbrl(groups[directory])
+            in_dir = [n for n in names if posixpath.dirname(n) == directory]
             out.append(
-                {"filename": name, "data": facts_to_rows(read_instance(zf.read(n), name), source)}
+                {
+                    "filename": _filing_name(in_dir, list(groups[directory])),
+                    "data": facts_to_rows(facts, source),
+                }
             )
         return out
+    _names, members = read_package_members(
+        zip_bytes, lambda n: n.endswith(".xbrl") and not _is_audit(n)
+    )
+    if not members:
+        raise UnsupportedInlineXBRL("no XBRL instance (*.xbrl) in the package")
+    out = []
+    for n in sorted(members):
+        name = posixpath.basename(n)
+        out.append(
+            {"filename": name, "data": facts_to_rows(read_instance(members[n], name), source)}
+        )
+    return out

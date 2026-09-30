@@ -12,7 +12,10 @@ newline between rows and blocks (`html_to_text`). EDINET's CSV runs the cells to
 
 from __future__ import annotations
 
+import html
+import io
 import re
+import zipfile
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from typing import Optional
@@ -159,3 +162,77 @@ def normalize_space(text: Optional[str]) -> Optional[str]:
     if text is None:
         return None
     return "".join(text.split())
+
+
+def plain_text_block_value(text: str) -> str:
+    """The value of a text block filed as plain (unescaped) text: read as an HTML text node by
+    `html_to_text`, so the inline reader (which knows it is unescaped) and the instance reader
+    (which cannot tell, and reads every ...TextBlock as HTML) give the same text."""
+    return html_to_text(html.escape(text, quote=False))
+
+
+# --- sources ---------------------------------------------------------------------------------
+
+# One vocabulary: 'xbrl' is the filing's inline XBRL; 'ixbrl' is accepted as its alias;
+# 'instance' is the .xbrl instance EDINET generates beside it.
+XBRL_SOURCES = ("xbrl", "instance")
+_SOURCE_ALIASES = {"xbrl": "xbrl", "ixbrl": "xbrl", "instance": "instance"}
+
+
+def normalize_source(source: str) -> str:
+    try:
+        return _SOURCE_ALIASES[source]
+    except (KeyError, TypeError):
+        raise ValueError(
+            f"source must be 'xbrl' (alias 'ixbrl') or 'instance', not {source!r}"
+        ) from None
+
+
+# --- safety ------------------------------------------------------------------------------------
+
+# Uncompressed-size caps for what a reader takes out of a package, checked on each member's
+# ZipInfo.file_size before it is read (zipfile never inflates past that size).
+MAX_MEMBER_BYTES = 200 * 1024 * 1024
+MAX_TOTAL_BYTES = 1024 * 1024 * 1024
+
+_DTD_RE = re.compile(rb"<!\s*(DOCTYPE|ENTITY)", re.IGNORECASE)
+
+
+def refuse_dtd(data: bytes, name: str) -> None:
+    """Refuse a document that carries a DOCTYPE or ENTITY declaration, before it is parsed
+    (entity expansion is the classic XML bomb; EDINET's documents carry neither)."""
+    candidates = [data]
+    if data[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        candidates.append(data.decode("utf-16", errors="replace").encode("utf-8"))
+    for c in candidates:
+        m = _DTD_RE.search(c)
+        if m:
+            kind = m.group(1).decode("ascii").upper()
+            raise UnsupportedInlineXBRL(f"{name}: a {kind} declaration is refused")
+
+
+def read_package_members(zip_bytes: bytes, wanted) -> tuple:
+    """(namelist, {name: bytes}) for the members `wanted(name)` selects, opening the zip once
+    and enforcing MAX_MEMBER_BYTES / MAX_TOTAL_BYTES before reading anything."""
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+        infos = [i for i in zf.infolist() if "__MACOSX" not in i.filename and wanted(i.filename)]
+        total = 0
+        for info in infos:
+            if info.file_size > MAX_MEMBER_BYTES:
+                raise UnsupportedInlineXBRL(
+                    f"{info.filename}: too large ({info.file_size} bytes uncompressed; "
+                    f"limit {MAX_MEMBER_BYTES})"
+                )
+            total += info.file_size
+        if total > MAX_TOTAL_BYTES:
+            raise UnsupportedInlineXBRL(
+                f"package too large ({total} bytes uncompressed; limit {MAX_TOTAL_BYTES})"
+            )
+        return zf.namelist(), {i.filename: zf.read(i) for i in infos}
+
+
+def put_unique(mapping: dict, key, value, what: str) -> None:
+    """mapping[key] = value, refusing a second definition that differs from the first."""
+    if key in mapping and mapping[key] != value:
+        raise UnsupportedInlineXBRL(f"{what} {key!r} is defined twice, differently")
+    mapping[key] = value
