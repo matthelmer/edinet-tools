@@ -804,6 +804,174 @@ _ROE_TIERS = (
 
 
 # ---------------------------------------------------------------------------
+# Standard-selection policy: one declaration per financial field
+#
+# The filing declares its accounting standard (AccountingStandardsDEI). A
+# filing in its first year on a new standard tags two highlights tables for
+# the same year, the old standard's and the new one's, at the same contexts.
+# The contract for every field below:
+#
+#   When a usable fact for the field's concept exists in the filing's declared
+#   standard, at the eligible context and period, another standard's fact
+#   cannot outrank it. A missing own-standard fact follows the field's
+#   declared fallback. Ownership basis (owners / total), consolidation scope
+#   and period are preserved independently of the standard.
+#
+# `standards` names the standards that tag the concept with an element of
+# their own; an element's standard is read from its taxonomy name
+# (element_standard). `fallback` is what happens when the declared standard's
+# fact is missing:
+#   'legacy' -- the field's existing waterfall, which may serve another
+#               standard's fact (the only source the filing gives);
+#   'none'   -- honest None;
+#   'n/a'    -- one standard (or none) tags the concept: nothing competes.
+# The context rule is unchanged for every field (get_context_patterns: bare
+# context for a consolidated filer, the _NonConsolidatedMember context first
+# for a parent-only filer), and so is the period: duration fields read
+# CurrentYearDuration and, for _PRIOR_YEAR_FIELDS, Prior1YearDuration;
+# instant fields read CurrentYearInstant.
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class FieldPolicy:
+    """How one financial field chooses between accounting standards."""
+    concept: str
+    standards: tuple
+    fallback: str
+    neutral: tuple = ()
+
+
+_JG, _IFRS, _US = 'Japan GAAP', 'IFRS', 'US GAAP'
+
+
+def element_standard(element_id: str) -> str:
+    """The accounting standard an element belongs to, from its taxonomy name:
+    'US GAAP' / 'IFRS' when the local name carries the standard
+    (...USGAAPSummaryOfBusinessResults, ...IFRSSummaryOfBusinessResults,
+    ...IFRS, including filer-local namespaces); 'Japan GAAP' for the jppfs_cor
+    financial-statement taxonomy and the unmarked ...SummaryOfBusinessResults
+    highlights elements; otherwise 'neutral', which a FieldPolicy must name
+    explicitly (the name alone does not establish neutrality)."""
+    prefix, _, local = element_id.rpartition(':')
+    if 'USGAAP' in local:
+        return _US
+    if local.endswith('IFRS') or 'IFRSSummaryOfBusinessResults' in local:
+        return _IFRS
+    if prefix == 'jppfs_cor' or local.endswith('SummaryOfBusinessResults'):
+        return _JG
+    return 'neutral'
+
+
+def _p(concept, *standards, fallback=None, neutral=()):
+    if fallback is None:
+        fallback = 'legacy' if len(standards) >= 2 else 'n/a'
+    return FieldPolicy(concept, standards, fallback, neutral)
+
+
+STANDARD_POLICY = {
+    # --- duration (current year; the first five also Prior1YearDuration) ---
+    'net_sales': _p('Revenue: net sales / IFRS revenue / US-GAAP revenues; banks and '
+                    'insurers 経常収益, brokers 営業収益', _JG, _IFRS, _US),
+    'operating_income': _p('Operating profit (J-GAAP FS, IFRS, US-GAAP summary); no '
+                           'J-GAAP fallback for IFRS/US-GAAP filers', _JG, _IFRS, _US),
+    'ordinary_income': _p('Ordinary income; IFRS profit before tax and US-GAAP income '
+                          'before taxes as the analogues', _JG, _IFRS, _US),
+    'net_income_owners': _p('Profit attributable to owners of parent', _JG, _IFRS, _US),
+    'net_income_total': _p('Profit including non-controlling interests', _JG, _IFRS),
+    'operating_cash_flow': _p('Cash flows from operating activities', _JG, _IFRS, _US),
+    'investing_cash_flow': _p('Cash flows from investing activities', _JG, _IFRS, _US),
+    'financing_cash_flow': _p('Cash flows from financing activities', _JG, _IFRS, _US),
+    'income_before_taxes': _p('Profit before income taxes (FS)', _JG, _IFRS),
+    'non_operating_income': _p('Non-operating income (J-GAAP only)', _JG),
+    'non_operating_expenses': _p('Non-operating expenses (J-GAAP only)', _JG),
+    'income_taxes': _p('Income tax expense (FS)', _JG, _IFRS),
+    'depreciation_amortization': _p('Depreciation and amortization (operating CF)',
+                                    _JG, _IFRS),
+    # --- instant (CurrentYearInstant) ---
+    'total_assets': _p('Total assets', _JG, _IFRS, _US),
+    'net_assets_owners': _p('Equity attributable to owners of parent (no J-GAAP '
+                            'element)', _IFRS, _US),
+    'net_assets_total': _p('Net assets / total equity including non-controlling '
+                           'interests', _JG, _IFRS, _US),
+    'total_liabilities': _p('Total liabilities (FS)', _JG, _IFRS),
+    'shareholders_equity': _p('Shareholders equity component (J-GAAP FS)', _JG),
+    'valuation_translation_adjustments': _p('Valuation and translation adjustments '
+                                            '(J-GAAP FS)', _JG),
+    'non_controlling_interests': _p('Non-controlling interests (FS)', _JG, _IFRS),
+    'short_term_loans_payable': _p('Short-term borrowings (FS)', _JG, _IFRS),
+    'long_term_loans_payable': _p('Long-term borrowings (FS)', _JG, _IFRS),
+    'bonds_payable': _p('Bonds payable (FS)', _JG, _IFRS),
+    'current_portion_long_term_loans_payable': _p('Current portion of long-term loans '
+                                                  '(J-GAAP FS)', _JG),
+    'lease_obligations_current': _p('Lease obligations, current (J-GAAP FS)', _JG),
+    'lease_obligations_noncurrent': _p('Lease obligations, non-current (J-GAAP FS)',
+                                       _JG),
+    'commercial_paper': _p('Commercial paper (J-GAAP FS)', _JG),
+    'bonds_and_borrowings_current_ifrs': _p('Bonds and borrowings, current (IFRS)', _IFRS),
+    'bonds_and_borrowings_noncurrent_ifrs': _p('Bonds and borrowings, non-current (IFRS)',
+                                               _IFRS),
+    'borrowings_current_ifrs': _p('Borrowings, current (IFRS)', _IFRS),
+    'borrowings_noncurrent_ifrs': _p('Borrowings, non-current (IFRS)', _IFRS),
+    'num_employees': _p('Number of employees (the employees section; the same under '
+                        'every standard)', neutral=(ELEMENT_MAP['num_employees'],)),
+    'cash_and_deposits': _p('Cash and deposits / IFRS cash and cash equivalents (FS)',
+                            _JG, _IFRS),
+    'current_assets': _p('Current assets (FS)', _JG, _IFRS),
+    'noncurrent_assets': _p('Non-current assets (FS)', _JG, _IFRS),
+    'property_plant_equipment': _p('Property, plant and equipment (FS)', _JG, _IFRS),
+    'deferred_tax_assets': _p('Deferred tax assets (FS)', _JG, _IFRS),
+    'current_liabilities': _p('Current liabilities (FS)', _JG, _IFRS),
+    'accounts_payable_other': _p('Accounts payable, other (J-GAAP FS)', _JG),
+    'retained_earnings': _p('Retained earnings (FS)', _JG, _IFRS),
+    # --- per-share and ratio ---
+    'net_assets_per_share': _p('Net assets / owners equity per share (instant)',
+                               _JG, _IFRS, _US),
+    'earnings_per_share': _p('Basic earnings per share (duration)', _JG, _IFRS, _US),
+    'equity_ratio': _p('Equity-to-assets ratio (instant)', _JG, _IFRS, _US),
+    'roe': _p('Return on equity (duration)', _JG, _IFRS, _US),
+    # --- the independent IFRS trio: fixed IFRS elements, public as they are ---
+    'ifrs_summary_basic_eps': _p('IFRS basic EPS, the IFRS highlights element only', _IFRS),
+    'ifrs_summary_roe': _p('IFRS ROE, the IFRS highlights element only', _IFRS),
+    'ifrs_summary_bps': _p('IFRS owners equity per share, the IFRS highlights element only',
+                           _IFRS),
+}
+
+_PER_SHARE_TABLES = {
+    'net_assets_per_share': (_NAV_TIERS,),
+    'earnings_per_share': (_EPS_TIERS,),
+    'equity_ratio': (_EQUITY_RATIO_IFRS_FIRST, _EQUITY_RATIO_LEGACY),
+    'roe': (_ROE_TIERS,),
+}
+_IFRS_TRIO_ELEMENTS = {
+    'ifrs_summary_basic_eps': ELEMENT_MAP['earnings_per_share_ifrs'],
+    'ifrs_summary_roe': ELEMENT_MAP['roe_ifrs'],
+    'ifrs_summary_bps': ELEMENT_MAP['bps_ifrs'],
+}
+
+
+def field_elements(name: str) -> tuple:
+    """Every element a field's tables read, in table order, without repeats
+    (a prior_ field reads its current-year field's table)."""
+    if name.startswith('prior_'):
+        name = name[len('prior_'):]
+    if name in _IFRS_TRIO_ELEMENTS:
+        return (_IFRS_TRIO_ELEMENTS[name],)
+    if name in _DURATION_TIERS:
+        tables = (_DURATION_TIERS[name],)
+    elif name in _INSTANT_TIERS:
+        tables = (_INSTANT_TIERS[name],)
+    else:
+        tables = _PER_SHARE_TABLES[name]
+    seen = []
+    for table in tables:
+        for tier in table:
+            for el in tier.elements:
+                if el not in seen:
+                    seen.append(el)
+    return tuple(seen)
+
+
+# ---------------------------------------------------------------------------
 # Extraction blocks (module-level, independently testable)
 # ---------------------------------------------------------------------------
 
