@@ -13,6 +13,7 @@
 """
 
 import collections
+import sys
 from dataclasses import fields, is_dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -83,22 +84,30 @@ def test_inline_and_instance_contexts_are_equal(doc):
 # --- (b) CSV vs inline -----------------------------------------------------------------------
 
 
-def compare(csv_value, xbrl_value, path, diffs):
-    """Record every difference as (path, kind); kind 'other' is a parity failure."""
+def compare(csv_value, xbrl_value, path, diffs, text=False):
+    """Record every difference as (path, kind); kind 'other' is a parity failure.
+
+    `text` marks a text-section path (a TextBlock's value, a text_blocks entry, a typed field
+    read from a TextBlock): only there may values differ by whitespace or by the CSV's cut.
+    Anywhere else (names, codes, dates, numbers) any difference is 'other'."""
     if is_dataclass(csv_value) and type(csv_value) is type(xbrl_value):
         # walk every field: == would skip fields declared compare=False (JointHolder.text_blocks)
         for f in fields(csv_value):
             compare(
-                getattr(csv_value, f.name), getattr(xbrl_value, f.name), f"{path}.{f.name}", diffs
+                getattr(csv_value, f.name),
+                getattr(xbrl_value, f.name),
+                f"{path}.{f.name}",
+                diffs,
+                text or f.name == "text_blocks",
             )
         return
     if isinstance(csv_value, str) and isinstance(xbrl_value, str):
         if csv_value == xbrl_value:
             return
         a, b = normalize_space(csv_value), normalize_space(xbrl_value)
-        if a == b:
+        if text and a == b:
             diffs.append((path, "whitespace"))
-        elif len(csv_value) >= CSV_LIMIT and len(b) > len(a) and b.startswith(a):
+        elif text and len(csv_value) >= CSV_LIMIT and len(b) > len(a) and b.startswith(a):
             diffs.append((path, "beyond_30000"))
         else:
             diffs.append((path, "other"))
@@ -107,14 +116,14 @@ def compare(csv_value, xbrl_value, path, diffs):
         if set(csv_value) != set(xbrl_value):
             diffs.append((path + ".keys", "other"))
         for k in set(csv_value) & set(xbrl_value):
-            compare(csv_value[k], xbrl_value[k], f"{path}[{k}]", diffs)
+            compare(csv_value[k], xbrl_value[k], f"{path}[{k}]", diffs, text)
         return
     if isinstance(csv_value, list) and isinstance(xbrl_value, list):
         if len(csv_value) != len(xbrl_value):
             diffs.append((path + ".len", "other"))
             return
         for i, (a, b) in enumerate(zip(csv_value, xbrl_value)):
-            compare(a, b, f"{path}[{i}]", diffs)
+            compare(a, b, f"{path}[{i}]", diffs, text)
         return
     # containers are walked above (== on a list of dataclasses would skip compare=False fields)
     if csv_value == xbrl_value and type(csv_value) is type(xbrl_value):
@@ -122,33 +131,72 @@ def compare(csv_value, xbrl_value, path, diffs):
     diffs.append((path, "other"))
 
 
-def report_diffs(doc, source="ixbrl"):
-    csv_files = extract_csv_from_zip((FIXTURES / f"{doc}_type5.zip").read_bytes())
-    csv_report = _parser_for(DOCS[doc])(csv_files=csv_files, doc_id=doc, doc_type_code=DOCS[doc])
-    xbrl_report = parse_xbrl(type1(doc), DOCS[doc], doc_id=doc, source=source)
+def text_fields(report) -> set:
+    """Typed fields read from a text section: named *_text, or mapped to a *TextBlock element
+    in the parser's ELEMENT_MAP."""
+    element_map = getattr(sys.modules[type(report).__module__], "ELEMENT_MAP", {})
+    return {f.name for f in fields(report) if f.name.endswith("_text")} | {
+        k for k, v in element_map.items() if isinstance(v, str) and v.endswith("TextBlock")
+    }
+
+
+def diff_reports(csv_report, xbrl_report):
     diffs = []
+    texts = text_fields(csv_report)
     for f in fields(csv_report):
         a, b = getattr(csv_report, f.name), getattr(xbrl_report, f.name)
         if f.name == "source_files":
             a = [n[: -len(".csv")] + ".xbrl" for n in a]
         if f.name == "raw_facts":
-            # facts compared as a multiset: document order may differ between sources
+            # facts compared as a multiset (document order may differ between sources); a
+            # fact's value is a text path only when its element is a TextBlock
             def by_key(facts):
                 return sorted(facts, key=lambda x: (x.element_id, x.context_id, str(x.unit_id)))
 
             a, b = by_key(a), by_key(b)
-        compare(a, b, f.name, diffs)
-    return csv_report, xbrl_report, diffs
+            if len(a) != len(b):
+                diffs.append(("raw_facts.len", "other"))
+                continue
+            for x, y in zip(a, b):
+                where = f"raw_facts[{x.element_id}@{x.context_id}]"
+                compare(x, y, where, diffs, "TextBlock" in x.element_id)
+            continue
+        if f.name in ("raw_fields", "unmapped_fields", "text_blocks"):
+            if set(a) != set(b):
+                diffs.append((f.name + ".keys", "other"))
+            for k in set(a) & set(b):
+                is_text = f.name == "text_blocks" or "TextBlock" in k
+                compare(a[k], b[k], f"{f.name}[{k}]", diffs, is_text)
+            continue
+        compare(a, b, f.name, diffs, f.name in texts or f.name == "text_blocks_by_context")
+    return diffs
+
+
+def report_diffs(doc, source="xbrl"):
+    csv_files = extract_csv_from_zip((FIXTURES / f"{doc}_type5.zip").read_bytes())
+    csv_report = _parser_for(DOCS[doc])(csv_files=csv_files, doc_id=doc, doc_type_code=DOCS[doc])
+    xbrl_report = parse_xbrl(type1(doc), DOCS[doc], doc_id=doc, source=source)
+    return csv_report, xbrl_report, diff_reports(csv_report, xbrl_report)
+
+
+# Exact difference counts per fixture (both XBRL sources give the same): a new difference, or
+# one that disappears, fails the test instead of hiding among the allowed kinds.
+EXPECTED_DIFFS = {
+    "S100Y4NW": {"whitespace": 200, "beyond_30000": 4},
+    "S100Y8GB": {"whitespace": 27},
+    "S100YRDM": {"whitespace": 16},
+    "S100YD3H": {"whitespace": 11},
+    "S100YWE2": {"whitespace": 94},
+}
 
 
 @pytest.mark.parametrize("doc", DOCS)
-@pytest.mark.parametrize("source", ["ixbrl", "instance"])
+@pytest.mark.parametrize("source", ["xbrl", "instance"])
 def test_csv_and_xbrl_reports_differ_only_by_the_documented_improvements(doc, source):
     _csv, _xbrl, diffs = report_diffs(doc, source)
-    kinds = collections.Counter(kind for _path, kind in diffs)
     others = [path for path, kind in diffs if kind == "other"]
     assert not others, others
-    assert set(kinds) <= {"whitespace", "beyond_30000"}
+    assert dict(collections.Counter(kind for _path, kind in diffs)) == EXPECTED_DIFFS[doc]
 
 
 def test_the_comparison_catches_a_real_difference():
@@ -158,12 +206,33 @@ def test_the_comparison_catches_a_real_difference():
     csv_report, xbrl_report, _diffs = report_diffs("S100YRDM")
     assert len(fields(csv_report)) > 30
     altered = replace(xbrl_report, ownership_pct=Decimal("0.5"))
+    assert ("ownership_pct", "other") in diff_reports(csv_report, altered)
     diffs = []
-    compare(csv_report.ownership_pct, altered.ownership_pct, "ownership_pct", diffs)
-    assert diffs == [("ownership_pct", "other")]
-    diffs = []
-    compare("90,0000.29", "90,000\t0.29x", "t", diffs)
+    compare("90,0000.29", "90,000\t0.29x", "t", diffs, text=True)
     assert diffs == [("t", "other")]
+
+
+def test_a_name_that_loses_its_spaces_is_not_a_whitespace_difference():
+    """Whitespace differences are allowed on text sections only: a filer name, a holder name
+    or a plain raw field that loses its spaces must fail parity."""
+    from dataclasses import replace
+
+    csv_report, xbrl_report, _diffs = report_diffs("S100YRDM")
+    squeezed = "".join(csv_report.filer_name.split())
+    assert squeezed != csv_report.filer_name
+    assert ("filer_name", "other") in diff_reports(
+        csv_report, replace(xbrl_report, filer_name=squeezed)
+    )
+    holders = list(xbrl_report.joint_holders)
+    holders[2] = replace(holders[2], name_jp="".join(holders[2].name_jp.split()))
+    assert ("joint_holders[2].name_jp", "other") in diff_reports(
+        csv_report, replace(xbrl_report, joint_holders=holders)
+    )
+    raw = dict(xbrl_report.raw_fields)
+    raw["jplvh_cor:NameCoverPage"] = "".join(raw["jplvh_cor:NameCoverPage"].split())
+    assert ("raw_fields[jplvh_cor:NameCoverPage]", "other") in diff_reports(
+        csv_report, replace(xbrl_report, raw_fields=raw)
+    )
 
 
 # --- the stories that found this ---------------------------------------------------------------
