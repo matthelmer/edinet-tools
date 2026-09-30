@@ -99,6 +99,9 @@ def test_inline_and_instance_contexts_are_equal(doc):
 # --- (b) CSV vs inline -----------------------------------------------------------------------
 
 
+MAX_ANGLE_DROP = 100
+
+
 def csv_drops_angle_text(csv_norm: str, xbrl_norm: str) -> bool:
     """EDINET's CSV conversion mangles literal text in angle brackets inside a text section,
     as if it were a tag. Per "<", followed by non-ASCII text, it drops the whole "<...>"
@@ -129,7 +132,12 @@ def csv_drops_angle_text(csv_norm: str, xbrl_norm: str) -> bool:
                 nxt.add((i + 1, j))  # the "<" alone dropped
                 close = xbrl_norm.find(">", i + 1)
                 start = i + 1
-                if close != -1 and "<" not in xbrl_norm[start:close]:
+                # a whole segment is excused only up to 100 characters (corpus maximum: 92)
+                if (
+                    close != -1
+                    and close + 1 - i <= MAX_ANGLE_DROP
+                    and "<" not in xbrl_norm[start:close]
+                ):
                     nxt.add((close + 1, j))  # the whole segment dropped
         states = nxt
     return done
@@ -139,7 +147,7 @@ def csv_was_cut(csv_value: str) -> bool:
     """EDINET cuts a CSV value at 30,000 characters counted BEFORE it decodes entity
     references; the reader decodes them (`&amp;` -> `&`), so a cut value can read shorter
     (S100YOXP: 29,908 characters with 23 ampersands)."""
-    return len(csv_value) + 4 * csv_value.count("&") >= CSV_LIMIT
+    return len(csv_value) >= 29000 and len(csv_value) + 4 * csv_value.count("&") >= CSV_LIMIT
 
 
 def compare(csv_value, xbrl_value, path, diffs, text=False):
@@ -372,3 +380,15 @@ def test_csv_drops_angle_text_is_narrow():
     diffs = []
     compare("取締役会は", "<取締役会>取締役会は", "filer_name", diffs)  # not a text path
     assert diffs == [("filer_name", "other")]
+
+
+def test_angle_drop_is_capped_at_100_characters():
+    seg = "<" + "取" * 98 + ">"  # 100 characters
+    assert csv_drops_angle_text("前後", "前" + seg + "後")
+    long_seg = "<" + "取" * 99 + ">"  # 101 characters
+    assert not csv_drops_angle_text("前後", "前" + long_seg + "後")
+
+
+def test_csv_was_cut_needs_a_long_value():
+    assert csv_was_cut("a" * 29908 + "&" * 23)
+    assert not csv_was_cut("&" * 6000)  # ampersand-dense but short: not a cut
