@@ -80,6 +80,16 @@ def extract_csv_from_zip(zip_bytes: bytes) -> list[dict[str, Any]]:
     return csv_files
 
 
+def extract_rows_from_package(zip_bytes: bytes, source: str = 'ixbrl') -> list[dict[str, Any]]:
+    """Rows from an EDINET type=1 package's XBRL, in extract_csv_from_zip's shape.
+
+    source='ixbrl' (the filing's inline XBRL) or 'instance' (the .xbrl EDINET generates).
+    See xbrl_rows.py for the columns. Unlike the CSV path this fails loudly
+    (UnsupportedInlineXBRL) rather than returning []."""
+    from .xbrl_rows import extract_rows_from_package as _extract
+    return _extract(zip_bytes, source=source)
+
+
 def _read_csv_from_zip(zf: zipfile.ZipFile, name: str) -> list[dict[str, Any]]:
     """Read a single CSV file from a ZIP archive.
 

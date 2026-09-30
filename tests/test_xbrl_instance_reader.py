@@ -32,11 +32,15 @@ INSTANCE = """<?xml version="1.0" encoding="UTF-8"?>
 </xbrli:scenario>
 </xbrli:context>
 <xbrli:unit id="JPY"><xbrli:measure>iso4217:JPY</xbrli:measure></xbrli:unit>
-<jpcrp_cor:NetSales contextRef="CurrentYearDuration" unitRef="JPY" decimals="-3">580567000</jpcrp_cor:NetSales>
-<jpcrp_cor:Loss contextRef="CurrentYearDuration" unitRef="JPY" decimals="-3">-130000</jpcrp_cor:Loss>
+<jpcrp_cor:NetSales contextRef="CurrentYearDuration" unitRef="JPY" decimals="-3">
+580567000</jpcrp_cor:NetSales>
+<jpcrp_cor:Loss contextRef="CurrentYearDuration" unitRef="JPY" decimals="-3">
+-130000</jpcrp_cor:Loss>
 <x:Name contextRef="FilingDateInstant_H2">ファンド &amp; Co</x:Name>
 <x:Empty contextRef="FilingDateInstant_H2" xsi:nil="true"/>
-<x:TradesTextBlock contextRef="FilingDateInstant_H2">&lt;p&gt;見出し&lt;/p&gt;&lt;table&gt;&lt;tr&gt;&lt;td&gt;90,000&lt;/td&gt;&lt;td&gt;0.29&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</x:TradesTextBlock>
+<x:TradesTextBlock contextRef="FilingDateInstant_H2">&lt;p&gt;見出し&lt;/p&gt;&lt;table&gt;\
+&lt;tr&gt;&lt;td&gt;90,000&lt;/td&gt;&lt;td&gt;0.29&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;\
+</x:TradesTextBlock>
 <link:footnoteLink xlink:type="extended" xlink:role="http://www.xbrl.org/2003/role/link"/>
 </xbrli:xbrl>
 """.encode("utf-8")
@@ -83,7 +87,8 @@ def test_text_blocks_keep_html_and_give_tabbed_text():
 def test_a_tuple_fails_loudly():
     bad = INSTANCE.replace(
         b"<link:footnoteLink",
-        b'<x:Tuple><x:Inner contextRef="CurrentYearDuration">a</x:Inner></x:Tuple><link:footnoteLink',
+        b'<x:Tuple><x:Inner contextRef="CurrentYearDuration">a</x:Inner></x:Tuple>'
+        b"<link:footnoteLink",
     )
     with pytest.raises(UnsupportedInlineXBRL, match="x:Tuple"):
         read_instance(bad)
