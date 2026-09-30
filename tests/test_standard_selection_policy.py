@@ -401,3 +401,66 @@ def _all_pairs():
 def test_declared_standard_outranks_each_other_standard(name, own, other):
     r = _parse(_rows_for(name, (own, other)), own)
     assert getattr(r, name) == _parsed(SENTINEL[_kind(name)][own], _kind(name))
+
+
+# ---------------------------------------------------------------------------
+# Provenance: source_elements names the element each field was read from
+# ---------------------------------------------------------------------------
+
+NI_JG = "jpcrp_cor:ProfitLossAttributableToOwnersOfParentSummaryOfBusinessResults"
+NI_IFRS = "jpcrp_cor:ProfitLossAttributableToOwnersOfParentIFRSSummaryOfBusinessResults"
+EPS_JG = "jpcrp_cor:BasicEarningsLossPerShareSummaryOfBusinessResults"
+EPS_IFRS = "jpcrp_cor:BasicEarningsLossPerShareIFRSSummaryOfBusinessResults"
+
+
+def test_source_elements_name_the_winning_element():
+    rows = [
+        (NI_JG, CYD, "16729000000"),
+        (NI_IFRS, CYD, "30430000000"),
+        (EPS_JG, CYD, "81.05"),
+        (EPS_IFRS, CYD, "147.43"),
+    ]
+    r = _parse(rows, "IFRS")
+    assert r.net_income_owners == 30_430_000_000
+    assert r.earnings_per_share == Decimal("147.43")
+    assert r.source_elements["net_income_owners"] == NI_IFRS
+    assert r.source_elements["earnings_per_share"] == EPS_IFRS
+    # a field that resolved to nothing has no source
+    assert "net_sales" not in r.source_elements
+
+
+def test_source_elements_show_a_fallback():
+    """An IFRS filing with only the J-GAAP fact: the value is the legacy
+    fallback, and the source says so."""
+    r = _parse([(NI_JG, CYD, "16729000000")], "IFRS")
+    assert r.net_income_owners == 16_729_000_000
+    assert element_standard(r.source_elements["net_income_owners"]) == "Japan GAAP"
+
+
+def test_source_elements_cover_prior_year_reads():
+    rows = [(NI_IFRS, PYD, "1"), (NI_JG, PYD, "2")]
+    r = _parse(rows, "IFRS")
+    assert r.prior_net_income_owners == 1
+    assert r.source_elements["prior_net_income_owners"] == NI_IFRS
+
+
+def test_empty_filing_has_empty_source_elements():
+    r = parse_securities_report(csv_files=[], doc_id="X", doc_type_code="120")
+    assert r.source_elements == {}
+
+
+def test_none_fallback_leaves_the_field_empty():
+    """The 'none' fallback: when the declared standard's fact is missing,
+    another standard's fact is not served."""
+    from edinet_tools.parsers.extraction import resolve_tiers
+    from edinet_tools.parsers.securities import FieldPolicy, _with_own_standard_first
+
+    legacy = sec._DURATION_LEGACY["net_income_owners"]
+    none = FieldPolicy("test", ("Japan GAAP", "IFRS", "US GAAP"), "none")
+    tiers = _with_own_standard_first(legacy, none)
+    cf = _csv([(NI_JG, CYD, "5")], "IFRS")
+    kw = dict(period=CYD, is_consolidated=True)
+    assert resolve_tiers(cf, tiers, standard="IFRS", **kw) is None
+    assert resolve_tiers(cf, tiers, standard="Japan GAAP", **kw).value == 5
+    # no declared standard: today's order, untouched
+    assert resolve_tiers(cf, tiers, standard=None, **kw).value == 5

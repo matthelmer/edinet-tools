@@ -9,7 +9,7 @@ PROCESSING PHILOSOPHY: Store raw XBRL values faithfully. No interpretation.
 - Ratios as decimals (0.086 = 8.6%)
 - Downstream consumers determine meaning
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from decimal import Decimal
 from datetime import date
 
@@ -17,6 +17,7 @@ from datetime import date
 from .base import ParsedReport
 from .extraction import (
     Tier,
+    _tier_in_scope,
     resolve_tiers,
     get_dei,
     extract_csv_from_zip,
@@ -472,6 +473,14 @@ class SecuritiesReport(ParsedReport):
     # residual miss, so an empty `segments` is not silently read as single-segment.
     segments_extraction_incomplete: bool = False
 
+    # Provenance (v0.9.0+): field name -> the element its value was read from
+    # (the winning tier's element id), for every financial field the tier
+    # tables and the per-share block resolved; a field that resolved to None
+    # has no entry. Compare element_standard(source) with accounting_standard
+    # to see when a value is a fallback from another standard's fact. The
+    # independent IFRS summary trio is not listed (its element is fixed).
+    source_elements: dict = field(default_factory=dict)
+
     # Guided errors for the three fields removed by the v0.8.0 ownership-basis
     # split. Not a dataclass field (no type annotation) -- a plain class
     # attribute the dataclass decorator leaves untouched.
@@ -566,22 +575,24 @@ def _chain(key: str):
 
 
 # ---------------------------------------------------------------------------
-# Per-field tier tables (v0.8.0 stage-5 migration)
+# Per-field legacy tier tables (v0.8.0 stage-5 migration)
 #
-# Tier order IS the pre-migration waterfall order — proven equivalent by the
-# full-corpus old-vs-new re-parse — EXCEPT the ratified C1 per-standard
-# scoping tiers marked "C1" below: IFRS-transition dual-table filings carry
-# BOTH a legacy J-GAAP highlights table and an IFRS one at the same
-# contexts, and the standard-agnostic order served the J-GAAP figures on
-# IFRS rows for exactly three fields (equity_ratio / total_assets /
-# net_assets_total). IFRS filers now try the IFRS-specific elements first;
-# the neutral/legacy tiers still serve every other standard unchanged, and
-# still serve IFRS rows that carry no IFRS-specific value (honest fallback).
+# Tier order IS the pre-migration waterfall order, proven equivalent by the
+# full-corpus old-vs-new re-parse. These are the LEGACY waterfalls: the
+# resolved tables (_DURATION_TIERS / _INSTANT_TIERS and the per-share
+# stages) put an own-standard stage in front of each, built from
+# STANDARD_POLICY below. The legacy table then serves a filing without a
+# declared standard, and a filing whose own-standard fact is missing
+# (the 'legacy' fallback).
+#
+# History: 0.8.0's C1 fix scoped three fields (equity_ratio, total_assets,
+# net_assets_total) to prefer the IFRS highlights table on IFRS filings;
+# 0.9.0 generalises it to every field and every standard.
 # ---------------------------------------------------------------------------
 
 # Duration-context fields. The same tables serve the current-year and
 # prior-year reads (the period is a resolve_tiers argument).
-_DURATION_TIERS = {
+_DURATION_LEGACY = {
     # Revenue: J-GAAP summary -> IFRS summary -> US-GAAP summary -> bank/
     # insurer 経常収益 -> broker 営業収益 (summary then FS) -> custom-namespace
     # IFRS suffix hatch -> securities-firm FS -> FS NetSales (+ IFRS chain).
@@ -683,10 +694,8 @@ _PRIOR_YEAR_FIELDS = ('net_sales', 'operating_income', 'ordinary_income',
                       'net_income_owners', 'net_income_total')
 
 # Instant-context fields (current year only).
-_INSTANT_TIERS = {
+_INSTANT_LEGACY = {
     'total_assets': (
-        # C1: IFRS filers read the IFRS highlights table first.
-        Tier(ELEMENT_MAP['total_assets_ifrs_summary'], standards=('IFRS',)),
         Tier(_chain('total_assets_summary')),
         Tier(_chain('total_assets_ifrs_summary')),
         Tier(_chain('total_assets_usgaap_summary')),
@@ -703,11 +712,6 @@ _INSTANT_TIERS = {
         Tier(_chain('net_assets_usgaap_summary')),
     ),
     'net_assets_total': (
-        # C1: IFRS filers read the IFRS-specific total-equity sources first
-        # (summary-level combined-equity hatch, then FS-level EquityIFRS).
-        Tier('TotalEquityIFRSSummaryOfBusinessResults',
-             standards=('IFRS',), suffix_match=True),
-        Tier('jpigp_cor:EquityIFRS', standards=('IFRS',)),
         Tier(_chain('net_assets_summary')),
         # Combined-equity highlights line for filers with no owners/NCI
         # split (e.g. TotalEquityIFRS... in a filer-local namespace) —
@@ -761,8 +765,9 @@ _INSTANT_TIERS = {
     'retained_earnings': (Tier(_chain('retained_earnings')),),
 }
 
-# Per-share / ratio tier tables ('string' mode — the caller parses).
-_NAV_TIERS = (
+# Per-share / ratio legacy tier tables ('string' mode — the caller parses).
+# The own-standard stages in front of them are built below the policy.
+_NAV_LEGACY = (
     Tier(ELEMENT_MAP['net_assets_per_share']),
     # bps_ifrs's element name is a taxonomy misnomer ("EquityToAssetRatio")
     # but its label is 1株当たり親会社所有者帰属持分 — per-share equity in JPY,
@@ -775,20 +780,15 @@ _NAV_TIERS = (
     Tier('StockholdersEquityPerShareOfCommonStockUSGAAP'
          'SummaryOfBusinessResults', suffix_match=True),
 )
-_EPS_TIERS = (
+_EPS_LEGACY = (
     Tier(ELEMENT_MAP['earnings_per_share']),
     Tier(ELEMENT_MAP['earnings_per_share_ifrs']),
     Tier(ELEMENT_MAP['earnings_per_share_usgaap']),
 )
-# C1 preference stage for equity_ratio: coerce semantics, so a
-# marker-valued IFRS ratio falls through to the legacy scan instead of
-# blanking the field.
-_EQUITY_RATIO_IFRS_FIRST = (
-    Tier(ELEMENT_MAP['equity_ratio_ifrs'], standards=('IFRS',)),
-)
 # The legacy scan keeps its historical first-non-empty-raw-string behavior
 # (coerce=False): a null-marker J-GAAP ratio still stops the scan and
-# parses to None — bit-identical to pre-migration for non-IFRS filers.
+# parses to None (the own-standard stage in front of it has coerce
+# semantics, so a marker-valued own-standard ratio falls through to here).
 # Note: EquityToAssetRatioUSGAAPSummaryOfBusinessResults IS a genuine ratio
 # (unlike its IFRS taxonomy namesake, which is the BPS misnomer above).
 _EQUITY_RATIO_LEGACY = (
@@ -796,7 +796,7 @@ _EQUITY_RATIO_LEGACY = (
     Tier(ELEMENT_MAP['equity_ratio_ifrs']),
     Tier(ELEMENT_MAP['equity_ratio_usgaap']),
 )
-_ROE_TIERS = (
+_ROE_LEGACY = (
     Tier(ELEMENT_MAP['roe']),
     Tier(ELEMENT_MAP['roe_ifrs']),
     Tier(ELEMENT_MAP['roe_usgaap']),
@@ -937,10 +937,10 @@ STANDARD_POLICY = {
 }
 
 _PER_SHARE_TABLES = {
-    'net_assets_per_share': (_NAV_TIERS,),
-    'earnings_per_share': (_EPS_TIERS,),
-    'equity_ratio': (_EQUITY_RATIO_IFRS_FIRST, _EQUITY_RATIO_LEGACY),
-    'roe': (_ROE_TIERS,),
+    'net_assets_per_share': (_NAV_LEGACY,),
+    'earnings_per_share': (_EPS_LEGACY,),
+    'equity_ratio': (_EQUITY_RATIO_LEGACY,),
+    'roe': (_ROE_LEGACY,),
 }
 _IFRS_TRIO_ELEMENTS = {
     'ifrs_summary_basic_eps': ELEMENT_MAP['earnings_per_share_ifrs'],
@@ -956,10 +956,10 @@ def field_elements(name: str) -> tuple:
         name = name[len('prior_'):]
     if name in _IFRS_TRIO_ELEMENTS:
         return (_IFRS_TRIO_ELEMENTS[name],)
-    if name in _DURATION_TIERS:
-        tables = (_DURATION_TIERS[name],)
-    elif name in _INSTANT_TIERS:
-        tables = (_INSTANT_TIERS[name],)
+    if name in _DURATION_LEGACY:
+        tables = (_DURATION_LEGACY[name],)
+    elif name in _INSTANT_LEGACY:
+        tables = (_INSTANT_LEGACY[name],)
     else:
         tables = _PER_SHARE_TABLES[name]
     seen = []
@@ -969,6 +969,59 @@ def field_elements(name: str) -> tuple:
                 if el not in seen:
                     seen.append(el)
     return tuple(seen)
+
+
+def _with_own_standard_first(legacy: tuple, policy: FieldPolicy) -> tuple:
+    """A field's resolved tier table: one stage per declared standard, then
+    the legacy waterfall.
+
+    Each stage holds, in legacy order, the legacy tiers' elements of that
+    standard only, scoped to it (standards=(std,)), with no chain of its own:
+    a filing that declares the standard reads its own facts before any other
+    standard's. A legacy tier out of scope for a standard (the 0.7.1
+    operating-income gate) contributes nothing to that standard's stage. A
+    last-resort tier keeps its place after the stage's other tiers but is not
+    deferred past the legacy table (it is the standard's own fact).
+
+    The legacy table follows unchanged: it serves a filing without a declared
+    standard, and, under the 'legacy' fallback, a filing whose own-standard
+    fact is missing. Under 'none' the legacy table is closed to the declared
+    standards, so a missing own fact is an honest None."""
+    if len(policy.standards) < 2:
+        return legacy
+    stage = []
+    ordered = [t for t in legacy if not t.last_resort] + [t for t in legacy if t.last_resort]
+    for std in policy.standards:
+        for tier in ordered:
+            if not _tier_in_scope(tier, std):
+                continue
+            own = tuple(e for e in tier.elements if element_standard(e) == std)
+            if own:
+                stage.append(Tier(own if len(own) > 1 else own[0], standards=(std,),
+                                  suffix_match=tier.suffix_match))
+    if policy.fallback == 'none':
+        closed = policy.standards
+        legacy = tuple(replace(t, exclude_standards=(t.exclude_standards or ()) + closed)
+                       for t in legacy)
+    return tuple(stage) + legacy
+
+
+def _own_standard_stage(legacy: tuple, policy: FieldPolicy) -> tuple:
+    """The own-standard stage alone (the per-share fields resolve it with
+    coerce semantics before their legacy scan)."""
+    full = _with_own_standard_first(legacy, policy)
+    return full[:len(full) - len(legacy)]
+
+
+# Resolved tables: own-standard stage, then the legacy waterfall.
+_DURATION_TIERS = {name: _with_own_standard_first(tiers, STANDARD_POLICY[name])
+                   for name, tiers in _DURATION_LEGACY.items()}
+_INSTANT_TIERS = {name: _with_own_standard_first(tiers, STANDARD_POLICY[name])
+                  for name, tiers in _INSTANT_LEGACY.items()}
+_NAV_OWN = _own_standard_stage(_NAV_LEGACY, STANDARD_POLICY['net_assets_per_share'])
+_EPS_OWN = _own_standard_stage(_EPS_LEGACY, STANDARD_POLICY['earnings_per_share'])
+_EQUITY_RATIO_OWN = _own_standard_stage(_EQUITY_RATIO_LEGACY, STANDARD_POLICY['equity_ratio'])
+_ROE_OWN = _own_standard_stage(_ROE_LEGACY, STANDARD_POLICY['roe'])
 
 
 # ---------------------------------------------------------------------------
@@ -1000,52 +1053,67 @@ def _extract_dei_block(csv_files) -> dict:
     }
 
 
-def _extract_financials(csv_files, standard, is_consolidated) -> dict:
-    """Every integer financial field, resolved from the tier tables."""
-    def fin(tiers, period):
+def _extract_financials(csv_files, standard, is_consolidated):
+    """Every integer financial field, resolved from the tier tables.
+    Returns (values, sources) — sources maps field -> winning element id."""
+    out, sources = {}, {}
+
+    def fin(name, tiers, period):
         hit = resolve_tiers(csv_files, tiers, standard=standard,
                             period=period, is_consolidated=is_consolidated)
-        return hit.value if hit else None
+        out[name] = hit.value if hit else None
+        if hit is not None:
+            sources[name] = hit.element_id
 
-    out = {}
     for field_name, tiers in _DURATION_TIERS.items():
-        out[field_name] = fin(tiers, 'CurrentYearDuration')
+        fin(field_name, tiers, 'CurrentYearDuration')
     for field_name in _PRIOR_YEAR_FIELDS:
-        out[f'prior_{field_name}'] = fin(_DURATION_TIERS[field_name],
-                                         'Prior1YearDuration')
+        fin(f'prior_{field_name}', _DURATION_TIERS[field_name], 'Prior1YearDuration')
     for field_name, tiers in _INSTANT_TIERS.items():
-        out[field_name] = fin(tiers, 'CurrentYearInstant')
-    return out
+        fin(field_name, tiers, 'CurrentYearInstant')
+    return out, sources
 
 
 def _extract_per_share_block(csv_files, standard, is_consolidated):
     """Per-share metrics, ratios, and the independent IFRS summary trio.
-    Returns (values, provenance) — provenance feeds apply_validation."""
-    def string_hit(tiers, period, coerce):
-        return resolve_tiers(csv_files, tiers, standard=standard,
-                             period=period, is_consolidated=is_consolidated,
-                             mode='string', coerce=coerce)
+    Returns (values, provenance, sources) — provenance feeds apply_validation;
+    sources maps field -> winning element id (source_elements).
+
+    Each per-share / ratio field resolves its own-standard stage first with
+    coerce semantics (a marker-valued own-standard fact falls through), then
+    its legacy scan with the legacy coerce setting."""
+    def string_hit(own, legacy, period, legacy_coerce):
+        hit = resolve_tiers(csv_files, own, standard=standard, period=period,
+                            is_consolidated=is_consolidated, mode='string', coerce=True)
+        if hit is None:
+            hit = resolve_tiers(csv_files, legacy, standard=standard, period=period,
+                                is_consolidated=is_consolidated, mode='string',
+                                coerce=legacy_coerce)
+        return hit
 
     values = {}
     provenance = {}
+    sources = {}
 
-    nav_hit = string_hit(_NAV_TIERS, 'CurrentYearInstant', True)
-    values['net_assets_per_share'] = parse_decimal(nav_hit.value) if nav_hit else None
+    def put(name, hit, parse):
+        values[name] = parse(hit.value) if hit else None
+        if values[name] is not None:
+            sources[name] = hit.element_id
 
-    eps_hit = string_hit(_EPS_TIERS, 'CurrentYearDuration', True)
-    values['earnings_per_share'] = parse_decimal(eps_hit.value) if eps_hit else None
+    put('net_assets_per_share',
+        string_hit(_NAV_OWN, _NAV_LEGACY, 'CurrentYearInstant', True), parse_decimal)
+    put('earnings_per_share',
+        string_hit(_EPS_OWN, _EPS_LEGACY, 'CurrentYearDuration', True), parse_decimal)
 
-    # equity_ratio: C1 IFRS-preference stage (coerce), then the legacy
-    # first-non-empty-raw-string scan (see the tier-table comments).
-    er_hit = string_hit(_EQUITY_RATIO_IFRS_FIRST, 'CurrentYearInstant', True)
-    if er_hit is None:
-        er_hit = string_hit(_EQUITY_RATIO_LEGACY, 'CurrentYearInstant', False)
+    # equity_ratio / roe: the legacy scan keeps its first-non-empty-raw-string
+    # behavior (coerce=False; see the tier-table comments).
+    er_hit = string_hit(_EQUITY_RATIO_OWN, _EQUITY_RATIO_LEGACY, 'CurrentYearInstant', False)
     if er_hit is not None:
         provenance['equity_ratio'] = er_hit.element_id
-    values['equity_ratio'] = parse_percentage(er_hit.value) if er_hit else None
+    put('equity_ratio', er_hit, parse_percentage)
 
-    roe_hit = string_hit(_ROE_TIERS, 'CurrentYearDuration', False)
-    values['roe'] = parse_percentage(roe_hit.value) if roe_hit else None
+    put('roe', string_hit(_ROE_OWN, _ROE_LEGACY, 'CurrentYearDuration', False),
+        parse_percentage)
 
     # IFRS summary CurrentYear metrics (v0.7.1+): single fixed-bare-context
     # elements, not waterfalls — extracted independently of the tier tables
@@ -1069,7 +1137,7 @@ def _extract_per_share_block(csv_files, standard, is_consolidated):
     ))
     values['ifrs_summary_bps'] = parse_decimal(ifrs_bps_str)
 
-    return values, provenance
+    return values, provenance, sources
 
 
 def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_type_code=None) -> SecuritiesReport:
@@ -1108,8 +1176,8 @@ def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_t
     standard = dei['accounting_standard']
     is_consolidated = dei['is_consolidated']
 
-    financials = _extract_financials(csv_files, standard, is_consolidated)
-    per_share, provenance = _extract_per_share_block(
+    financials, sources = _extract_financials(csv_files, standard, is_consolidated)
+    per_share, provenance, per_share_sources = _extract_per_share_block(
         csv_files, standard, is_consolidated)
 
     # Categorize all elements
@@ -1137,6 +1205,7 @@ def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_t
         # Financials (tier tables) + per-share/ratios
         **financials,
         **per_share,
+        source_elements={**sources, **per_share_sources},
 
         # Segments (v0.7.0+)
         segments=segments,
