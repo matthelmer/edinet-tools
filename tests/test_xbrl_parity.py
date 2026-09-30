@@ -13,7 +13,6 @@
 """
 
 import collections
-import re
 import sys
 from dataclasses import fields, is_dataclass
 from decimal import Decimal
@@ -100,21 +99,40 @@ def test_inline_and_instance_contexts_are_equal(doc):
 # --- (b) CSV vs inline -----------------------------------------------------------------------
 
 
-_ANGLE_TEXT_RE = re.compile(r"<[^<>]*>")
-
-
 def csv_drops_angle_text(csv_norm: str, xbrl_norm: str) -> bool:
-    """EDINET's CSV conversion mangles literal text written in angle brackets inside a text
-    section, as if it were a tag: it drops the whole "<取締役会>" (S100Z59P) or only its "<"
-    (S100YOXP, "<参考情報：...>"); the XBRL keeps it. True only when one of those two edits,
-    applied to every such segment, gives the CSV text exactly, and every segment holds
-    non-ASCII text (so a real HTML tag never qualifies)."""
-    segments = _ANGLE_TEXT_RE.findall(xbrl_norm)
-    if not segments or not all(any(ord(ch) > 127 for ch in seg) for seg in segments):
+    """EDINET's CSV conversion mangles literal text in angle brackets inside a text section,
+    as if it were a tag. Per "<", followed by non-ASCII text, it drops the whole "<...>"
+    segment ("<取締役会>", S100Z59P) or only the "<" ("<参考情報：...>", S100YOXP; an unclosed
+    "<―――損益", S100YSD1; S100YNQE does both in one section). True only when the CSV text is
+    the XBRL text with such edits and nothing else changed; a "<" followed by ASCII (a real
+    HTML tag) is never excused."""
+    if csv_norm == xbrl_norm or "<" not in xbrl_norm:
         return False
-    dropped = _ANGLE_TEXT_RE.sub("", xbrl_norm)
-    opened = _ANGLE_TEXT_RE.sub(lambda m: m.group(0)[1:], xbrl_norm)
-    return csv_norm in (dropped, opened)
+    # frontier: {(i in xbrl, j in csv)} states reached; advance through xbrl
+    states = {(0, 0)}
+    n, m = len(xbrl_norm), len(csv_norm)
+    done = False
+    seen = set()
+    while states:
+        nxt = set()
+        for i, j in states:
+            if (i, j) in seen:
+                continue
+            seen.add((i, j))
+            if i == n:
+                done = done or j == m
+                continue
+            ch = xbrl_norm[i]
+            if j < m and csv_norm[j] == ch:
+                nxt.add((i + 1, j + 1))
+            if ch == "<" and i + 1 < n and ord(xbrl_norm[i + 1]) > 127:
+                nxt.add((i + 1, j))  # the "<" alone dropped
+                close = xbrl_norm.find(">", i + 1)
+                start = i + 1
+                if close != -1 and "<" not in xbrl_norm[start:close]:
+                    nxt.add((close + 1, j))  # the whole segment dropped
+        states = nxt
+    return done
 
 
 def csv_was_cut(csv_value: str) -> bool:
@@ -183,16 +201,34 @@ def text_fields(report) -> set:
     }
 
 
-def diff_reports(csv_report, xbrl_report):
+def diff_reports(csv_report, xbrl_report, text_elements=frozenset()):
+    """Differences between the CSV and XBRL reports. A text section is a ...TextBlock element
+    or an element the inline XBRL escapes (text_elements: e.g. an escaped cover-page name
+    with a line break, S100YRJE); a typed field is text when it is named as one, or when its
+    value is a text section's value (reason_for_filing reads one of two TextBlocks)."""
+
+    def is_text_element(element_id):
+        local = element_id.rsplit(":", 1)[-1]
+        return (
+            "TextBlock" in element_id
+            or element_id in text_elements
+            or local in {e.rsplit(":", 1)[-1] for e in text_elements}
+        )
+
     diffs = []
     texts = text_fields(csv_report)
+    text_values = {
+        f.value
+        for r in (csv_report, xbrl_report)
+        for f in r.raw_facts
+        if is_text_element(f.element_id)
+    }
     for f in fields(csv_report):
         a, b = getattr(csv_report, f.name), getattr(xbrl_report, f.name)
         if f.name == "source_files":
             a = [n[: -len(".csv")] + ".xbrl" for n in a]
         if f.name == "raw_facts":
-            # facts compared as a multiset (document order may differ between sources); a
-            # fact's value is a text path only when its element is a TextBlock
+            # facts compared as a multiset (document order may differ between sources)
             def by_key(facts):
                 return sorted(facts, key=lambda x: (x.element_id, x.context_id, str(x.unit_id)))
 
@@ -202,24 +238,40 @@ def diff_reports(csv_report, xbrl_report):
                 continue
             for x, y in zip(a, b):
                 where = f"raw_facts[{x.element_id}@{x.context_id}]"
-                compare(x, y, where, diffs, "TextBlock" in x.element_id)
+                compare(x, y, where, diffs, is_text_element(x.element_id))
             continue
         if f.name in ("raw_fields", "unmapped_fields", "text_blocks"):
             if set(a) != set(b):
                 diffs.append((f.name + ".keys", "other"))
             for k in set(a) & set(b):
-                is_text = f.name == "text_blocks" or "TextBlock" in k
+                is_text = f.name == "text_blocks" or is_text_element(k)
                 compare(a[k], b[k], f"{f.name}[{k}]", diffs, is_text)
             continue
-        compare(a, b, f.name, diffs, f.name in texts or f.name == "text_blocks_by_context")
+        is_text = (
+            f.name in texts
+            or f.name == "text_blocks_by_context"
+            or (isinstance(a, str) and (a in text_values or b in text_values))
+        )
+        compare(a, b, f.name, diffs, is_text)
     return diffs
+
+
+def escaped_elements(zip_bytes) -> frozenset:
+    """Elements the inline XBRL files as escaped HTML (text sections by the filer's own mark)."""
+    return frozenset(
+        f.element_id for f in read_inline_xbrl_package(zip_bytes).facts if f.html is not None
+    )
 
 
 def report_diffs(doc, source="xbrl"):
     csv_files = extract_csv_from_zip((FIXTURES / f"{doc}_type5.zip").read_bytes())
     csv_report = _parser_for(DOCS[doc])(csv_files=csv_files, doc_id=doc, doc_type_code=DOCS[doc])
     xbrl_report = parse_xbrl(type1(doc), DOCS[doc], doc_id=doc, source=source)
-    return csv_report, xbrl_report, diff_reports(csv_report, xbrl_report)
+    return (
+        csv_report,
+        xbrl_report,
+        diff_reports(csv_report, xbrl_report, escaped_elements(type1(doc))),
+    )
 
 
 # Exact difference counts per fixture (both XBRL sources give the same): a new difference, or
@@ -310,6 +362,11 @@ def test_s100yrdm_three_share_counts():
 def test_csv_drops_angle_text_is_narrow():
     assert csv_drops_angle_text("取締役会は", "<取締役会>取締役会は")
     assert csv_drops_angle_text("取締役会>は", "<取締役会>は")
+    # an unclosed "<" before non-ASCII text (S100YSD1's scheme arrows)
+    assert csv_drops_angle_text("代金―>―収益", "代金―><―収益")
+    # S100YNQE mixes both edits in one section
+    assert csv_drops_angle_text("【対象】共通>次の甲1>先", "【対象】<共通>次の<甲1><甲2>先")
+    assert not csv_drops_angle_text("【対象】共通>次の甲1>先X", "【対象】<共通>次の<甲1><甲2>先")
     assert not csv_drops_angle_text("取締役会は", "<b>取締役会は")  # an ASCII tag never qualifies
     assert not csv_drops_angle_text("取締役会", "<取締役会>取締役会は")  # more than the brackets
     diffs = []
