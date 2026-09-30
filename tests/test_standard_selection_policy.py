@@ -12,13 +12,18 @@ fallback. These tests hold the declaration to the tier tables.
 """
 
 import dataclasses
+from decimal import Decimal
+
+import pytest
 
 from edinet_tools.parsers import securities as sec
+from edinet_tools.parsers.extraction import _tier_in_scope
 from edinet_tools.parsers.securities import (
     STANDARD_POLICY,
     SecuritiesReport,
     element_standard,
     field_elements,
+    parse_securities_report,
 )
 
 STANDARDS = ("Japan GAAP", "IFRS", "US GAAP")
@@ -79,3 +84,320 @@ def test_element_standard_reads_the_taxonomy_name():
     assert element_standard("jpcrp_cor:RevenuesUSGAAPSummaryOfBusinessResults") == "US GAAP"
     assert element_standard("SalesRevenuesIFRS") == "IFRS"
     assert element_standard("jpcrp_cor:NumberOfEmployees") == "neutral"
+
+
+# ---------------------------------------------------------------------------
+# The competing-source grid
+#
+# For every field that more than one standard tags, a filing is built with a
+# distinct sentinel per standard, and the winner is asserted by value: a wrong
+# winner is visible by which sentinel came back.
+# ---------------------------------------------------------------------------
+
+CYD, PYD, CYI = "CurrentYearDuration", "Prior1YearDuration", "CurrentYearInstant"
+NC = "_NonConsolidatedMember"
+FILER_NS = "jpcrp030000-asr_E99999-000"
+DURATION_PER_SHARE = ("earnings_per_share", "roe")
+KINDS = {"net_assets_per_share": "dec", "earnings_per_share": "dec"}
+KINDS.update({"equity_ratio": "pct", "roe": "pct"})
+SENTINEL = {
+    "int": {"Japan GAAP": "111", "IFRS": "222", "US GAAP": "333"},
+    "dec": {"Japan GAAP": "11.1", "IFRS": "22.2", "US GAAP": "33.3"},
+    "pct": {"Japan GAAP": "0.111", "IFRS": "0.222", "US GAAP": "0.333"},
+}
+PRIOR_SENTINEL = {"Japan GAAP": "444", "IFRS": "555", "US GAAP": "666"}
+
+
+def _competing():
+    return [n for n, p in STANDARD_POLICY.items() if len(p.standards) >= 2]
+
+
+def _period(name):
+    if name.startswith("prior_"):
+        return PYD
+    if name in sec._DURATION_TIERS or name in DURATION_PER_SHARE:
+        return CYD
+    return CYI
+
+
+def _tables(name):
+    name = _policy_name(name)
+    if name in sec._DURATION_TIERS:
+        return (sec._DURATION_TIERS[name],)
+    if name in sec._INSTANT_TIERS:
+        return (sec._INSTANT_TIERS[name],)
+    return sec._PER_SHARE_TABLES[name]
+
+
+def _rep(name, standard):
+    """The field's first element of `standard` (exact id; a suffix-only
+    standard gets a filer-local id, with suffix=True)."""
+    els = [e for e in field_elements(name) if element_standard(e) == standard]
+    exact = [e for e in els if ":" in e]
+    if exact:
+        return exact[0], False
+    return f"{FILER_NS}:{els[0]}", True
+
+
+def _parsed(value, kind):
+    if value is None:
+        return None
+    return int(value) if kind == "int" else Decimal(value)
+
+
+def _reachable(name, standard, element):
+    """True when a tier in scope for `standard` reads `element` (by id or,
+    for a suffix tier, by its local name)."""
+    local = element.rpartition(":")[2]
+    for table in _tables(name):
+        for tier in table:
+            if not _tier_in_scope(tier, standard):
+                continue
+            if element in tier.elements or (tier.suffix_match and local in tier.elements):
+                return True
+    return False
+
+
+def _no_standard_winner(name, present):
+    """Today's order for a filing without a DEI standard: the first present
+    element in the unscoped tiers (last-resort tiers last)."""
+    tiers = [t for table in _tables(name) for t in table if _tier_in_scope(t, None)]
+    ordered = [t for t in tiers if not t.last_resort] + [t for t in tiers if t.last_resort]
+    for tier in ordered:
+        for el in tier.elements:
+            for std, (rep, suffix) in present.items():
+                if rep == el or (tier.suffix_match and rep.rpartition(":")[2] == el):
+                    return std
+    return None
+
+
+def _csv(rows, standard, consolidated="true"):
+    dei = [("jpdei_cor:EDINETCodeDEI", "FilingDateInstant", "E99999")]
+    if standard is not None:
+        dei.append(("jpdei_cor:AccountingStandardsDEI", "FilingDateInstant", standard))
+    dei.append(
+        (
+            "jpdei_cor:WhetherConsolidatedFinancialStatementsArePreparedDEI",
+            "FilingDateInstant",
+            consolidated,
+        )
+    )
+    data = [
+        {
+            "要素ID": e,
+            "項目名": "",
+            "コンテキストID": c,
+            "相対年度": "",
+            "連結・個別": "",
+            "期間・時点": "",
+            "ユニットID": "JPY",
+            "単位": "",
+            "値": v,
+        }
+        for e, c, v in dei + rows
+    ]
+    return [{"filename": "grid.csv", "data": data}]
+
+
+def _parse(rows, standard, consolidated="true"):
+    return parse_securities_report(
+        csv_files=_csv(rows, standard, consolidated), doc_id="GRID", doc_type_code="120"
+    )
+
+
+def _kind(name):
+    return KINDS.get(_policy_name(name), "int")
+
+
+def _cases(pairs):
+    """[(field, own_standard, other_standard)] -> pytest ids."""
+    return [pytest.param(*p, id="-".join(x.replace(" ", "") for x in p)) for p in pairs]
+
+
+def _fields_with_prior():
+    out = []
+    for name in _competing():
+        out.append(name)
+        if name in sec._PRIOR_YEAR_FIELDS:
+            out.append(f"prior_{name}")
+    return out
+
+
+def _pairs(own_standards, other_pick):
+    pairs = []
+    for name in _fields_with_prior():
+        stds = STANDARD_POLICY[_policy_name(name)].standards
+        for own in own_standards:
+            if own not in stds:
+                continue
+            other = other_pick(stds, own)
+            if other is not None:
+                pairs.append((name, own, other))
+    return pairs
+
+
+def _jgaap_else_other(stds, own):
+    if own != "Japan GAAP" and "Japan GAAP" in stds:
+        return "Japan GAAP"
+    rest = [s for s in stds if s != own]
+    return rest[0] if rest else None
+
+
+def _rows_for(name, standards, period=None, sentinels=None, context_suffix=""):
+    period = period or _period(name)
+    kind = _kind(name)
+    sentinels = sentinels or SENTINEL[kind]
+    rows = []
+    for std in standards:
+        rep, _suffix = _rep(name, std)
+        rows.append((rep, period + context_suffix, sentinels[std]))
+    return rows
+
+
+# 1-2: the declared standard's fact wins over another standard's fact.
+@pytest.mark.parametrize(
+    "name,own,other",
+    _cases(_pairs(("IFRS", "US GAAP"), lambda s, o: "Japan GAAP" if "Japan GAAP" in s else None)),
+)
+def test_declared_standard_outranks_jgaap(name, own, other):
+    r = _parse(_rows_for(name, (own, other)), own)
+    assert getattr(r, name) == _parsed(SENTINEL[_kind(name)][own], _kind(name))
+
+
+# 3: control — a J-GAAP filing tagging all three reads the J-GAAP fact.
+@pytest.mark.parametrize(
+    "name",
+    [n for n in _fields_with_prior() if "Japan GAAP" in STANDARD_POLICY[_policy_name(n)].standards],
+)
+def test_jgaap_declared_reads_jgaap(name):
+    stds = STANDARD_POLICY[_policy_name(name)].standards
+    r = _parse(_rows_for(name, stds), "Japan GAAP")
+    assert getattr(r, name) == _parsed(SENTINEL[_kind(name)]["Japan GAAP"], _kind(name))
+
+
+# 4: control — no DEI standard: today's order (a scoped tier never matches).
+@pytest.mark.parametrize("name", _fields_with_prior())
+def test_no_declared_standard_keeps_todays_order(name):
+    stds = STANDARD_POLICY[_policy_name(name)].standards
+    present = {s: _rep(name, s) for s in stds}
+    winner = _no_standard_winner(name, present)
+    r = _parse(_rows_for(name, stds), None)
+    expected = None if winner is None else SENTINEL[_kind(name)][winner]
+    assert getattr(r, name) == _parsed(expected, _kind(name))
+
+
+def _fallback_expected(name, own, other):
+    policy = STANDARD_POLICY[_policy_name(name)]
+    if policy.fallback == "none":
+        return None
+    rep, _ = _rep(name, other)
+    if not _reachable(name, own, rep):
+        return None
+    return _parsed(SENTINEL[_kind(name)][other], _kind(name))
+
+
+# 5: the own-standard fact is missing: the declared fallback.
+@pytest.mark.parametrize("name,own,other", _cases(_pairs(STANDARDS, _jgaap_else_other)))
+def test_missing_own_fact_follows_the_declared_fallback(name, own, other):
+    r = _parse(_rows_for(name, (other,)), own)
+    assert getattr(r, name) == _fallback_expected(name, own, other)
+
+
+# 6: a null marker is a missing fact; a genuine zero is a value.
+@pytest.mark.parametrize("marker", ["－", "—"])
+@pytest.mark.parametrize("name,own,other", _cases(_pairs(("IFRS", "US GAAP"), _jgaap_else_other)))
+def test_own_null_marker_falls_through(name, own, other, marker):
+    rows = _rows_for(name, (other,))
+    rep, _ = _rep(name, own)
+    rows.append((rep, _period(name), marker))
+    r = _parse(rows, own)
+    assert getattr(r, name) == _fallback_expected(name, own, other)
+
+
+@pytest.mark.parametrize("name,own,other", _cases(_pairs(("IFRS", "US GAAP"), _jgaap_else_other)))
+def test_own_zero_is_a_value_and_wins(name, own, other):
+    rows = _rows_for(name, (other,))
+    rep, _ = _rep(name, own)
+    rows.append((rep, _period(name), "0"))
+    r = _parse(rows, own)
+    assert getattr(r, name) == _parsed("0", _kind(name))
+
+
+# 7: each period chooses independently.
+def _prior_pairs():
+    return [
+        (n, own, other)
+        for n, own, other in _pairs(("IFRS", "US GAAP"), _jgaap_else_other)
+        if n in sec._PRIOR_YEAR_FIELDS
+    ]
+
+
+@pytest.mark.parametrize("name,own,other", _cases(_prior_pairs()))
+def test_current_own_prior_other(name, own, other):
+    own_rep, _ = _rep(name, own)
+    other_rep, _ = _rep(name, other)
+    rows = [
+        (own_rep, CYD, SENTINEL["int"][own]),
+        (other_rep, CYD, SENTINEL["int"][other]),
+        (other_rep, PYD, PRIOR_SENTINEL[other]),
+    ]
+    r = _parse(rows, own)
+    assert getattr(r, name) == int(SENTINEL["int"][own])
+    reach = _reachable(name, own, other_rep)
+    assert getattr(r, f"prior_{name}") == (int(PRIOR_SENTINEL[other]) if reach else None)
+
+
+@pytest.mark.parametrize("name,own,other", _cases(_prior_pairs()))
+def test_prior_own_current_other(name, own, other):
+    own_rep, _ = _rep(name, own)
+    other_rep, _ = _rep(name, other)
+    rows = [
+        (other_rep, CYD, SENTINEL["int"][other]),
+        (own_rep, PYD, PRIOR_SENTINEL[own]),
+        (other_rep, PYD, PRIOR_SENTINEL[other]),
+    ]
+    r = _parse(rows, own)
+    reach = _reachable(name, own, other_rep)
+    assert getattr(r, name) == (int(SENTINEL["int"][other]) if reach else None)
+    assert getattr(r, f"prior_{name}") == int(PRIOR_SENTINEL[own])
+
+
+# 8: a consolidated filer's parent-only own-standard fact is not eligible.
+@pytest.mark.parametrize("name,own,other", _cases(_pairs(STANDARDS, _jgaap_else_other)))
+def test_parent_only_own_fact_never_wins_for_a_consolidated_filer(name, own, other):
+    rows = _rows_for(name, (other,))
+    rep, _ = _rep(name, own)
+    rows.append((rep, _period(name) + NC, "999"))
+    r = _parse(rows, own)
+    assert getattr(r, name) == _fallback_expected(name, own, other)
+
+
+# 9: a parent-only filer reads the parent context, own standard first.
+def _parent_only_pairs():
+    return [
+        (n, own, other)
+        for n, own, other in _pairs(("IFRS", "US GAAP"), _jgaap_else_other)
+        if not _rep(n, own)[1] and not _rep(n, other)[1]
+    ]
+
+
+@pytest.mark.parametrize("name,own,other", _cases(_parent_only_pairs()))
+def test_parent_only_filer_reads_its_parent_context(name, own, other):
+    rows = _rows_for(name, (own, other), context_suffix=NC)
+    r = _parse(rows, own, consolidated="false")
+    assert getattr(r, name) == _parsed(SENTINEL[_kind(name)][own], _kind(name))
+
+
+# 1-3 generalised: every ordered pair of the field's standards.
+def _all_pairs():
+    pairs = []
+    for name in _fields_with_prior():
+        stds = STANDARD_POLICY[_policy_name(name)].standards
+        pairs += [(name, own, other) for own in stds for other in stds if other != own]
+    return pairs
+
+
+@pytest.mark.parametrize("name,own,other", _cases(_all_pairs()))
+def test_declared_standard_outranks_each_other_standard(name, own, other):
+    r = _parse(_rows_for(name, (own, other)), own)
+    assert getattr(r, name) == _parsed(SENTINEL[_kind(name)][own], _kind(name))
