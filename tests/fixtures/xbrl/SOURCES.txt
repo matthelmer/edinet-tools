@@ -14,3 +14,7 @@ S100YO5B  Doc 040 amended securities registration of an investment trust: three 
           type=1 TRIMMED to its XBRL/*_ixbrl.htm and *.xbrl members (the readers' inputs; the
           original also holds HTML, images, schemas and linkbases, 1.4 MB). Members unmodified.
           type=5 unmodified.
+S100YOXP  Doc 120 annual report of an investment trust: literal "<参考情報：...>" text the
+          CSV mangles, and a CSV value cut at 30,000 characters counted before entity
+          decoding (29,908 characters read). type=1 TRIMMED to its XBRL/*_ixbrl.htm and *.xbrl
+          members (original 890 KB). Members unmodified. type=5 unmodified.

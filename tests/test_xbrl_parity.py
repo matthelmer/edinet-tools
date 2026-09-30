@@ -13,6 +13,7 @@
 """
 
 import collections
+import re
 import sys
 from dataclasses import fields, is_dataclass
 from decimal import Decimal
@@ -37,6 +38,8 @@ DOCS = {
     "S100YWE2": "160",
     # three filings in one package (fund + two series), same context ids defined per filing
     "S100YO5B": "040",
+    # a fund's annual report: angle-bracket text the CSV mangles; a CSV cut that reads short
+    "S100YOXP": "120",
 }
 # Facts per package (PublicDoc), equal to the CSV's row count and the instance's.
 FACT_COUNTS = {
@@ -46,6 +49,7 @@ FACT_COUNTS = {
     "S100YD3H": 369,
     "S100YWE2": 365,
     "S100YO5B": 261,
+    "S100YOXP": 159,
 }
 
 
@@ -96,11 +100,36 @@ def test_inline_and_instance_contexts_are_equal(doc):
 # --- (b) CSV vs inline -----------------------------------------------------------------------
 
 
+_ANGLE_TEXT_RE = re.compile(r"<[^<>]*>")
+
+
+def csv_drops_angle_text(csv_norm: str, xbrl_norm: str) -> bool:
+    """EDINET's CSV conversion mangles literal text written in angle brackets inside a text
+    section, as if it were a tag: it drops the whole "<取締役会>" (S100Z59P) or only its "<"
+    (S100YOXP, "<参考情報：...>"); the XBRL keeps it. True only when one of those two edits,
+    applied to every such segment, gives the CSV text exactly, and every segment holds
+    non-ASCII text (so a real HTML tag never qualifies)."""
+    segments = _ANGLE_TEXT_RE.findall(xbrl_norm)
+    if not segments or not all(any(ord(ch) > 127 for ch in seg) for seg in segments):
+        return False
+    dropped = _ANGLE_TEXT_RE.sub("", xbrl_norm)
+    opened = _ANGLE_TEXT_RE.sub(lambda m: m.group(0)[1:], xbrl_norm)
+    return csv_norm in (dropped, opened)
+
+
+def csv_was_cut(csv_value: str) -> bool:
+    """EDINET cuts a CSV value at 30,000 characters counted BEFORE it decodes entity
+    references; the reader decodes them (`&amp;` -> `&`), so a cut value can read shorter
+    (S100YOXP: 29,908 characters with 23 ampersands)."""
+    return len(csv_value) + 4 * csv_value.count("&") >= CSV_LIMIT
+
+
 def compare(csv_value, xbrl_value, path, diffs, text=False):
     """Record every difference as (path, kind); kind 'other' is a parity failure.
 
     `text` marks a text-section path (a TextBlock's value, a text_blocks entry, a typed field
-    read from a TextBlock): only there may values differ by whitespace or by the CSV's cut.
+    read from a TextBlock): only there may values differ by whitespace, by the CSV's cut, or by
+    literal angle-bracket text the CSV drops.
     Anywhere else (names, codes, dates, numbers) any difference is 'other'."""
     if is_dataclass(csv_value) and type(csv_value) is type(xbrl_value):
         # walk every field: == would skip fields declared compare=False (JointHolder.text_blocks)
@@ -119,8 +148,10 @@ def compare(csv_value, xbrl_value, path, diffs, text=False):
         a, b = normalize_space(csv_value), normalize_space(xbrl_value)
         if text and a == b:
             diffs.append((path, "whitespace"))
-        elif text and len(csv_value) >= CSV_LIMIT and len(b) > len(a) and b.startswith(a):
+        elif text and csv_was_cut(csv_value) and len(b) > len(a) and b.startswith(a):
             diffs.append((path, "beyond_30000"))
+        elif text and csv_drops_angle_text(a, b):
+            diffs.append((path, "csv_drops_angle_text"))
         else:
             diffs.append((path, "other"))
         return
@@ -200,6 +231,7 @@ EXPECTED_DIFFS = {
     "S100YD3H": {"whitespace": 11},
     "S100YWE2": {"whitespace": 94},
     "S100YO5B": {"whitespace": 207, "beyond_30000": 6},
+    "S100YOXP": {"whitespace": 144, "csv_drops_angle_text": 3, "beyond_30000": 3},
 }
 
 
@@ -273,3 +305,13 @@ def test_s100y8gb_two_trading_tables_one_per_holder():
 def test_s100yrdm_three_share_counts():
     _csv, xbrl, _diffs = report_diffs("S100YRDM")
     assert [h.shares_held for h in xbrl.joint_holders] == [3269300, 1250000, 6190300]
+
+
+def test_csv_drops_angle_text_is_narrow():
+    assert csv_drops_angle_text("取締役会は", "<取締役会>取締役会は")
+    assert csv_drops_angle_text("取締役会>は", "<取締役会>は")
+    assert not csv_drops_angle_text("取締役会は", "<b>取締役会は")  # an ASCII tag never qualifies
+    assert not csv_drops_angle_text("取締役会", "<取締役会>取締役会は")  # more than the brackets
+    diffs = []
+    compare("取締役会は", "<取締役会>取締役会は", "filer_name", diffs)  # not a text path
+    assert diffs == [("filer_name", "other")]
