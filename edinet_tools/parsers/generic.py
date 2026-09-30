@@ -67,7 +67,7 @@ class RawReport(ParsedReport):
 GenericReport = RawReport
 
 
-def parse_raw(document) -> RawReport:
+def parse_raw(document=None, *, csv_files=None, doc_id=None, doc_type_code=None) -> RawReport:
     """
     Parse a document without type-specific field mapping.
 
@@ -76,18 +76,25 @@ def parse_raw(document) -> RawReport:
     dedicated parsers (120, 140, 160, 180, 350).
 
     Args:
-        document: Document object with fetch() method
+        document: Document object with fetch() method (optional if csv_files provided)
+        csv_files: Pre-extracted rows (list of dicts with 'filename' and 'data' keys)
+        doc_id: Document ID (used when csv_files provided)
+        doc_type_code: Document type code (used when csv_files provided)
 
     Returns:
         RawReport with raw_fields containing all XBRL elements
     """
-    zip_bytes = document.fetch()
-    csv_files = extract_csv_from_zip(zip_bytes)
+    if csv_files is None:
+        zip_bytes = document.fetch()
+        csv_files = extract_csv_from_zip(zip_bytes)
+    if document is not None:
+        doc_id = doc_id or document.doc_id
+        doc_type_code = doc_type_code or document.doc_type_code
 
     if not csv_files:
         return RawReport(
-            doc_id=document.doc_id,
-            doc_type_code=document.doc_type_code,
+            doc_id=doc_id,
+            doc_type_code=doc_type_code,
             filer_name=getattr(document, 'filer_name', None),
             filer_edinet_code=getattr(document, 'filer_edinet_code', None),
             doc_description=getattr(document, 'doc_description', None),
@@ -134,8 +141,8 @@ def parse_raw(document) -> RawReport:
                 text_blocks[key] = value
 
     return RawReport(
-        doc_id=document.doc_id,
-        doc_type_code=document.doc_type_code,
+        doc_id=doc_id,
+        doc_type_code=doc_type_code,
         source_files=source_files,
         raw_fields=raw_fields,
         unmapped_fields={},  # Empty - concept only applies to typed parsers

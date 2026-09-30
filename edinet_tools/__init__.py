@@ -37,6 +37,7 @@ from .doc_types import DocType, doc_type, list_doc_types, doc_types
 # Parsers
 from .parsers import (
     parse,
+    parse_xbrl,
     supported_doc_types,
     ParsedReport,
     RawReport,
@@ -83,6 +84,7 @@ __all__ = [
     "doc_types",
     # Parsers
     "parse",
+    "parse_xbrl",
     "supported_doc_types",
     "ParsedReport",
     "RawReport",

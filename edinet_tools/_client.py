@@ -72,14 +72,19 @@ class _ApiClient:
             else:
                 raise APIError(f"Failed to fetch documents for {date}: {e}")
 
-    def download_filing_raw(self, doc_id: str, raise_on_error: bool = True) -> Optional[bytes]:
+    def download_filing_raw(
+        self, doc_id: str, raise_on_error: bool = True, type: int = 5
+    ) -> Optional[bytes]:
         """Fetch a filing and return its raw ZIP bytes, without saving to disk.
+
+        type is EDINET's download type: 5 the CSV conversion (default), 1 the filing itself
+        (inline XBRL and the XBRL instance).
 
         Returns None (when raise_on_error=False) or raises on a JSON error
         body or a response that is not a valid ZIP.
         """
         try:
-            doc_response = fetch_document(doc_id, api_key=self.api_key)
+            doc_response = fetch_document(doc_id, type=type, api_key=self.api_key)
 
             if self._is_json_error_response(doc_response):
                 error_data = json.loads(doc_response.decode('utf-8'))
