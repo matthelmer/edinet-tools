@@ -39,7 +39,9 @@ def test_cjk_date_with_a_two_digit_year_is_refused():
 # 5. sign="-" on zero
 
 
-def test_negative_sign_on_zero_reads_zero():
+def test_negative_sign_on_zero_reads_minus_zero_as_edinet_does():
+    """EDINET's instance and CSV both write "-0" for a zero shown with sign="-" (S100YYDI,
+    S100YWTA, S100YONX, S100YXDQ, S100Z56E); the inline reader matches them."""
     f = one(
         facts_of(
             '<ix:nonFraction name="x:N" contextRef="CurrentYearDuration" unitRef="JPY"'
@@ -47,7 +49,7 @@ def test_negative_sign_on_zero_reads_zero():
         ),
         "x:N",
     )
-    assert f.value == "0"
+    assert f.value == "-0"
 
 
 # 3. an unescaped multi-line text block reads the same from both readers
@@ -315,3 +317,26 @@ def test_utf16_without_bom_carrying_a_dtd_is_refused(codec):
         read_inline_xbrl({"a_ixbrl.htm": data})
     with pytest.raises(UnsupportedInlineXBRL, match="DOCTYPE|ENTITY"):
         read_instance(data)
+
+
+# a format on an escaped ix:nonNumeric (S100YRJE, jpsps_cor:FilingDateCoverPage)
+
+
+def test_format_on_an_escaped_nonnumeric_is_applied_to_its_text():
+    f = one(
+        facts_of(
+            '<ix:nonNumeric name="x:FilingDateCoverPage" contextRef="FilingDateInstant"'
+            ' escape="true" format="ixt:dateyearmonthdaycjk"><span>2026年7月28日</span>'
+            "</ix:nonNumeric>"
+        ),
+        "x:FilingDateCoverPage",
+    )
+    assert (f.value, f.html) == ("2026-07-28", None)
+
+
+def test_an_unknown_format_on_an_escaped_nonnumeric_still_fails_loudly():
+    with pytest.raises(UnsupportedInlineXBRL, match="numcommadecimal"):
+        facts_of(
+            '<ix:nonNumeric name="x:D" contextRef="FilingDateInstant"'
+            ' escape="true" format="ixt:numcommadecimal">1</ix:nonNumeric>'
+        )

@@ -325,7 +325,8 @@ class _Reader:
             except (InvalidOperation, ValueError):
                 raise UnsupportedInlineXBRL(f"{doc.name}: scale {scale!r} on {name}") from None
             value = format(number, "f")
-            if sign == "-" and number != 0:
+            if sign == "-":
+                # a zero shown with sign="-" reads "-0", as EDINET's instance and CSV write it
                 value = "-" + value
             return XbrlFact(value=value, **common)
 
@@ -339,11 +340,11 @@ class _Reader:
                 raise UnsupportedInlineXBRL(f"{doc.name}: nil ix:nonNumeric {name} has content")
             return XbrlFact(value=None, **common)
         chain = self._chain(doc, el)
-        if escaped:
-            if transform:
-                raise UnsupportedInlineXBRL(f"{doc.name}: format on escaped ix:nonNumeric {name}")
+        if escaped and not transform:
             markup = "".join(self._html(d, e) for d, e in chain)
             return XbrlFact(value=html_to_text(markup), html=markup, **common)
+        # plain, or escaped with a format: the transform reads the element's text (Inline XBRL
+        # permits format on any nonNumeric; S100YRJE's escaped FilingDateCoverPage carries one)
         text = "".join(self._text(e) for _d, e in chain)
         if transform:
             text = transform(text)
