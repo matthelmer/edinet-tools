@@ -593,15 +593,13 @@ def _value_at(csv_files, element_id, pattern, prefer_unit=None):
     With `prefer_unit`, a row in that unit wins over an earlier row of the
     same element and context in another unit."""
     if pattern is None:
-        for csv_file in csv_files:
-            for entry in csv_file.get('data', []):
-                if entry.get('要素ID') == element_id:
-                    pattern = entry.get('コンテキストID')
-                    break
-            if pattern is not None:
-                break
-        if pattern is None:
+        # context-blind: the first row of the element, and the rows sharing its context
+        # (a row without a コンテキストID key reads as it always did: its value, context None)
+        first = next((entry for csv_file in csv_files for entry in csv_file.get('data', [])
+                      if entry.get('要素ID') == element_id), None)
+        if first is None:
             return None, None, None
+        pattern = first.get('コンテキストID')
     rows = [
         entry
         for csv_file in csv_files

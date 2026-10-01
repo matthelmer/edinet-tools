@@ -384,3 +384,16 @@ def test_string_mode_prefers_the_unit_asked_for():
         prefer_unit="JPYPerShares",
     )
     assert (hit.value, hit.unit_id) == ("532.37", "JPYPerShares")
+
+
+# ---------------------------------------------------------------------------
+# Review fixes
+# ---------------------------------------------------------------------------
+
+
+def test_a_context_blind_read_of_a_row_without_a_context_key_returns_its_value():
+    cf = [{"filename": "t.csv", "data": [{"要素ID": "x:A", "値": "123"}]}]
+    hit = resolve_tiers(
+        cf, (Tier("x:A"),), standard=None, period=None, is_consolidated=None, mode="string"
+    )
+    assert (hit.value, hit.element_id, hit.context_id) == ("123", "x:A", None)
