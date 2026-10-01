@@ -51,7 +51,7 @@ from ._xbrl_model import (
     plain_text_block_value,
     put_unique,
     read_package_members,
-    refuse_dtd,
+    guard_dtd,
 )
 
 __all__ = [
@@ -151,15 +151,20 @@ class _Doc:
     def __init__(self, name: str, data: bytes):
         self.name = name
         self.nsmap: dict = {}
-        refuse_dtd(data, name)
+        data = guard_dtd(data, name)
         events = ET.iterparse(io.BytesIO(data), events=("start-ns",))
-        for _event, (prefix, uri) in events:
-            if prefix in self.nsmap and self.nsmap[prefix] != uri:
-                raise UnsupportedInlineXBRL(
-                    f"{name}: prefix {prefix!r} is bound to two namespaces; QName values "
-                    "cannot be resolved"
-                )
-            self.nsmap[prefix] = uri
+        try:
+            for _event, (prefix, uri) in events:
+                if prefix in self.nsmap and self.nsmap[prefix] != uri:
+                    raise UnsupportedInlineXBRL(
+                        f"{name}: prefix {prefix!r} is bound to two namespaces; QName values "
+                        "cannot be resolved"
+                    )
+                self.nsmap[prefix] = uri
+        except ET.ParseError as e:
+            # inline XBRL is XHTML; a file that is not well-formed XML (an HTML 4 file) is
+            # refused, not guessed at
+            raise UnsupportedInlineXBRL(f"{name}: not well-formed XML ({e})") from e
         self.root = events.root
 
     def resolve(self, qname: str, what: str) -> tuple[str, str]:

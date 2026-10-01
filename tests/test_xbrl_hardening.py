@@ -344,3 +344,84 @@ def test_an_unknown_format_on_an_escaped_nonnumeric_still_fails_loudly():
             '<ix:nonNumeric name="x:D" contextRef="FilingDateInstant"'
             ' escape="true" format="ixt:numcommadecimal">1</ix:nonNumeric>'
         )
+
+
+# A plain DOCTYPE (no internal subset) is allowed: Beat Holdings' S100YW89 inline files open
+# with <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">. An internal subset and
+# an ENTITY declaration stay refused.
+
+PLAIN_DOCTYPES = [
+    '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">',
+    '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"'
+    ' "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
+    "<!DOCTYPE html>",
+    '<!DOCTYPE html SYSTEM "a[b].dtd">',
+]
+PLAIN_FACT = '<ix:nonNumeric name="x:Plain" contextRef="FilingDateInstant">plain</ix:nonNumeric>'
+
+
+def with_doctype(doctype: str) -> bytes:
+    doc = ixdoc(PLAIN_FACT).decode("utf-8")
+    head, _, rest = doc.partition("\n")
+    return f"{head}\n{doctype}\n{rest}".encode("utf-8")
+
+
+@pytest.mark.parametrize("doctype", PLAIN_DOCTYPES)
+def test_a_plain_doctype_is_allowed(doctype):
+    facts = read_inline_xbrl({"a_ixbrl.htm": with_doctype(doctype)}).facts
+    assert one(facts, "x:Plain").value == "plain"
+    assert facts == read_inline_xbrl({"a_ixbrl.htm": ixdoc(PLAIN_FACT)}).facts
+
+
+@pytest.mark.parametrize("codec", ["utf-16", "utf-16-le", "utf-16-be"])
+def test_a_plain_doctype_is_allowed_in_utf16(codec):
+    data = with_doctype(PLAIN_DOCTYPES[0]).decode("utf-8")
+    data = data.replace('encoding="UTF-8"', 'encoding="UTF-16"').encode(codec)
+    facts = read_inline_xbrl({"a_ixbrl.htm": data}).facts
+    assert one(facts, "x:Plain").value == "plain"
+
+
+REFUSED_DOCTYPES = [
+    '<!DOCTYPE x [<!ENTITY a "boom">]>',
+    "<!DOCTYPE x [<!ATTLIST html lang CDATA 'ja'>]>",
+    '<!DOCTYPE x SYSTEM "a>b" [<!ATTLIST html lang CDATA "ja">]>',
+    "<!DOCTYPE x [ ]>",
+    '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"',
+]
+
+
+@pytest.mark.parametrize("doctype", REFUSED_DOCTYPES)
+def test_a_doctype_with_an_internal_subset_is_refused(doctype):
+    with pytest.raises(UnsupportedInlineXBRL, match="DOCTYPE|ENTITY"):
+        read_inline_xbrl({"a_ixbrl.htm": with_doctype(doctype)})
+
+
+def test_an_entity_declaration_beside_a_plain_doctype_is_refused():
+    data = with_doctype(PLAIN_DOCTYPES[0]).replace(b"<html", b'<!ENTITY x "y">\n<html', 1)
+    with pytest.raises(UnsupportedInlineXBRL, match="ENTITY"):
+        read_inline_xbrl({"a_ixbrl.htm": data})
+
+
+@pytest.mark.parametrize("codec", ["utf-16-le", "utf-16-be"])
+def test_utf16_without_bom_internal_subset_without_entity_is_refused(codec):
+    data = '<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE x [<!ATTLIST x a CDATA \'b\'>]><x/>'
+    data = data.encode(codec)
+    with pytest.raises(UnsupportedInlineXBRL, match="DOCTYPE"):
+        read_inline_xbrl({"a_ixbrl.htm": data})
+    with pytest.raises(UnsupportedInlineXBRL, match="DOCTYPE"):
+        read_instance(data)
+
+
+def test_beat_inline_package_passes_the_doctype_guard_and_is_refused_as_html():
+    """S100YW89's DOCTYPE no longer stops it, but nine of its ten inline files are HTML 4
+    (unclosed <meta>, <link>), not XHTML: the reader refuses them as not well-formed instead of
+    raising the XML parser's error. Its instance reads."""
+    pkg = (FIXTURES / "S100YW89_type1.zip").read_bytes()
+    with pytest.raises(UnsupportedInlineXBRL, match="not well-formed XML"):
+        read_inline_xbrl_package(pkg)
+    assert len(read_instance_package(pkg).facts) == 423
+
+
+def test_a_file_that_is_not_xml_is_refused_not_a_parse_error():
+    with pytest.raises(UnsupportedInlineXBRL, match="not well-formed XML"):
+        read_inline_xbrl({"a_ixbrl.htm": b'<html><head><meta charset="utf-8"></head></html>'})

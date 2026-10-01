@@ -242,24 +242,77 @@ MAX_MEMBER_BYTES = 200 * 1024 * 1024
 MAX_TOTAL_BYTES = 1024 * 1024 * 1024
 READ_CHUNK_BYTES = 1024 * 1024
 
-_DTD_RE = re.compile(rb"<!\s*(DOCTYPE|ENTITY)", re.IGNORECASE)
+_ENTITY_RE = re.compile(r"<!\s*ENTITY", re.IGNORECASE)
+_DOCTYPE_RE = re.compile(r"<!\s*DOCTYPE", re.IGNORECASE)
 
 
-def refuse_dtd(data: bytes, name: str) -> None:
-    """Refuse a document that carries a DOCTYPE or ENTITY declaration, before it is parsed
-    (entity expansion is the classic XML bomb; EDINET's documents carry neither)."""
-    candidates = [data]
+def _doctype_end(text: str, start: int):
+    """The index just past the closing '>' of the DOCTYPE whose name starts at `start`, or None
+    when it carries an internal subset ('[' outside its quoted literals) or never closes (a
+    '<' outside its literals comes first)."""
+    quote = None
+    for i in range(start, len(text)):
+        ch = text[i]
+        if quote:
+            if ch == quote:
+                quote = None
+        elif ch in "\"'":
+            quote = ch
+        elif ch in "[<":
+            return None
+        elif ch == ">":
+            return i + 1
+    return None
+
+
+def _codec(data: bytes):
+    """How to read a document's bytes as text position for position: (codec, prefix bytes).
+    UTF-16 with or without a BOM (expat detects it on its own); anything else byte for byte."""
+    if data[:2] == b"\xff\xfe":
+        return "utf-16-le", 2
+    if data[:2] == b"\xfe\xff":
+        return "utf-16-be", 2
+    if len(data) > 1 and data[0] == 0 and data[1] != 0:
+        return "utf-16-be", 0
+    if len(data) > 1 and data[0] != 0 and data[1] == 0:
+        return "utf-16-le", 0
+    return "latin-1", 0
+
+
+def guard_dtd(data: bytes, name: str) -> bytes:
+    """Refuse a document that carries an ENTITY declaration or a DOCTYPE with an internal
+    subset, before it is parsed (entity expansion is the classic XML bomb). A plain DOCTYPE
+    (a name and public / system identifiers, no subset) is allowed and returned blanked to
+    spaces: some EDINET inline files open with an HTML one,
+    <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">, which is not well-formed
+    XML, and it declares nothing the reader uses. Returns the bytes to parse."""
+    candidates = [data.decode("latin-1")]
     if data[:2] in (b"\xff\xfe", b"\xfe\xff"):
-        candidates.append(data.decode("utf-16", errors="replace").encode("utf-8"))
+        candidates.append(data.decode("utf-16", errors="replace"))
     if b"\x00" in data:
         # UTF-16 (or UTF-32) without a BOM, which expat detects on its own: the ASCII of a
         # declaration survives with its NUL bytes removed.
-        candidates.append(data.replace(b"\x00", b""))
+        candidates.append(data.replace(b"\x00", b"").decode("latin-1"))
     for c in candidates:
-        m = _DTD_RE.search(c)
-        if m:
-            kind = m.group(1).decode("ascii").upper()
-            raise UnsupportedInlineXBRL(f"{name}: a {kind} declaration is refused")
+        for m in _DOCTYPE_RE.finditer(c):
+            if _doctype_end(c, m.end()) is None:
+                raise UnsupportedInlineXBRL(
+                    f"{name}: a DOCTYPE declaration with an internal subset is refused"
+                )
+        if _ENTITY_RE.search(c):
+            raise UnsupportedInlineXBRL(f"{name}: an ENTITY declaration is refused")
+
+    codec, skip = _codec(data)
+    try:
+        text = data[skip:].decode(codec)
+    except UnicodeDecodeError:
+        return data
+    spans = [(m.start(), _doctype_end(text, m.end())) for m in _DOCTYPE_RE.finditer(text)]
+    if not spans:
+        return data
+    for start, end in spans:
+        text = text[:start] + " " * (end - start) + text[end:]
+    return data[:skip] + text.encode(codec)
 
 
 def _read_capped(zf: zipfile.ZipFile, info: zipfile.ZipInfo, budget: list) -> bytes:

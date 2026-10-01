@@ -33,7 +33,7 @@ from ._xbrl_model import (
     add_filing,
     put_unique,
     read_package_members,
-    refuse_dtd,
+    guard_dtd,
 )
 from .ixbrl import XBRLI, XSI, _is_audit, _local, read_context, read_unit
 
@@ -45,7 +45,7 @@ _LINK_CHILDREN = frozenset({"schemaRef", "roleRef", "arcroleRef", "footnoteLink"
 
 def read_instance(data: bytes, name: str = "") -> XbrlFacts:
     """Facts, contexts and units of one XBRL instance document."""
-    refuse_dtd(data, name or "instance")
+    data = guard_dtd(data, name or "instance")
     prefixes: dict = {}
     events = ET.iterparse(io.BytesIO(data), events=("start-ns",))
     for _event, (prefix, uri) in events:
