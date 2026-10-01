@@ -18,3 +18,7 @@ S100YOXP  Doc 120 annual report of an investment trust: literal "<参考情報�
           CSV mangles, and a CSV value cut at 30,000 characters counted before entity
           decoding (29,908 characters read). type=1 TRIMMED to its XBRL/*_ixbrl.htm and *.xbrl
           members (original 890 KB). Members unmodified. type=5 unmodified.
+S100YRSR  Doc 120 annual report, year to April 2026, IFRS, parent-only (no consolidated
+          statements): tags the J-GAAP highlights table beside the IFRS one at the
+          _NonConsolidatedMember contexts. type=1 TRIMMED to its XBRL/*_ixbrl.htm and *.xbrl
+          members (original 727 KB). Members unmodified. type=5 unmodified.
