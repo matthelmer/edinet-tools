@@ -107,12 +107,13 @@ class TestJGAAPFilingDoesNotReadTheIFRSElement:
 
 
 # =====================================================================
-# Synthetic (b): last_resort means LAST -- when an earlier tier already
-# resolves net_income_total, the new tier must never override it, even
-# though standards=('IFRS',) lets it apply to this same filing.
+# Synthetic (b): on an IFRS filing the IFRS summary total is an own-standard
+# fact, so it outranks the J-GAAP jppfs_cor:ProfitLoss (0.9.0 own-standard
+# selection); among the IFRS facts it stays last, after the FS-level
+# jpigp_cor:ProfitLossIFRS.
 # =====================================================================
 
-class TestLastResortDoesNotOverrideAnEarlierTier:
+class TestIfrsSummaryTotalOutranksJgaapButFollowsIfrsFs:
     """0.9.0 own-standard selection: on an IFRS filing the IFRS summary total
     is the filing's own-standard fact, so it now outranks the J-GAAP
     jppfs_cor:ProfitLoss (0.8.x returned the J-GAAP 100 here). Within the IFRS
