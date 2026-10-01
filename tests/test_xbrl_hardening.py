@@ -425,3 +425,8 @@ def test_beat_inline_package_passes_the_doctype_guard_and_is_refused_as_html():
 def test_a_file_that_is_not_xml_is_refused_not_a_parse_error():
     with pytest.raises(UnsupportedInlineXBRL, match="not well-formed XML"):
         read_inline_xbrl({"a_ixbrl.htm": b'<html><head><meta charset="utf-8"></head></html>'})
+
+
+def test_an_instance_that_is_not_xml_is_refused_not_a_parse_error():
+    with pytest.raises(UnsupportedInlineXBRL, match="not well-formed XML"):
+        read_instance(b"<x><y></x>")
