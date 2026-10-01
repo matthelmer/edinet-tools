@@ -7,7 +7,7 @@
 
 Python library for Japan's [EDINET](https://disclosure2.edinet-fsa.go.jp/) disclosure system — the official source for securities reports, shareholding notices, tender offers, and other regulatory filings from listed Japanese companies.
 
-J-GAAP, IFRS, and US-GAAP filers tag the same figure under different XBRL elements. edinet-tools maps them all to one typed Python field, reading each filing on its own accounting standard, and says which element, context and unit every value came from.
+J-GAAP, IFRS, and US-GAAP filers tag the same figure under different XBRL elements. edinet-tools maps them all to one typed Python field, reading the filing's own accounting standard first. For securities, quarterly and semi-annual reports it records which element, context and unit each financial field was read from.
 
 It reads either EDINET's CSV conversion or the filing's own inline XBRL. The XBRL path keeps text sections that the CSV cuts at 30,000 characters.
 
@@ -29,9 +29,10 @@ pip install edinet-tools
 
 Requires Python 3.10+. Standard library only.
 
-> **Upgrading to 0.9.0?** Values change for IFRS and US GAAP filers: each field now reads
-> the filing's own standard rather than a J-GAAP figure the filing also tags. J-GAAP and
-> fund filings read as before. See the [CHANGELOG](CHANGELOG.md) for every changed value
+> **Upgrading to 0.9.0?** Values change for IFRS and US GAAP filers: a field now reads
+> the filing's own standard first, where 0.8.x could return a J-GAAP figure the filing
+> also tags. A few fields still fall back to the J-GAAP figure when the filing tags none
+> of its own, and `source_elements` shows when. J-GAAP and fund filings read as before. See the [CHANGELOG](CHANGELOG.md) for every changed value
 > and key.
 >
 > Versions before 0.8.1 call EDINET's retired API host and cannot fetch anything.
@@ -48,7 +49,7 @@ edinet-tools has three layers:
 
 Each parser maps known XBRL elements to typed Python fields (dates, decimals, strings). As EDINET evolves or new elements become useful, adding a field is one line in the element map and one line on the dataclass.
 
-If a filing doesn't state a figure, the field is `None`: never a guess, never a number borrowed from another accounting standard or from the parent company. Every mapping is tested against real filings and cross-checked against issuers' own earnings releases.
+If a filing doesn't state a figure, the field is `None`: never a guess, and never a number borrowed from the parent company. A financial field reads the filing's declared standard first. Where a filing tags no fact on its own standard, a field may fall back to another standard's element that the parser lists for it. On securities, quarterly and semi-annual reports, `source_elements` names the element actually read. Every mapping is tested against real filings and cross-checked against issuers' own earnings releases.
 
 ## EDINET Document Types
 
@@ -163,10 +164,13 @@ report.text_blocks       # Narrative text block content
 report.extraction_flags  # parse-time structural checks (0.8.0): impossible
                          # values are withheld as None, never served
 
-# Where each value came from (securities, quarterly, semi-annual reports)
+# Where a financial field came from: securities, quarterly and semi-annual
+# reports fill these; other report types leave them empty. A field missing
+# from a map means its source was not recorded, not that it has none.
 report.source_elements   # field -> XBRL element read
 report.source_contexts   # field -> context read
-report.units             # monetary / per-share field -> unit (yen first; "USD" if only USD was filed)
+report.units             # monetary / per-share field -> unit id, e.g. "JPY",
+                         # "JPYPerShares"; yen is read first when both are filed
 ```
 
 ### Reading the filing's own XBRL
@@ -185,10 +189,21 @@ report = parse_xbrl(zip_bytes, "350", source="xbrl", doc_id="S100Y8GB")
 What the XBRL path gives you that the CSV does not:
 
 - **Text sections in full.** The CSV cuts every text value at 30,000 characters. A tender-offer registration's purpose section of 75,894 characters reads in full.
-- **Each joint holder's own text** on 5% reports: `joint_holder.text_blocks` and `report.text_blocks_by_context`, such as each holder's 60-day trading table.
-- **Structure in text sections:** a tab between table cells, a newline between rows, and the original HTML kept alongside.
+- **Cell boundaries in text sections:** a tab between table cells and a newline between rows.
 
-Typed fields are the same from either source, apart from those documented differences. The reader uses only the standard library. It refuses what it does not implement with a named error (`UnsupportedInlineXBRL`) rather than guessing.
+On 5% reports, both sources now keep each joint holder's own text sections, such as each holder's 60-day trading table: `joint_holder.text_blocks` and `report.text_blocks_by_context`.
+
+The typed report carries values. For the HTML of a text section, decimals, scale and each fact's period dates, read the source rows:
+
+```python
+from edinet_tools.parsers.xbrl_rows import extract_rows_from_package
+
+files = extract_rows_from_package(zip_bytes, source="xbrl")
+for row in files[0]["data"]:
+    row["要素ID"], row["値"], row["html"], row["decimals"], row["period_end"]
+```
+
+On the filings tested, typed fields match across sources apart from the documented differences (the 30,000-character cut, whitespace, and text the CSV drops around angle brackets). The reader uses only the standard library. It refuses what it does not implement with a named error (`UnsupportedInlineXBRL`) rather than guessing.
 
 ### Download Formats
 
