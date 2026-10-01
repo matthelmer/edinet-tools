@@ -9,7 +9,15 @@ from datetime import date
 from decimal import Decimal
 
 from . import securities as _securities
-from ._standard_policy import IFRS, JGAAP, USGAAP, FieldPolicy
+from ._standard_policy import (
+    IFRS,
+    JGAAP,
+    USGAAP,
+    FieldPolicy,
+    close_legacy,
+    own_standard_stage,
+    with_own_standard_first,
+)
 from .base import ParsedReport
 from .extraction import (
     Tier,
@@ -18,6 +26,7 @@ from .extraction import (
     extract_csv_from_zip,
     categorize_elements,
     parse_date,
+    parse_decimal,
 )
 from .validation import Bound, Identity, apply_validation
 
@@ -53,7 +62,9 @@ IFRS_FALLBACK_MAP = {
     'jppfs_cor:Assets': 'jpigp_cor:AssetsIFRS',
     'jppfs_cor:CurrentAssets': 'jpigp_cor:CurrentAssetsIFRS',
     'jppfs_cor:Liabilities': 'jpigp_cor:LiabilitiesIFRS',
-    'jppfs_cor:CurrentLiabilities': 'jpigp_cor:CurrentLiabilitiesIFRS',
+    # The IFRS taxonomy's current-liabilities total is TotalCurrentLiabilitiesIFRS
+    # (there is no CurrentLiabilitiesIFRS element), as in the annual map.
+    'jppfs_cor:CurrentLiabilities': 'jpigp_cor:TotalCurrentLiabilitiesIFRS',
     'jppfs_cor:NetAssets': 'jpigp_cor:EquityIFRS',
     'jppfs_cor:OperatingIncome': 'jpigp_cor:OperatingProfitLossIFRS',
     'jppfs_cor:OrdinaryIncome': 'jpigp_cor:ProfitLossBeforeTaxIFRS',
@@ -142,35 +153,25 @@ def _chain(key: str):
     return (element_id, fallback)
 
 
-# Per-field tier tables (v0.8.0 stage-5 Task 9 context fix). Split by
-# instant vs. duration context: balance-sheet fields read the doc's current
-# INSTANT token, income-statement fields read its current DURATION token
-# (see _detect_period_tokens). No per-standard scoping (no C1-style
-# IFRS-preference reordering) -- each field is one element with at most one
-# IFRS fallback, exactly the pre-migration extract_financial waterfall.
-_INSTANT_FIELD_TIERS = {
-    'total_assets': (Tier(_chain('assets')),),
-    'current_assets': (Tier(_chain('current_assets')),),
-    'total_liabilities': (Tier(_chain('liabilities')),),
-    'current_liabilities': (Tier(_chain('current_liabilities')),),
-    'net_assets': (Tier(_chain('net_assets')),),
-}
-_DURATION_FIELD_TIERS = {
-    'operating_income': (Tier(_chain('operating_income')),),
-    'ordinary_income': (Tier(_chain('ordinary_income')),),
-    'profit_loss': (Tier(_chain('profit_loss')),),
-}
-
-
 # ---------------------------------------------------------------------------
 # Standard-selection policy (see _standard_policy for the contract)
 #
-# The existing fields' legacy tables: the field's existing tier, unchanged,
-# plus the other standards' elements as tiers scoped to their own standard
-# (a scoped tier never serves a filing of another standard, nor one that
-# declares none). The new fields reuse the annual parser's tables and
-# policies: the same concepts, the same elements, read at this document's
-# period token.
+# Every financial field reads the filing's declared standard first
+# (AccountingStandardsDEI): one stage per standard at the head of the field's
+# table, built from the legacy table's elements of that standard. A missing
+# own fact follows the field's declared fallback: 'legacy' serves the legacy
+# table; 'none' closes it to that standard. IFRS and US-GAAP filers never read
+# the J-GAAP operating income; a US-GAAP filer never reads another standard's
+# total-basis profit (US GAAP tags none).
+#
+# The existing fields' legacy tables: the field's 0.8 tier (one element with
+# at most one IFRS fallback), unchanged, plus the other standards' elements as
+# tiers scoped to their own standard (a scoped tier never serves a filing of
+# another standard, nor one that declares none). The new fields reuse the
+# annual parser's tables and policies: the same concepts, the same elements,
+# read at this document's period token. Periods: balance-sheet fields read the
+# document's current instant token, the others its current duration token
+# (detect_period_tokens); the context rule is get_context_patterns.
 # ---------------------------------------------------------------------------
 
 _C, _G = 'jpcrp_cor:', 'jpigp_cor:'
@@ -250,6 +251,16 @@ _STANDARD_POLICY = {
     'financing_cash_flow': _annual['financing_cash_flow'],
     'earnings_per_share': _annual['earnings_per_share'],
 }
+
+# Resolved tables: own-standard stage, then the legacy table (closed where the
+# fallback is 'none'). EPS resolves its own stage with coerce semantics, then
+# the legacy scan.
+_INSTANT_FIELD_TIERS = {name: with_own_standard_first(t, _STANDARD_POLICY[name])
+                        for name, t in _INSTANT_LEGACY.items()}
+_DURATION_FIELD_TIERS = {name: with_own_standard_first(t, _STANDARD_POLICY[name])
+                         for name, t in _DURATION_LEGACY.items()}
+_EPS_OWN = own_standard_stage(_EPS_LEGACY, _STANDARD_POLICY['earnings_per_share'])
+_EPS_REST = close_legacy(_EPS_LEGACY, _STANDARD_POLICY['earnings_per_share'])
 
 
 def detect_period_tokens(csv_files: list) -> tuple[str, str]:
@@ -362,19 +373,32 @@ def parse_semi_annual_report(document=None, *, csv_files=None, doc_id=None, doc_
     # get_context_patterns).
     instant_period, duration_period = detect_period_tokens(csv_files)
 
-    def fin(tiers, period):
+    sources, contexts = {}, {}
+
+    def fin(name, tiers, period):
         hit = resolve_tiers(csv_files, tiers, standard=accounting_standard,
                             period=period, is_consolidated=is_consolidated)
-        return hit.value if hit else None
+        if hit is None:
+            return None
+        sources[name], contexts[name] = hit.element_id, hit.context_id
+        return hit.value
 
-    total_assets = fin(_INSTANT_FIELD_TIERS['total_assets'], instant_period)
-    current_assets = fin(_INSTANT_FIELD_TIERS['current_assets'], instant_period)
-    total_liabilities = fin(_INSTANT_FIELD_TIERS['total_liabilities'], instant_period)
-    current_liabilities = fin(_INSTANT_FIELD_TIERS['current_liabilities'], instant_period)
-    net_assets = fin(_INSTANT_FIELD_TIERS['net_assets'], instant_period)
-    operating_income = fin(_DURATION_FIELD_TIERS['operating_income'], duration_period)
-    ordinary_income = fin(_DURATION_FIELD_TIERS['ordinary_income'], duration_period)
-    profit_loss = fin(_DURATION_FIELD_TIERS['profit_loss'], duration_period)
+    values = {name: fin(name, tiers, instant_period)
+              for name, tiers in _INSTANT_FIELD_TIERS.items()}
+    values.update({name: fin(name, tiers, duration_period)
+                   for name, tiers in _DURATION_FIELD_TIERS.items()})
+
+    eps_hit = resolve_tiers(csv_files, _EPS_OWN, standard=accounting_standard,
+                            period=duration_period, is_consolidated=is_consolidated,
+                            mode='string', coerce=True)
+    if eps_hit is None:
+        eps_hit = resolve_tiers(csv_files, _EPS_REST, standard=accounting_standard,
+                                period=duration_period, is_consolidated=is_consolidated,
+                                mode='string', coerce=True)
+    values['earnings_per_share'] = parse_decimal(eps_hit.value) if eps_hit else None
+    if values['earnings_per_share'] is not None:
+        sources['earnings_per_share'] = eps_hit.element_id
+        contexts['earnings_per_share'] = eps_hit.context_id
 
     # Categorize all elements
     raw_fields, text_blocks, unmapped_fields, raw_facts = categorize_elements(csv_files, ELEMENT_MAP)
@@ -401,17 +425,12 @@ def parse_semi_annual_report(document=None, *, csv_files=None, doc_id=None, doc_
         period_end=period_end,
         filing_date=filing_date,
 
-        # Balance Sheet
-        total_assets=total_assets,
-        current_assets=current_assets,
-        total_liabilities=total_liabilities,
-        current_liabilities=current_liabilities,
-        net_assets=net_assets,
+        # Financials (balance sheet, income statement, cash flow, per-share)
+        **values,
 
-        # Income Statement
-        operating_income=operating_income,
-        ordinary_income=ordinary_income,
-        profit_loss=profit_loss,
+        # Provenance
+        source_elements=sources,
+        source_contexts=contexts,
     )
     apply_validation(report, SEMI_ANNUAL_BOUNDS, SEMI_ANNUAL_IDENTITIES)
     return report

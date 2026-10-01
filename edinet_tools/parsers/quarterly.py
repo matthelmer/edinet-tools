@@ -14,7 +14,15 @@ from datetime import date, timedelta
 from typing import Any, Optional
 
 from . import securities as _securities
-from ._standard_policy import IFRS, JGAAP, USGAAP, FieldPolicy
+from ._standard_policy import (
+    IFRS,
+    JGAAP,
+    USGAAP,
+    FieldPolicy,
+    close_legacy,
+    own_standard_stage,
+    with_own_standard_first,
+)
 from .base import ParsedReport
 from .extraction import (
     Tier,
@@ -23,10 +31,8 @@ from .extraction import (
     extract_csv_from_zip,
     extract_value,
     categorize_elements,
-    get_context_patterns,
     parse_percentage,
     parse_date,
-    coerce_numeric_value,
 )
 
 
@@ -88,40 +94,25 @@ def _chain(key: str):
     return (element_id, fallback)
 
 
-# Per-field tier tables (v0.8.0 stage-5 migration). Single-tier waterfalls:
-# each field is one primary element with at most one IFRS fallback, exactly
-# the pre-migration extract_financial calls. Deliberately NO per-standard
-# gate here — the quarterly gate (and the 0.7.1-class leak it would close)
-# is a deferred, separately-predicted change, not migration drift.
-# Income-statement + cash-flow tables serve both the CurrentYTDDuration and
-# Prior1YTDDuration reads; balance-sheet tables read CurrentQuarterInstant.
-_YTD_TIERS = {
-    'revenue_ytd': (Tier(_chain('net_sales')),),
-    'operating_profit_ytd': (Tier(_chain('operating_income')),),
-    'ordinary_profit_ytd': (Tier(_chain('ordinary_income')),),
-    'net_income_ytd': (Tier(_chain('net_income')),),
-}
-_CF_TIERS = {
-    'operating_cash_flow_ytd': (Tier(_chain('operating_cf')),),
-    'investing_cash_flow_ytd': (Tier(_chain('investing_cf')),),
-    'financing_cash_flow_ytd': (Tier(_chain('financing_cf')),),
-}
-_INSTANT_TIERS = {
-    'total_assets': (Tier(_chain('total_assets')),),
-    'net_assets': (Tier(_chain('net_assets')),),
-    'total_liabilities': (Tier(_chain('total_liabilities')),),
-}
-
-
 # ---------------------------------------------------------------------------
 # Standard-selection policy (see _standard_policy for the contract)
 #
-# The legacy tables: each field's existing tier, unchanged, plus the other
-# standards' elements as tiers scoped to their own standard. A scoped tier
-# never serves a filing of another standard, nor one that declares none, so
-# the legacy order for a J-GAAP or undeclared filing is the tier above.
-# Periods are unchanged: duration fields read CurrentYTDDuration (and the
-# prior_ fields Prior1YTDDuration), instant fields CurrentQuarterInstant.
+# Every financial field reads the filing's declared standard first
+# (AccountingStandardsDEI): one stage per standard at the head of the field's
+# table, built from the legacy table's elements of that standard. A missing
+# own fact follows the field's declared fallback: 'legacy' serves the legacy
+# table; 'none' closes it to that standard. IFRS and US-GAAP filers never read
+# the J-GAAP operating or ordinary profit (no fallback to another standard's
+# figure), and owners' equity is never read for a J-GAAP filer (J-GAAP states
+# no owners-only figure).
+#
+# The legacy tables: each field's 0.8 tier (one element with at most one IFRS
+# fallback), unchanged, plus the other standards' elements as tiers scoped to
+# their own standard. A scoped tier never serves a filing of another
+# standard, nor one that declares none, so the legacy order for a J-GAAP or
+# undeclared filing is the 0.8 tier. Periods are unchanged: duration fields
+# read CurrentYTDDuration (and the prior_ fields Prior1YTDDuration), instant
+# fields CurrentQuarterInstant; the context rule is get_context_patterns.
 # ---------------------------------------------------------------------------
 
 _C, _G, _J = 'jpcrp_cor:', 'jpigp_cor:', 'jppfs_cor:'
@@ -255,6 +246,24 @@ _STANDARD_POLICY = {
 }
 
 
+def _resolved(tables):
+    return {name: with_own_standard_first(t, _STANDARD_POLICY[name]) for name, t in tables.items()}
+
+
+# Resolved tables: own-standard stage, then the legacy table (closed where the
+# fallback is 'none').
+_YTD_TIERS = _resolved(_YTD_LEGACY)
+_YTD_CURRENT_TIERS = _resolved(_YTD_CURRENT_LEGACY)
+_CF_TIERS = _resolved(_CF_LEGACY)
+_INSTANT_TIERS = _resolved(_INSTANT_LEGACY)
+# Per-share and ratio: the own stage is resolved with coerce semantics (a
+# marker-valued own fact falls through), then the legacy scan.
+_EPS_OWN = own_standard_stage(_EPS_LEGACY, _STANDARD_POLICY['eps_basic_ytd'])
+_EPS_REST = close_legacy(_EPS_LEGACY, _STANDARD_POLICY['eps_basic_ytd'])
+_EQUITY_RATIO_OWN = own_standard_stage(_EQUITY_RATIO_LEGACY, _STANDARD_POLICY['equity_ratio'])
+_EQUITY_RATIO_REST = close_legacy(_EQUITY_RATIO_LEGACY, _STANDARD_POLICY['equity_ratio'])
+
+
 @dataclass
 class QuarterlyReport(ParsedReport):
     """Parsed Quarterly Report (Doc 140)."""
@@ -324,6 +333,13 @@ class QuarterlyReport(ParsedReport):
         q = f"Q{self.quarter_number}" if self.quarter_number else 'Q?'
         fy = self.fiscal_year_end.year if self.fiscal_year_end else '?'
         return f"QuarterlyReport(filer='{filer}', {q} FY{fy})"
+
+
+def _decimal_or_none(value):
+    try:
+        return Decimal(value)
+    except ArithmeticError:
+        return None
 
 
 def _derive_quarter_number(filing_date: date, fiscal_year_end: date) -> Optional[int]:
@@ -423,40 +439,47 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
     if filing_date and fiscal_year_end:
         quarter_number = _derive_quarter_number(filing_date, fiscal_year_end)
 
-    # Financials from the tier tables. Standard is intentionally None-ish
-    # here: quarterly tiers carry no standards scoping (no gate — see the
-    # table comment), so nothing consults it.
-    def fin(tiers, period):
-        hit = resolve_tiers(csv_files, tiers, standard=None, period=period,
+    # Financials: every field reads the declared standard first (see the
+    # policy above); source_elements / source_contexts record the element and
+    # context of every value.
+    sources, contexts = {}, {}
+
+    def fin(name, tiers, period):
+        hit = resolve_tiers(csv_files, tiers, standard=accounting_standard, period=period,
                             is_consolidated=is_consolidated)
-        return hit.value if hit else None
+        if hit is None:
+            return None
+        sources[name], contexts[name] = hit.element_id, hit.context_id
+        return hit.value
 
     fields = {}
     for name, tiers in _YTD_TIERS.items():
-        fields[name] = fin(tiers, 'CurrentYTDDuration')
-        fields[f'prior_{name}'] = fin(tiers, 'Prior1YTDDuration')
-    for name, tiers in _CF_TIERS.items():
-        fields[name] = fin(tiers, 'CurrentYTDDuration')
+        fields[name] = fin(name, tiers, 'CurrentYTDDuration')
+        fields[f'prior_{name}'] = fin(f'prior_{name}', tiers, 'Prior1YTDDuration')
+    for name, tiers in {**_YTD_CURRENT_TIERS, **_CF_TIERS}.items():
+        fields[name] = fin(name, tiers, 'CurrentYTDDuration')
     for name, tiers in _INSTANT_TIERS.items():
-        fields[name] = fin(tiers, 'CurrentQuarterInstant')
+        fields[name] = fin(name, tiers, 'CurrentQuarterInstant')
 
-    # Per-share metrics. coerce_numeric_value nulls the full dash-family
-    # marker set (incl. '―'/'—' — the local tuple this replaced); the
-    # guarded Decimal keeps the legacy silent-None on non-numeric strings.
-    patterns = get_context_patterns(is_consolidated, 'CurrentYTDDuration')
-    eps_str = coerce_numeric_value(extract_value(
-        csv_files, ELEMENT_MAP['eps_basic'], context_patterns=patterns))
-    eps_basic = None
-    if eps_str:
-        try:
-            eps_basic = Decimal(eps_str)
-        except ArithmeticError:
-            eps_basic = None
+    def per_share(name, own, rest, period, rest_coerce, parse):
+        hit = resolve_tiers(csv_files, own, standard=accounting_standard, period=period,
+                            is_consolidated=is_consolidated, mode='string', coerce=True)
+        if hit is None:
+            hit = resolve_tiers(csv_files, rest, standard=accounting_standard, period=period,
+                                is_consolidated=is_consolidated, mode='string',
+                                coerce=rest_coerce)
+        value = parse(hit.value) if hit else None
+        if value is not None:
+            sources[name], contexts[name] = hit.element_id, hit.context_id
+        return value
 
-    # Ratios
-    patterns = get_context_patterns(is_consolidated, 'CurrentQuarterInstant')
-    equity_str = extract_value(csv_files, ELEMENT_MAP['equity_ratio'], context_patterns=patterns)
-    equity_ratio = parse_percentage(equity_str)
+    # EPS: a marker is a missing fact (coerce); a non-numeric string is a
+    # silent None (the guarded Decimal). The equity ratio's legacy scan keeps
+    # its first-non-empty-raw-string read: a marker parses to None.
+    eps_basic = per_share('eps_basic_ytd', _EPS_OWN, _EPS_REST, 'CurrentYTDDuration', True,
+                          _decimal_or_none)
+    equity_ratio = per_share('equity_ratio', _EQUITY_RATIO_OWN, _EQUITY_RATIO_REST,
+                             'CurrentQuarterInstant', False, parse_percentage)
 
     # Categorize all elements
     raw_fields, text_blocks, unmapped_fields, raw_facts = categorize_elements(csv_files, ELEMENT_MAP)
@@ -491,4 +514,8 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
 
         # Ratios
         equity_ratio=equity_ratio,
+
+        # Provenance
+        source_elements=sources,
+        source_contexts=contexts,
     )

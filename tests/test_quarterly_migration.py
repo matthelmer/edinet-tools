@@ -1,8 +1,8 @@
 """Quarterly parser tier-table migration pins (0.8.0 stage-5 Task 7).
 
-Behavior-preserving migration: NO new gate (the quarterly per-standard gate
-is deferred), NO new fields. These tests pin the semantics the migration
-must not change — especially the eps coercion swap (the local marker tuple
+Behavior-preserving migration (0.8.0): no new gate, no new fields. The
+per-standard gate arrived in 0.9.0 (test_standard_selection_policy_interim.py);
+these tests pin the semantics the migration must not change — especially the eps coercion swap (the local marker tuple
 + bare except became coerce_numeric_value + guarded Decimal, equivalent
 only because the shared null-marker set gained '―'/'—' first).
 """
@@ -72,14 +72,18 @@ class TestTierTablesPreserveWaterfalls:
                    ('jpigp_cor:RevenueIFRS', CYTD, '2000'))
         assert r.revenue_ytd == 2000
 
-    def test_no_gate_ifrs_standard_still_reads_jgaap_operating_income(self):
-        """Deliberately NO per-standard gate in 0.8.0 (deferred with the
-        quarterly gate decision): an IFRS filing tagging the parent J-GAAP
-        element still reads it — pinned so the gate arrives as its own
-        predicted change, not as migration drift."""
+    def test_ifrs_standard_never_reads_jgaap_operating_income(self):
+        """The quarterly gate (0.9.0): an IFRS filing that tags only the
+        J-GAAP operating-income element gets None, not the J-GAAP figure.
+        0.8.0 pinned the opposite so this change would arrive as its own
+        predicted change; this is that change."""
         rows = [('jpdei_cor:AccountingStandardsDEI', FDI, 'IFRS'),
                 ('jppfs_cor:OperatingIncome', CYTD, '777')]
         r = _parse(*rows)
+        assert r.operating_profit_ytd is None
+
+    def test_undeclared_standard_still_reads_jgaap_operating_income(self):
+        r = _parse(('jppfs_cor:OperatingIncome', CYTD, '777'))
         assert r.operating_profit_ytd == 777
 
     def test_balance_sheet_and_prior_periods(self):

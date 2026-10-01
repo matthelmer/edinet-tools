@@ -155,10 +155,6 @@ def test_quarterly_standard_dei_stays_in_unmapped_fields():
 
 from tests import _standard_grid as g  # noqa: E402
 
-# The grid is RED until the parsers resolve these tables (the next commit
-# removes this mark; every case must then pass).
-PENDING_GRID = pytest.mark.xfail(reason="own-standard resolution not wired yet")
-
 
 class Spec:
     def __init__(self, label, mod, parse, doc_type, kinds, instant, prior, tokens):
@@ -297,7 +293,6 @@ def _value(spec, name, r):
     return getattr(r, name)
 
 
-@PENDING_GRID
 # 1-3: the declared standard's fact wins over every other standard's fact,
 # and the element and context it was read at are recorded.
 @pytest.mark.parametrize("spec,name,own,other", _params(_all_pairs))
@@ -308,7 +303,6 @@ def test_declared_standard_outranks_each_other_standard(spec, name, own, other):
     assert r.source_contexts[name] == spec.period(name)
 
 
-@PENDING_GRID
 @pytest.mark.parametrize(
     "spec,name",
     [
@@ -324,7 +318,6 @@ def test_jgaap_declared_reads_jgaap(spec, name):
     assert _value(spec, name, r) == g.typed(spec.sentinel(name, "Japan GAAP"), spec.kind(name))
 
 
-@PENDING_GRID
 # 4: no DEI standard: the legacy order.
 @pytest.mark.parametrize(
     "spec,name", [pytest.param(sp, n, id=f"{sp.label}-{n}") for sp in SPECS for n in sp.fields()]
@@ -338,7 +331,6 @@ def test_no_declared_standard_keeps_the_legacy_order(spec, name):
     assert _value(spec, name, r) == g.typed(expected, spec.kind(name))
 
 
-@PENDING_GRID
 # 5: the own-standard fact is missing: the declared fallback.
 @pytest.mark.parametrize(
     "spec,name,own,other", _params(lambda sp: _pairs(sp, g.STANDARDS, _jgaap_else_other))
@@ -348,7 +340,6 @@ def test_missing_own_fact_follows_the_declared_fallback(spec, name, own, other):
     assert _value(spec, name, r) == _fallback_expected(spec, name, own, other)
 
 
-@PENDING_GRID
 # 6: a null marker is a missing fact; a genuine zero is a value.
 @pytest.mark.parametrize("marker", ["－", "—"])
 @pytest.mark.parametrize(
@@ -360,7 +351,6 @@ def test_own_null_marker_falls_through(spec, name, own, other, marker):
     assert _value(spec, name, r) == _fallback_expected(spec, name, own, other)
 
 
-@PENDING_GRID
 @pytest.mark.parametrize(
     "spec,name,own,other",
     _params(lambda sp: _pairs(sp, ("IFRS", "US GAAP"), _jgaap_else_other)),
@@ -375,7 +365,6 @@ def _prior_pairs(spec):
     return [t for t in _pairs(spec, ("IFRS", "US GAAP"), _jgaap_else_other) if t[0] in spec.prior]
 
 
-@PENDING_GRID
 @pytest.mark.parametrize("spec,name,own,other", _params(_prior_pairs))
 def test_current_own_prior_other(spec, name, own, other):
     own_el, _ = g.rep(spec.tables(name), own)
@@ -393,7 +382,6 @@ def test_current_own_prior_other(spec, name, own, other):
     )
 
 
-@PENDING_GRID
 @pytest.mark.parametrize("spec,name,own,other", _params(_prior_pairs))
 def test_prior_own_current_other(spec, name, own, other):
     own_el, _ = g.rep(spec.tables(name), own)
@@ -408,7 +396,6 @@ def test_prior_own_current_other(spec, name, own, other):
     assert getattr(r, f"prior_{name}") == int(g.PRIOR_SENTINEL[own])
 
 
-@PENDING_GRID
 # 8: a consolidated filer's parent-only own-standard fact is not eligible.
 @pytest.mark.parametrize(
     "spec,name,own,other", _params(lambda sp: _pairs(sp, g.STANDARDS, _jgaap_else_other))
@@ -427,7 +414,6 @@ def _parent_only_pairs(spec):
     ]
 
 
-@PENDING_GRID
 @pytest.mark.parametrize("spec,name,own,other", _params(_parent_only_pairs))
 def test_parent_only_filer_reads_its_parent_context(spec, name, own, other):
     rows = [spec.row(name, own, suffix=g.NC), spec.row(name, other, suffix=g.NC)]
@@ -447,7 +433,6 @@ def _none_cells(spec):
     return out
 
 
-@PENDING_GRID
 @pytest.mark.parametrize("spec,name,declared", _params(_none_cells))
 def test_declared_none_withholds_every_other_standards_fact(spec, name, declared):
     others = [x for x in spec.policy(name).standards if x != declared]
@@ -470,7 +455,6 @@ def _legacy_no_own_cells(spec):
     return out
 
 
-@PENDING_GRID
 @pytest.mark.parametrize("spec,name,declared", _params(_legacy_no_own_cells))
 def test_legacy_fallback_without_an_own_element(spec, name, declared):
     stds = spec.policy(name).standards
@@ -483,7 +467,6 @@ def test_legacy_fallback_without_an_own_element(spec, name, declared):
         assert element_standard(r.source_elements[name]) == winner != declared
 
 
-@PENDING_GRID
 # 13: an Interim* semi-annual never reads a CurrentYTD/CurrentQuarter fact.
 @pytest.mark.parametrize(
     "name,declared",
@@ -511,7 +494,6 @@ def _control_cells(spec):
     ]
 
 
-@PENDING_GRID
 @pytest.mark.parametrize("declared", ["Japan GAAP", None])
 @pytest.mark.parametrize("spec,name", _params(_control_cells))
 def test_jgaap_control_for_every_declared_none(spec, name, declared):
@@ -519,10 +501,41 @@ def test_jgaap_control_for_every_declared_none(spec, name, declared):
     assert _value(spec, name, r) == g.typed(spec.sentinel(name, "Japan GAAP"), spec.kind(name))
 
 
-@PENDING_GRID
 def test_owners_equity_undeclared_keeps_the_legacy_order():
     """Quarterly net_assets_owners has no J-GAAP element: closed to a
     declared J-GAAP filing, open to one that declares nothing."""
     row = QS.row("net_assets_owners", "IFRS")
     assert QS.parse([row], "Japan GAAP").net_assets_owners is None
     assert QS.parse([row], None).net_assets_owners == 222
+
+
+# ---------------------------------------------------------------------------
+# profit_before_tax and income_before_taxes on the annual report
+# ---------------------------------------------------------------------------
+
+from pathlib import Path  # noqa: E402
+
+from edinet_tools.parsers.securities import parse_securities_report  # noqa: E402
+from tests.conftest import load_securities_fixture  # noqa: E402
+
+_ANNUAL = sorted(p.stem for p in (Path(__file__).parent / "fixtures" / "securities").glob("*.csv"))
+
+
+@pytest.mark.parametrize("name", _ANNUAL)
+def test_profit_before_tax_and_income_before_taxes(name):
+    """income_before_taxes is unchanged (J-GAAP FS with its IFRS chain, no
+    US-GAAP source). Where it came from the declared standard's own element it
+    equals profit_before_tax; on a US-GAAP filing it is None while
+    profit_before_tax reads the US-GAAP figure."""
+    r = parse_securities_report(
+        csv_files=load_securities_fixture(name), doc_id=name, doc_type_code="120"
+    )
+    src = r.source_elements
+    if "income_before_taxes" in src and element_standard(src["income_before_taxes"]) == (
+        r.accounting_standard
+    ):
+        assert r.profit_before_tax == r.income_before_taxes
+    if r.accounting_standard == "US GAAP":
+        assert r.income_before_taxes is None
+    if r.profit_before_tax is not None:
+        assert element_standard(src["profit_before_tax"]) == r.accounting_standard

@@ -61,9 +61,6 @@ def _load(key):
 
 _CACHE = {}
 
-# Own-standard selection lands with the parser change; until then these fail.
-PENDING = pytest.mark.xfail(strict=True, reason="own-standard selection not wired yet")
-
 
 def _parsed(key):
     if key not in _CACHE:
@@ -189,7 +186,6 @@ REPLACED = [
 ]
 
 
-@PENDING
 @pytest.mark.parametrize(
     "key,field,element,context,rival", REPLACED, ids=[f"{c[0]}-{c[1]}" for c in REPLACED]
 )
@@ -303,7 +299,6 @@ OWN = [
 ]
 
 
-@PENDING
 @pytest.mark.parametrize("key,field,element,context", OWN, ids=[f"{c[0]}-{c[1]}" for c in OWN])
 def test_own_standard_fact(key, field, element, context):
     _assert_own(key, field, element, context)
@@ -316,7 +311,6 @@ WITHHELD = [
 ]
 
 
-@PENDING
 @pytest.mark.parametrize("key,field,rival,context", WITHHELD, ids=[c[1] for c in WITHHELD])
 def test_declared_none_withholds_the_other_standards_fact(key, field, rival, context):
     cf, r = _parsed(key)
@@ -340,7 +334,6 @@ def test_no_own_element_is_none(key, field):
     assert getattr(r, field) is None
 
 
-@PENDING
 def test_fallback_is_recorded_as_the_other_standards_element():
     """BayCurrent tags its IFRS equity ratio only in a filer-local element;
     the legacy fallback serves the J-GAAP ratio, and the source says so."""
@@ -382,7 +375,6 @@ KOKUYO_S = [
 ]
 
 
-@PENDING
 @pytest.mark.parametrize(
     "key,field,element,context",
     [("kokuyo_q", *c) for c in KOKUYO_Q] + [("kokuyo_s", *c) for c in KOKUYO_S],

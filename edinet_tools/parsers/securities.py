@@ -608,6 +608,15 @@ def _chain(key: str):
 # 0.9.0 generalises it to every field and every standard.
 # ---------------------------------------------------------------------------
 
+# Profit before income taxes on the declared standard (profit_before_tax):
+# J-GAAP FS, IFRS highlights then FS, US-GAAP highlights. The elements are
+# kept out of ELEMENT_MAP so unmapped_fields keeps them.
+_PROFIT_BEFORE_TAX_LEGACY = (
+    Tier(ELEMENT_MAP['income_before_taxes']),
+    Tier('jpcrp_cor:ProfitLossBeforeTaxIFRSSummaryOfBusinessResults'),
+    Tier('jpigp_cor:ProfitLossBeforeTaxIFRS'),
+    Tier(ELEMENT_MAP['ordinary_income_usgaap_summary']),
+)
 # Duration-context fields. The same tables serve the current-year and
 # prior-year reads (the period is a resolve_tiers argument).
 _DURATION_LEGACY = {
@@ -700,6 +709,7 @@ _DURATION_LEGACY = {
     ),
     # Income detail.
     'income_before_taxes': (Tier(_chain('income_before_taxes')),),
+    'profit_before_tax': _PROFIT_BEFORE_TAX_LEGACY,
     'non_operating_income': (Tier(_chain('non_operating_income')),),
     'non_operating_expenses': (Tier(_chain('non_operating_expenses')),),
     'income_taxes': (Tier(_chain('income_taxes')),),
@@ -814,15 +824,6 @@ _EQUITY_RATIO_LEGACY = (
     Tier(ELEMENT_MAP['equity_ratio_ifrs']),
     Tier(ELEMENT_MAP['equity_ratio_usgaap']),
 )
-# Profit before income taxes on the declared standard (profit_before_tax):
-# J-GAAP FS, IFRS highlights then FS, US-GAAP highlights. The elements are
-# kept out of ELEMENT_MAP so unmapped_fields keeps them.
-_PROFIT_BEFORE_TAX_LEGACY = (
-    Tier(ELEMENT_MAP['income_before_taxes']),
-    Tier('jpcrp_cor:ProfitLossBeforeTaxIFRSSummaryOfBusinessResults'),
-    Tier('jpigp_cor:ProfitLossBeforeTaxIFRS'),
-    Tier(ELEMENT_MAP['ordinary_income_usgaap_summary']),
-)
 _ROE_LEGACY = (
     Tier(ELEMENT_MAP['roe']),
     Tier(ELEMENT_MAP['roe_ifrs']),
@@ -882,6 +883,8 @@ _STANDARD_POLICY = {
     'investing_cash_flow': _p('Cash flows from investing activities', _JG, _IFRS, _US),
     'financing_cash_flow': _p('Cash flows from financing activities', _JG, _IFRS, _US),
     'income_before_taxes': _p('Profit before income taxes (FS)', _JG, _IFRS),
+    'profit_before_tax': _p('Profit before income taxes, read on the declared standard '
+                            'only', _JG, _IFRS, _US, fallback='none'),
     'non_operating_income': _p('Non-operating income (J-GAAP only)', _JG),
     'non_operating_expenses': _p('Non-operating expenses (J-GAAP only)', _JG),
     'income_taxes': _p('Income tax expense (FS)', _JG, _IFRS),
