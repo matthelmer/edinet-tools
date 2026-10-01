@@ -7,7 +7,9 @@
 
 Python library for Japan's [EDINET](https://disclosure2.edinet-fsa.go.jp/) disclosure system — the official source for securities reports, shareholding notices, tender offers, and other regulatory filings from listed Japanese companies.
 
-J-GAAP, IFRS, and US-GAAP filers tag the same figure under different XBRL elements. edinet-tools maps them all to one typed Python field.
+J-GAAP, IFRS, and US-GAAP filers tag the same figure under different XBRL elements. edinet-tools maps them all to one typed Python field, reading each filing on its own accounting standard, and says which element, context and unit every value came from.
+
+It reads either EDINET's CSV conversion or the filing's own inline XBRL. The XBRL path keeps text sections that the CSV cuts at 30,000 characters.
 
 **Zero runtime dependencies. Typed parsers for all 42 EDINET document types.**
 
@@ -27,10 +29,12 @@ pip install edinet-tools
 
 Requires Python 3.10+. Standard library only.
 
-> **Use 0.8.4 or later.** EDINET moved its API to `api.edinet-fsa.go.jp` at the end of
-> August 2026; versions before 0.8.1 call the old host and cannot fetch anything. 0.8.4
-> also fixes the code-list download (the old CSV path now serves HTML) and reads joint
-> 5%+ filings as group totals — see the CHANGELOG.
+> **Upgrading to 0.9.0?** Values change for IFRS and US GAAP filers: each field now reads
+> the filing's own standard rather than a J-GAAP figure the filing also tags. J-GAAP and
+> fund filings read as before. See the [CHANGELOG](CHANGELOG.md) for every changed value
+> and key.
+>
+> Versions before 0.8.1 call EDINET's retired API host and cannot fetch anything.
 >
 > Upgrading from 0.7.x? 0.8.0 contains breaking changes; see [MIGRATING.md](https://github.com/matthelmer/edinet-tools/blob/main/MIGRATING.md).
 
@@ -158,7 +162,33 @@ report.raw_fields        # All XBRL elements by element ID
 report.text_blocks       # Narrative text block content
 report.extraction_flags  # parse-time structural checks (0.8.0): impossible
                          # values are withheld as None, never served
+
+# Where each value came from (securities, quarterly, semi-annual reports)
+report.source_elements   # field -> XBRL element read
+report.source_contexts   # field -> context read
+report.units             # monetary / per-share field -> unit (yen first; "USD" if only USD was filed)
 ```
+
+### Reading the filing's own XBRL
+
+By default `parse()` reads EDINET's CSV conversion (download type 5), as earlier versions did. Pass `source` to read the filing itself (download type 1):
+
+```python
+report = doc.parse(source="xbrl")       # the inline XBRL ("ixbrl" also accepted)
+report = doc.parse(source="instance")   # the .xbrl instance in the same package
+
+# Or from bytes you already have
+from edinet_tools import parse_xbrl
+report = parse_xbrl(zip_bytes, "350", source="xbrl", doc_id="S100Y8GB")
+```
+
+What the XBRL path gives you that the CSV does not:
+
+- **Text sections in full.** The CSV cuts every text value at 30,000 characters. A tender-offer registration's purpose section of 75,894 characters reads in full.
+- **Each joint holder's own text** on 5% reports: `joint_holder.text_blocks` and `report.text_blocks_by_context`, such as each holder's 60-day trading table.
+- **Structure in text sections:** a tab between table cells, a newline between rows, and the original HTML kept alongside.
+
+Typed fields are the same from either source, apart from those documented differences. The reader uses only the standard library. It refuses what it does not implement with a named error (`UnsupportedInlineXBRL`) rather than guessing.
 
 ### Download Formats
 
@@ -167,7 +197,7 @@ from edinet_tools.api import fetch_document
 
 csv_zip = fetch_document("S100ABC")            # XBRL CSV (default)
 pdf = fetch_document("S100ABC", type=2)        # PDF
-html_zip = fetch_document("S100ABC", type=1)   # HTML documents
+filing_zip = fetch_document("S100ABC", type=1) # the filing: inline XBRL, HTML and the .xbrl instance
 ```
 
 ## Configuration
@@ -178,12 +208,20 @@ Get a free API key from [EDINET](https://disclosure2.edinet-fsa.go.jp/) ([video 
 export EDINET_API_KEY=your_key_here
 ```
 
-The key is read from the environment only.  Entity lookup and parsing work without an API key (document fetching requires one).
+Or set it in code with `edinet_tools.configure(api_key="...")`. Entity lookup and parsing work without an API key (document fetching requires one).
+
+## Limitations
+
+- EDINET stops serving a filing once its public-inspection period ends, so an expired document can no longer be downloaded. Keep the packages you need.
+- Some filers' inline files are HTML 4 rather than XHTML. The inline reader refuses them, and `source="instance"` reads them.
+- Where a filing's highlights table and its statements disagree, the parser follows a documented order and does not judge which figure is right. `source_elements` shows which was read.
+
+The full list is under "Known limits" in the [CHANGELOG](CHANGELOG.md).
 
 ## Testing
 
 ```bash
-pytest tests/ -v  # 1,000+ tests
+pytest tests/ -q  # 3,000+ tests, including real EDINET filings as fixtures
 ```
 
 ## Links
