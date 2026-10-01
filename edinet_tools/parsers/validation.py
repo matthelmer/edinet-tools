@@ -31,7 +31,9 @@ FILING_DATE_SANITY_DAYS = 30
 class ExtractionFlag:
     """One validation finding. severity 'withheld' means the typed field was
     emptied (bounds); 'annotated' means the field kept its value (identities,
-    date sanity).
+    date sanity); 'skipped' means an identity was not compared because its
+    operands were read in different units (report.units), operands then
+    mapping each operand to its unit id.
 
     operands (v0.8.0+, additive): on identity flags, the structured
     {operand_field: value_string} dict behind the rendered `value` string —
@@ -43,7 +45,7 @@ class ExtractionFlag:
     element_id: Optional[str]
     value: str
     rule: str
-    severity: str  # 'withheld' | 'annotated'
+    severity: str  # 'withheld' | 'annotated' | 'skipped'
     accounting_standard: Optional[str]
     operands: Optional[dict] = None
 
@@ -135,8 +137,14 @@ class Identity:
 def apply_identities(report, identities) -> list:
     """Check every identity against the report. Violations produce an
     'annotated' flag but DO NOT modify the report. Returns the flags; caller
-    appends them to report.extraction_flags."""
+    appends them to report.extraction_flags.
+
+    Amounts are never compared across currencies: when the operands that
+    carry a unit in report.units name more than one unit (MODEC's yen
+    total_assets beside its dollar net_assets_total), the identity is not
+    checked and a 'skipped' flag records the units."""
     standard = getattr(report, 'accounting_standard', None)
+    units = getattr(report, 'units', None) or {}
     flags = []
     for identity in identities:
         if not _in_scope(identity.standards, standard):
@@ -145,6 +153,19 @@ def apply_identities(report, identities) -> list:
                   for op in identity.operands]
         if any(v is None for v in values):
             continue  # skip, never fail
+        op_units = {op: units[op] for op in identity.operands if op in units}
+        if len(set(op_units.values())) > 1:
+            flags.append(ExtractionFlag(
+                field=identity.operands[0],
+                element_id=None,
+                value=', '.join(f'{op}={val} {op_units.get(op, "")}'.rstrip()
+                                for op, val in zip(identity.operands, values)),
+                rule=f'units_differ:{identity.name}',
+                severity='skipped',
+                accounting_standard=standard,
+                operands=op_units,
+            ))
+            continue
         result = identity.check(*values)
         if result is None or result:
             continue

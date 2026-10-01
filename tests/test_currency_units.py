@@ -391,6 +391,38 @@ def test_string_mode_prefers_the_unit_asked_for():
 # ---------------------------------------------------------------------------
 
 
+def test_an_identity_across_currencies_is_skipped_and_flagged():
+    """MODEC's annual report: total_assets is read from the highlights table in yen,
+    net_assets_total from the statements in dollars. net_assets<=total_assets is not
+    compared; a 'skipped' flag says why."""
+    _cf, r = _modec_annual()
+    assert (r.units["net_assets_total"], r.units["total_assets"]) == ("USD", "JPY")
+    flags = [f for f in r.extraction_flags if f.rule.endswith("identity:net_assets<=total_assets")]
+    assert len(flags) == 1
+    flag = flags[0]
+    assert flag.severity == "skipped"
+    assert flag.rule == "units_differ:identity:net_assets<=total_assets"
+    assert flag.operands == {"net_assets_total": "USD", "total_assets": "JPY"}
+
+
+def test_an_identity_in_one_currency_is_still_checked():
+    from edinet_tools.parsers.validation import Identity, apply_identities
+
+    class R:
+        accounting_standard = "IFRS"
+        net_assets_total = 10
+        total_assets = 5
+        units = {"net_assets_total": "USD", "total_assets": "USD"}
+
+    ident = Identity(
+        name="identity:na<=ta",
+        operands=("net_assets_total", "total_assets"),
+        check=lambda na, ta: na <= ta,
+    )
+    flags = apply_identities(R(), [ident])
+    assert [f.severity for f in flags] == ["annotated"]
+
+
 def test_a_context_blind_read_of_a_row_without_a_context_key_returns_its_value():
     cf = [{"filename": "t.csv", "data": [{"要素ID": "x:A", "値": "123"}]}]
     hit = resolve_tiers(
