@@ -292,9 +292,10 @@ class QuarterlyReport(ParsedReport):
     ordinary_profit_ytd: int | None = None
     net_income_ytd: int | None = None
     # Profit before income taxes (total basis, pre-tax): J-GAAP
-    # 税金等調整前四半期純利益, IFRS / US-GAAP profit before tax, each read on
-    # the declared standard only (honest None when the filing does not tag
-    # its own standard's figure).
+    # 税金等調整前四半期純利益, IFRS / US-GAAP profit before tax. A filing that
+    # declares a standard reads that standard's figure only (honest None when
+    # it does not tag it); a filing that declares none reads the legacy order
+    # (J-GAAP FS, IFRS highlights then FS, US-GAAP highlights).
     profit_before_tax: int | None = None
 
     # Income Statement (Prior Year YTD)

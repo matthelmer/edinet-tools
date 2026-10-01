@@ -467,8 +467,9 @@ class SecuritiesReport(ParsedReport):
     # Income Detail
     # income_before_taxes: the J-GAAP FS element with its IFRS chain, then
     # the legacy fallback; no US-GAAP source. profit_before_tax: the same
-    # concept read on the declared standard only (J-GAAP FS, IFRS highlights
-    # then FS, US-GAAP highlights); None when the own fact is missing.
+    # concept on the declared standard (J-GAAP FS, IFRS highlights then FS,
+    # US-GAAP highlights); None when the declared standard's fact is missing.
+    # A filing that declares no standard reads those sources in that order.
     income_before_taxes: int | None = None
     profit_before_tax: int | None = None
     non_operating_income: int | None = None
