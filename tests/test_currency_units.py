@@ -397,3 +397,33 @@ def test_a_context_blind_read_of_a_row_without_a_context_key_returns_its_value()
         cf, (Tier("x:A"),), standard=None, period=None, is_consolidated=None, mode="string"
     )
     assert (hit.value, hit.element_id, hit.context_id) == ("123", "x:A", None)
+
+
+def test_a_fact_without_a_unit_is_not_stored_in_units():
+    """`units` holds unit ids only: a field read from a row with no unit id has no entry."""
+    cf = _rows(("jppfs_cor:NetSales", "CurrentYearDuration", "－", "1500"))
+    hit = resolve_tiers(
+        cf,
+        (Tier("jppfs_cor:NetSales"),),
+        standard="Japan GAAP",
+        period="CurrentYearDuration",
+        is_consolidated=True,
+    )
+    assert hit.unit_id is None
+    base = load_securities_fixture("jgaap_control_revenue")
+    read = parse_securities_report(csv_files=base, doc_id="x", doc_type_code="120")
+    element = read.source_elements["net_sales"]
+    stripped = [
+        {
+            "filename": f["filename"],
+            "data": [
+                {**row, "ユニットID": "－"} if row["要素ID"] == element else row
+                for row in f["data"]
+            ],
+        }
+        for f in base
+    ]
+    r = parse_securities_report(csv_files=stripped, doc_id="x", doc_type_code="120")
+    assert r.net_sales is not None
+    assert "net_sales" not in r.units
+    assert all(u is not None for u in r.units.values())

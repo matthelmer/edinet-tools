@@ -1198,7 +1198,8 @@ def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_t
         **per_share,
         source_elements={**sources, **per_share_sources},
         source_contexts={**contexts, **per_share_contexts},
-        units={**units, **per_share_units},
+        # a row without a unit id has no entry (never None)
+        units={k: u for k, u in {**units, **per_share_units}.items() if u is not None},
 
         # Segments (v0.7.0+)
         segments=segments,

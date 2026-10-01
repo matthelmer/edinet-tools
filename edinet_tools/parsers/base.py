@@ -30,7 +30,8 @@ class ParsedReport:
         units: Monetary or per-share field name -> the unit id of the fact
             read ('JPY' / 'JPYPerShares', or the foreign currency a filer
             tagged it in, e.g. 'USD' / 'USDPerShares'). A fact filed in yen and
-            another currency at one context is read in yen.
+            another currency at one context is read in yen. A value read from a
+            row without a unit id has no entry: the map never holds None.
 
     The provenance maps are filled by the parsers that record them (the
     securities, quarterly and semi-annual reports) for every field that holds

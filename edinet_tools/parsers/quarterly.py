@@ -528,5 +528,6 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
         # Provenance
         source_elements=sources,
         source_contexts=contexts,
-        units=units,
+        # a row without a unit id has no entry (never None)
+        units={k: u for k, u in units.items() if u is not None},
     )

@@ -445,7 +445,8 @@ def parse_semi_annual_report(document=None, *, csv_files=None, doc_id=None, doc_
         # Provenance
         source_elements=sources,
         source_contexts=contexts,
-        units=units,
+        # a row without a unit id has no entry (never None)
+        units={k: u for k, u in units.items() if u is not None},
     )
     apply_validation(report, SEMI_ANNUAL_BOUNDS, SEMI_ANNUAL_IDENTITIES)
     return report
