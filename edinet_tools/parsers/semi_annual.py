@@ -21,6 +21,7 @@ from ._standard_policy import (
 from .base import ParsedReport
 from .extraction import (
     Tier,
+    PREFERRED_PER_SHARE_UNIT,
     resolve_tiers,
     get_dei,
     extract_csv_from_zip,
@@ -401,15 +402,17 @@ def parse_semi_annual_report(document=None, *, csv_files=None, doc_id=None, doc_
 
     eps_hit = resolve_tiers(csv_files, _EPS_OWN, standard=accounting_standard,
                             period=duration_period, is_consolidated=is_consolidated,
-                            mode='string', coerce=True)
+                            mode='string', coerce=True, prefer_unit=PREFERRED_PER_SHARE_UNIT)
     if eps_hit is None:
         eps_hit = resolve_tiers(csv_files, _EPS_REST, standard=accounting_standard,
                                 period=duration_period, is_consolidated=is_consolidated,
-                                mode='string', coerce=True)
+                                mode='string', coerce=True,
+                                prefer_unit=PREFERRED_PER_SHARE_UNIT)
     values['earnings_per_share'] = parse_decimal(eps_hit.value) if eps_hit else None
     if values['earnings_per_share'] is not None:
         sources['earnings_per_share'] = eps_hit.element_id
         contexts['earnings_per_share'] = eps_hit.context_id
+        units['earnings_per_share'] = eps_hit.unit_id
 
     # Categorize all elements
     raw_fields, text_blocks, unmapped_fields, raw_facts = categorize_elements(csv_files, ELEMENT_MAP)

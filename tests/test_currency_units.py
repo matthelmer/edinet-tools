@@ -16,6 +16,7 @@ numbers.
 """
 
 import dataclasses
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -32,17 +33,15 @@ from tests.conftest import (
 )
 
 XBRL = Path(__file__).parent / "fixtures" / "xbrl"
-NON_MONETARY = {
+PER_SHARE = {
     "earnings_per_share",
     "eps_basic_ytd",
-    "equity_ratio",
     "net_assets_per_share",
-    "roe",
     "ifrs_summary_basic_eps",
-    "ifrs_summary_roe",
     "ifrs_summary_bps",
-    "num_employees",
 }
+UNITLESS = {"equity_ratio", "roe", "ifrs_summary_roe", "num_employees"}
+NON_MONETARY = PER_SHARE | UNITLESS
 
 
 def _units_at(csv_files, element, context):
@@ -60,6 +59,15 @@ def _monetary(report):
         name: getattr(report, name)
         for name in report.source_elements
         if name not in NON_MONETARY and getattr(report, name) is not None
+    }
+
+
+def _recorded(report):
+    """The fields `units` covers: every monetary and per-share field holding a value."""
+    return {
+        name
+        for name in report.source_elements
+        if name not in UNITLESS and getattr(report, name) is not None
     }
 
 
@@ -122,7 +130,7 @@ def test_modec_statements_filed_only_in_dollars_are_read_and_marked():
 def test_every_monetary_value_carries_the_unit_it_was_read_in():
     cf, r = _modec()
     fields = _monetary(r)
-    assert set(r.units) == set(fields)
+    assert set(r.units) == _recorded(r)
     for name, value in fields.items():
         at = _units_at(cf, r.source_elements[name], r.source_contexts[name])
         assert value == int(at[r.units[name]]), name
@@ -189,18 +197,75 @@ def test_a_yen_filing_reads_as_before(subdir, name, doc_type, parse):
     cf = _load(subdir, name)
     r = parse(csv_files=cf, doc_id=name, doc_type_code=doc_type)
     fields = _monetary(r)
-    assert set(r.units) == set(fields)
+    assert set(r.units) == _recorded(r)
     for field_name, value in fields.items():
         at = _units_at(cf, r.source_elements[field_name], r.source_contexts[field_name])
         assert set(at) == {"JPY"}, field_name
         assert value == int(at["JPY"]), field_name
         assert r.units[field_name] == "JPY"
+    per_share = _recorded(r) & PER_SHARE
+    assert per_share
+    for field_name in per_share:
+        at = _units_at(cf, r.source_elements[field_name], r.source_contexts[field_name])
+        assert set(at) == {"JPYPerShares"}, field_name
+        assert r.units[field_name] == "JPYPerShares", field_name
 
 
-def test_per_share_and_ratio_fields_are_not_in_units():
-    _cf, r = _modec()
-    assert r.earnings_per_share is not None
-    assert "earnings_per_share" not in r.units
+def test_ratio_fields_are_not_in_units():
+    _cf, r = _modec_annual()
+    assert r.equity_ratio is not None
+    assert not set(r.units) & UNITLESS
+
+
+# ---------------------------------------------------------------------------
+# Per-share figures: the same rule in JPYPerShares
+# ---------------------------------------------------------------------------
+
+
+def _modec_annual():
+    cf = load_securities_fixture("modec_s100xu6c_usd")
+    return cf, parse_securities_report(csv_files=cf, doc_id="S100XU6C", doc_type_code="120")
+
+
+def test_modec_annual_eps_and_bps_read_the_yen_figure():
+    cf, r = _modec_annual()
+    for name in PER_SHARE - {"eps_basic_ytd"}:
+        at = _units_at(cf, r.source_elements[name], r.source_contexts[name])
+        assert set(at) == {"JPYPerShares", "USDPerShares"}, name
+        assert getattr(r, name) == Decimal(at["JPYPerShares"]), name
+        assert r.units[name] == "JPYPerShares", name
+    assert r.earnings_per_share == Decimal("826.25")
+
+
+def test_modec_half_year_eps_reads_the_yen_figure():
+    cf, r = _modec()
+    at = _units_at(
+        cf, r.source_elements["earnings_per_share"], r.source_contexts["earnings_per_share"]
+    )
+    assert r.earnings_per_share == Decimal(at["JPYPerShares"]) == Decimal("532.37")
+    assert r.units["earnings_per_share"] == "JPYPerShares"
+
+
+def test_a_dollar_only_per_share_figure_is_read_and_marked():
+    cf = _load("quarterly", "kokuyo_s100s4mr_jgaap")
+    usd = [
+        {
+            "filename": f["filename"],
+            "data": [
+                (
+                    {**row, "ユニットID": "USDPerShares"}
+                    if row["ユニットID"] == "JPYPerShares"
+                    else row
+                )
+                for row in f["data"]
+            ],
+        }
+        for f in cf
+    ]
+    yen = parse_quarterly_report(csv_files=cf, doc_id="x", doc_type_code="140")
+    r = parse_quarterly_report(csv_files=usd, doc_id="x", doc_type_code="140")
+    assert r.eps_basic_ytd == yen.eps_basic_ytd is not None
+    assert r.units["eps_basic_ytd"] == "USDPerShares"
 
 
 # ---------------------------------------------------------------------------
@@ -277,7 +342,7 @@ def test_a_foreign_only_suffix_fact_is_read_with_its_unit():
     assert (hit.value, hit.unit_id) == (10, "EUR")
 
 
-def test_string_mode_is_unchanged_first_row_wins():
+def test_string_mode_without_a_preference_reads_the_first_row():
     cf = _rows(
         (
             "jpcrp_cor:BasicEarningsLossPerShareSummaryOfBusinessResults",
@@ -300,4 +365,22 @@ def test_string_mode_is_unchanged_first_row_wins():
         is_consolidated=True,
         mode="string",
     )
-    assert (hit.value, hit.unit_id) == ("3.28", None)
+    assert (hit.value, hit.unit_id) == ("3.28", "USDPerShares")
+
+
+def test_string_mode_prefers_the_unit_asked_for():
+    el = "jpcrp_cor:BasicEarningsLossPerShareSummaryOfBusinessResults"
+    cf = _rows(
+        (el, "CurrentYearDuration", "USDPerShares", "3.28"),
+        (el, "CurrentYearDuration", "JPYPerShares", "532.37"),
+    )
+    hit = resolve_tiers(
+        cf,
+        (Tier(el),),
+        standard="Japan GAAP",
+        period="CurrentYearDuration",
+        is_consolidated=True,
+        mode="string",
+        prefer_unit="JPYPerShares",
+    )
+    assert (hit.value, hit.unit_id) == ("532.37", "JPYPerShares")

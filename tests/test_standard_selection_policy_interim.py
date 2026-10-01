@@ -526,13 +526,19 @@ def test_profit_before_tax_and_income_before_taxes(name):
     """income_before_taxes is unchanged (J-GAAP FS with its IFRS chain, no
     US-GAAP source). Where it came from the declared standard's own element it
     equals profit_before_tax; on a US-GAAP filing it is None while
-    profit_before_tax reads the US-GAAP figure."""
+    profit_before_tax reads the US-GAAP figure. A filing that states the two in
+    different currencies (`units`) is not compared."""
     r = parse_securities_report(
         csv_files=load_securities_fixture(name), doc_id=name, doc_type_code="120"
     )
     src = r.source_elements
-    if "income_before_taxes" in src and element_standard(src["income_before_taxes"]) == (
-        r.accounting_standard
+    # Two amounts compare only in one currency: MODEC's highlights table states
+    # profit before tax in yen and dollars, its statements in dollars only.
+    same_unit = r.units.get("profit_before_tax") == r.units.get("income_before_taxes")
+    if (
+        "income_before_taxes" in src
+        and element_standard(src["income_before_taxes"]) == r.accounting_standard
+        and same_unit
     ):
         assert r.profit_before_tax == r.income_before_taxes
     if r.accounting_standard == "US GAAP":

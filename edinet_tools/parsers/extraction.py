@@ -555,8 +555,7 @@ class TierHit(NamedTuple):
     free per-field provenance. A suffix tier reads the bare period, so its
     context is the period; a context-blind read (period=None) reports the
     matched row's own context. unit_id is the read row's unit id, as the
-    CSV's ユニットID gives it (None for a row without one); 'financial' mode
-    fills it, 'string' mode leaves it None."""
+    CSV's ユニットID gives it (None for a row without one)."""
     value: Any
     element_id: str
     context_id: Optional[str] = None
@@ -568,6 +567,9 @@ class TierHit(NamedTuple):
 # fact in USD and JPY), the yen fact is read. A fact filed only in another
 # currency is read as filed, and TierHit.unit_id says which.
 PREFERRED_UNIT = 'JPY'
+# The same rule for per-share figures ('string' mode, asked for by the
+# caller): the yen-per-share fact before one in another currency per share.
+PREFERRED_PER_SHARE_UNIT = 'JPYPerShares'
 _NO_UNIT = ('', '－')
 
 
@@ -661,6 +663,7 @@ def resolve_tiers(
     is_consolidated: Optional[bool],
     mode: str = 'financial',
     coerce: bool = True,
+    prefer_unit: Optional[str] = None,
 ) -> Optional[TierHit]:
     """Resolve a per-field tier table to a TierHit, or None (honest absence).
 
@@ -680,7 +683,9 @@ def resolve_tiers(
       pattern-fallen-through). coerce=True reproduces the eps/nav
       null-marker tier-advance; coerce=False reproduces the legacy
       equity-ratio/roe first-non-empty-raw-string-stops behavior (the
-      caller's parse_percentage turns markers into None).
+      caller's parse_percentage turns markers into None). `prefer_unit`
+      (per-share fields: PREFERRED_PER_SHARE_UNIT) reads an element's fact in
+      that unit before one in another unit at the same context.
 
     period=None resolves context-blind (extract_value with no context
     patterns — first match in file order), preserving the semi-annual
@@ -715,10 +720,10 @@ def resolve_tiers(
                 if v is None:
                     continue  # parse failure advances the waterfall
                 return TierHit(v, elem, period, unit)
-            s, elem, _unit = _resolve_suffix_tier(csv_files, tier, period)
+            s, elem, unit = _resolve_suffix_tier(csv_files, tier, period, prefer_unit)
             if s is None:
                 continue
-            return TierHit(s, elem, period)
+            return TierHit(s, elem, period, unit)
 
         if mode == 'financial':
             s, elem, context, unit = _resolve_financial_tier(csv_files, tier, patterns)
@@ -732,14 +737,14 @@ def resolve_tiers(
         # string mode: extract_value over the full pattern list, i.e. the
         # first pattern with any row for the element (a marker included).
         for elem in tier.elements:
-            s, context = None, None
+            s, context, unit = None, None, None
             for pattern in patterns:
-                s, context, _unit = _value_at(csv_files, elem, pattern)
+                s, context, unit = _value_at(csv_files, elem, pattern, prefer_unit)
                 if s is not None:
                     break
             candidate = coerce_numeric_value(s) if coerce else s
             if candidate:
-                return TierHit(candidate, elem, context)
+                return TierHit(candidate, elem, context, unit)
 
     return None
 

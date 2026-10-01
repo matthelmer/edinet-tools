@@ -26,6 +26,7 @@ from ._standard_policy import (
 from .base import ParsedReport
 from .extraction import (
     Tier,
+    PREFERRED_PER_SHARE_UNIT,
     resolve_tiers,
     get_dei,
     extract_csv_from_zip,
@@ -467,23 +468,26 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
     for name, tiers in _INSTANT_TIERS.items():
         fields[name] = fin(name, tiers, 'CurrentQuarterInstant')
 
-    def per_share(name, own, rest, period, rest_coerce, parse):
+    def per_share(name, own, rest, period, rest_coerce, parse, prefer_unit=None):
         hit = resolve_tiers(csv_files, own, standard=accounting_standard, period=period,
-                            is_consolidated=is_consolidated, mode='string', coerce=True)
+                            is_consolidated=is_consolidated, mode='string', coerce=True,
+                            prefer_unit=prefer_unit)
         if hit is None:
             hit = resolve_tiers(csv_files, rest, standard=accounting_standard, period=period,
                                 is_consolidated=is_consolidated, mode='string',
-                                coerce=rest_coerce)
+                                coerce=rest_coerce, prefer_unit=prefer_unit)
         value = parse(hit.value) if hit else None
         if value is not None:
             sources[name], contexts[name] = hit.element_id, hit.context_id
+            if prefer_unit:
+                units[name] = hit.unit_id
         return value
 
     # EPS: a marker is a missing fact (coerce); a non-numeric string is a
     # silent None (the guarded Decimal). The equity ratio's legacy scan keeps
     # its first-non-empty-raw-string read: a marker parses to None.
     eps_basic = per_share('eps_basic_ytd', _EPS_OWN, _EPS_REST, 'CurrentYTDDuration', True,
-                          _decimal_or_none)
+                          _decimal_or_none, PREFERRED_PER_SHARE_UNIT)
     equity_ratio = per_share('equity_ratio', _EQUITY_RATIO_OWN, _EQUITY_RATIO_REST,
                              'CurrentQuarterInstant', False, parse_percentage)
 

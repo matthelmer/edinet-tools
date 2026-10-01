@@ -25,7 +25,9 @@ from ._standard_policy import (
 )
 from .base import ParsedReport
 from .extraction import (
+    PREFERRED_PER_SHARE_UNIT,
     Tier,
+    _value_at,
     resolve_tiers,
     get_dei,
     extract_csv_from_zip,
@@ -1046,37 +1048,44 @@ def _extract_financials(csv_files, standard, is_consolidated):
 
 def _extract_per_share_block(csv_files, standard, is_consolidated):
     """Per-share metrics, ratios, and the independent IFRS summary trio.
-    Returns (values, provenance, sources, contexts) — provenance feeds
-    apply_validation; sources / contexts map field -> winning element id and
-    its context (source_elements / source_contexts).
+    Returns (values, provenance, sources, contexts, units) — provenance feeds
+    apply_validation; sources / contexts / units map field -> winning element
+    id, its context and (per-share fields) its unit id.
 
     Each per-share / ratio field resolves its own-standard stage first with
     coerce semantics (a marker-valued own-standard fact falls through), then
     its legacy scan with the legacy coerce setting."""
-    def string_hit(own, legacy, period, legacy_coerce):
+    def string_hit(own, legacy, period, legacy_coerce, prefer_unit=None):
         hit = resolve_tiers(csv_files, own, standard=standard, period=period,
-                            is_consolidated=is_consolidated, mode='string', coerce=True)
+                            is_consolidated=is_consolidated, mode='string', coerce=True,
+                            prefer_unit=prefer_unit)
         if hit is None:
             hit = resolve_tiers(csv_files, legacy, standard=standard, period=period,
                                 is_consolidated=is_consolidated, mode='string',
-                                coerce=legacy_coerce)
+                                coerce=legacy_coerce, prefer_unit=prefer_unit)
         return hit
 
     values = {}
     provenance = {}
     sources = {}
     contexts = {}
+    units = {}
 
-    def put(name, hit, parse):
+    def put(name, hit, parse, per_share=False):
         values[name] = parse(hit.value) if hit else None
         if values[name] is not None:
             sources[name] = hit.element_id
             contexts[name] = hit.context_id
+            if per_share:
+                units[name] = hit.unit_id
 
+    # Per-share figures read the yen-per-share fact first (PREFERRED_PER_SHARE_UNIT).
     put('net_assets_per_share',
-        string_hit(_NAV_OWN, _NAV_LEGACY, 'CurrentYearInstant', True), parse_decimal)
+        string_hit(_NAV_OWN, _NAV_LEGACY, 'CurrentYearInstant', True, PREFERRED_PER_SHARE_UNIT),
+        parse_decimal, per_share=True)
     put('earnings_per_share',
-        string_hit(_EPS_OWN, _EPS_LEGACY, 'CurrentYearDuration', True), parse_decimal)
+        string_hit(_EPS_OWN, _EPS_LEGACY, 'CurrentYearDuration', True, PREFERRED_PER_SHARE_UNIT),
+        parse_decimal, per_share=True)
 
     # equity_ratio / roe: the legacy scan keeps its first-non-empty-raw-string
     # behavior (coerce=False; see the tier-table comments).
@@ -1092,14 +1101,14 @@ def _extract_per_share_block(csv_files, standard, is_consolidated):
     # elements, not waterfalls — extracted independently of the tier tables
     # so consumers can distinguish IFRS-summary truth from waterfall-picked
     # values. coerce_numeric_value() keeps null markers away from Decimal().
-    ifrs_eps_str = coerce_numeric_value(extract_value(
-        csv_files, ELEMENT_MAP['earnings_per_share_ifrs'],
-        context_patterns=['CurrentYearDuration'],
-    ))
-    values['ifrs_summary_basic_eps'] = parse_decimal(ifrs_eps_str)
+    ifrs_eps_raw, _ctx, ifrs_eps_unit = _value_at(
+        csv_files, ELEMENT_MAP['earnings_per_share_ifrs'], 'CurrentYearDuration',
+        PREFERRED_PER_SHARE_UNIT)
+    values['ifrs_summary_basic_eps'] = parse_decimal(coerce_numeric_value(ifrs_eps_raw))
     if values['ifrs_summary_basic_eps'] is not None:
         sources['ifrs_summary_basic_eps'] = ELEMENT_MAP['earnings_per_share_ifrs']
         contexts['ifrs_summary_basic_eps'] = 'CurrentYearDuration'
+        units['ifrs_summary_basic_eps'] = ifrs_eps_unit
 
     ifrs_roe_str = coerce_numeric_value(extract_value(
         csv_files, ELEMENT_MAP['roe_ifrs'],
@@ -1110,16 +1119,15 @@ def _extract_per_share_block(csv_files, standard, is_consolidated):
         sources['ifrs_summary_roe'] = ELEMENT_MAP['roe_ifrs']
         contexts['ifrs_summary_roe'] = 'CurrentYearDuration'
 
-    ifrs_bps_str = coerce_numeric_value(extract_value(
-        csv_files, ELEMENT_MAP['bps_ifrs'],
-        context_patterns=['CurrentYearInstant'],
-    ))
-    values['ifrs_summary_bps'] = parse_decimal(ifrs_bps_str)
+    ifrs_bps_raw, _ctx, ifrs_bps_unit = _value_at(
+        csv_files, ELEMENT_MAP['bps_ifrs'], 'CurrentYearInstant', PREFERRED_PER_SHARE_UNIT)
+    values['ifrs_summary_bps'] = parse_decimal(coerce_numeric_value(ifrs_bps_raw))
     if values['ifrs_summary_bps'] is not None:
         sources['ifrs_summary_bps'] = ELEMENT_MAP['bps_ifrs']
         contexts['ifrs_summary_bps'] = 'CurrentYearInstant'
+        units['ifrs_summary_bps'] = ifrs_bps_unit
 
-    return values, provenance, sources, contexts
+    return values, provenance, sources, contexts, units
 
 
 def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_type_code=None) -> SecuritiesReport:
@@ -1160,8 +1168,8 @@ def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_t
 
     financials, sources, contexts, units = _extract_financials(
         csv_files, standard, is_consolidated)
-    per_share, provenance, per_share_sources, per_share_contexts = _extract_per_share_block(
-        csv_files, standard, is_consolidated)
+    per_share, provenance, per_share_sources, per_share_contexts, per_share_units = (
+        _extract_per_share_block(csv_files, standard, is_consolidated))
 
     # Categorize all elements
     raw_fields, text_blocks, unmapped_fields, raw_facts = categorize_elements(csv_files, ELEMENT_MAP)
@@ -1190,7 +1198,7 @@ def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_t
         **per_share,
         source_elements={**sources, **per_share_sources},
         source_contexts={**contexts, **per_share_contexts},
-        units=units,
+        units={**units, **per_share_units},
 
         # Segments (v0.7.0+)
         segments=segments,

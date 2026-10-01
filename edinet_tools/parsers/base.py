@@ -27,14 +27,15 @@ class ParsedReport:
         extraction_flags: Validation findings (bounds withheld / identities annotated)
         source_elements: Field name -> the element its value was read from
         source_contexts: Field name -> the context that element was read at
-        units: Monetary field name -> the unit id of the fact read ('JPY', or
-            the foreign currency a filer tagged it in, e.g. 'USD'). A fact
-            filed in JPY and another currency at one context is read in JPY.
+        units: Monetary or per-share field name -> the unit id of the fact
+            read ('JPY' / 'JPYPerShares', or the foreign currency a filer
+            tagged it in, e.g. 'USD' / 'USDPerShares'). A fact filed in yen and
+            another currency at one context is read in yen.
 
     The provenance maps are filled by the parsers that record them (the
     securities, quarterly and semi-annual reports) for every field that holds
-    a value (`units`: every monetary field; per-share figures and ratios are
-    not in it); a parser that records none leaves them empty, which means
+    a value (`units`: every monetary and per-share field; ratios are not in
+    it); a parser that records none leaves them empty, which means
     "not recorded", never "no value".
     """
     doc_id: str
