@@ -465,7 +465,12 @@ class SecuritiesReport(ParsedReport):
     retained_earnings: int | None = None
 
     # Income Detail
+    # income_before_taxes: the J-GAAP FS element with its IFRS chain, then
+    # the legacy fallback; no US-GAAP source. profit_before_tax: the same
+    # concept read on the declared standard only (J-GAAP FS, IFRS highlights
+    # then FS, US-GAAP highlights); None when the own fact is missing.
     income_before_taxes: int | None = None
+    profit_before_tax: int | None = None
     non_operating_income: int | None = None
     non_operating_expenses: int | None = None
     income_taxes: int | None = None

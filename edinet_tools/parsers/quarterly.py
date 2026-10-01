@@ -115,6 +115,9 @@ class QuarterlyReport(ParsedReport):
     filer_name: str | None = None
     filer_edinet_code: str | None = None
     ticker: str | None = None
+    # AccountingStandardsDEI as declared ('Japan GAAP', 'IFRS', 'US GAAP'),
+    # whitespace-stripped; None when the filing declares none.
+    accounting_standard: str | None = None
     is_consolidated: bool | None = None
 
     # Period
@@ -127,6 +130,11 @@ class QuarterlyReport(ParsedReport):
     operating_profit_ytd: int | None = None
     ordinary_profit_ytd: int | None = None
     net_income_ytd: int | None = None
+    # Profit before income taxes (total basis, pre-tax): J-GAAP
+    # 税金等調整前四半期純利益, IFRS / US-GAAP profit before tax, each read on
+    # the declared standard only (honest None when the filing does not tag
+    # its own standard's figure).
+    profit_before_tax: int | None = None
 
     # Income Statement (Prior Year YTD)
     prior_revenue_ytd: int | None = None
@@ -137,6 +145,9 @@ class QuarterlyReport(ParsedReport):
     # Balance Sheet
     total_assets: int | None = None
     net_assets: int | None = None
+    # Equity attributable to owners of parent (IFRS / US GAAP). None for
+    # J-GAAP filers by design: J-GAAP states no owners-only figure.
+    net_assets_owners: int | None = None
     total_liabilities: int | None = None
 
     # Cash Flow

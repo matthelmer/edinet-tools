@@ -6,6 +6,7 @@ Supports both corporate and fund reports with IFRS fallback.
 """
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 
 from .base import ParsedReport
 from .extraction import (
@@ -83,9 +84,24 @@ class SemiAnnualReport(ParsedReport):
     net_assets: int | None = None
 
     # Income Statement
+    net_sales: int | None = None
     operating_income: int | None = None
+    # ordinary_income: 経常利益 for J-GAAP filers; IFRS has no ordinary-income
+    # concept, so for IFRS filers it holds profit before tax as the analogue
+    # (ProfitLossBeforeTaxIFRS). profit_before_tax is the same concept under
+    # its own name, for every standard.
     ordinary_income: int | None = None
+    profit_before_tax: int | None = None
     profit_loss: int | None = None
+    profit_attributable_to_owners: int | None = None
+
+    # Cash Flow
+    operating_cash_flow: int | None = None
+    investing_cash_flow: int | None = None
+    financing_cash_flow: int | None = None
+
+    # Per-Share
+    earnings_per_share: Decimal | None = None
 
     @property
     def filer(self):
