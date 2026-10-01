@@ -22,3 +22,12 @@ S100YRSR  Doc 120 annual report, year to April 2026, IFRS, parent-only (no conso
           statements): tags the J-GAAP highlights table beside the IFRS one at the
           _NonConsolidatedMember contexts. type=1 TRIMMED to its XBRL/*_ixbrl.htm and *.xbrl
           members (original 727 KB). Members unmodified. type=5 unmodified.
+
+Quarterly and semi-annual, type=1 only (downloaded 2026-09-30, unmodified, full packages); the
+matching CSVs are tests/fixtures/quarterly and tests/fixtures/semi_annual (EDINET's type=5
+conversion, full, unfiltered):
+S100MHAZ  Doc 140 quarterly report, Q2 to August 2021, IFRS, parent-only: tags the J-GAAP
+          statements beside the IFRS ones at the _NonConsolidatedMember contexts.
+S100M4N0  Doc 140 quarterly report, Q1 to June 2021, IFRS, consolidated.
+S100X2FP  Doc 160 semi-annual report, half year to September 2025, US GAAP.
+S100YV2R  Doc 160 semi-annual report, half year to June 2026, IFRS.
