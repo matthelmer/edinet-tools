@@ -6,7 +6,7 @@ another standard's fact cannot outrank it. A missing own-standard fact follows
 the field's declared fallback. Ownership basis, consolidation scope and period
 are preserved independently of the standard.
 
-STANDARD_POLICY (securities.py) declares, for every financial field, the
+_STANDARD_POLICY (securities.py) declares, for every financial field, the
 concept, the standards that tag it with a standard-specific element, and the
 fallback. These tests hold the declaration to the tier tables.
 """
@@ -19,10 +19,10 @@ import pytest
 from edinet_tools.parsers import securities as sec
 from edinet_tools.parsers.extraction import _tier_in_scope
 from edinet_tools.parsers.securities import (
-    STANDARD_POLICY,
+    _STANDARD_POLICY,
     SecuritiesReport,
-    element_standard,
-    field_elements,
+    _element_standard,
+    _field_elements,
     parse_securities_report,
 )
 
@@ -45,7 +45,7 @@ def _policy_name(field):
 def test_every_financial_field_has_a_declared_policy():
     report_fields = {f.name for f in dataclasses.fields(SecuritiesReport)}
     filled = _filled_fields()
-    declared = set(STANDARD_POLICY)
+    declared = set(_STANDARD_POLICY)
     assert {_policy_name(f) for f in filled} == declared
     assert declared <= report_fields
 
@@ -54,10 +54,10 @@ def test_the_declared_standards_are_the_standards_of_the_field_elements():
     """A field declares exactly the standards its elements belong to; an
     element that is neither J-GAAP, IFRS nor US-GAAP by its taxonomy name must
     be declared neutral by name, never assumed."""
-    for name, policy in STANDARD_POLICY.items():
+    for name, policy in _STANDARD_POLICY.items():
         found = set()
-        for el in field_elements(name):
-            std = element_standard(el)
+        for el in _field_elements(name):
+            std = _element_standard(el)
             if std == "neutral":
                 assert el in policy.neutral, (name, el)
             else:
@@ -66,7 +66,7 @@ def test_the_declared_standards_are_the_standards_of_the_field_elements():
 
 
 def test_fallback_is_declared_where_standards_compete():
-    for name, policy in STANDARD_POLICY.items():
+    for name, policy in _STANDARD_POLICY.items():
         assert policy.fallback in ("legacy", "none", "n/a"), name
         if len(policy.standards) >= 2:
             assert policy.fallback in ("legacy", "none"), name
@@ -76,14 +76,14 @@ def test_fallback_is_declared_where_standards_compete():
 
 
 def test_element_standard_reads_the_taxonomy_name():
-    assert element_standard("jpcrp_cor:NetSalesSummaryOfBusinessResults") == "Japan GAAP"
-    assert element_standard("jppfs_cor:NetSales") == "Japan GAAP"
-    assert element_standard("jpcrp_cor:RevenueIFRSSummaryOfBusinessResults") == "IFRS"
-    assert element_standard("jpigp_cor:RevenueIFRS") == "IFRS"
-    assert element_standard("jpcrp_cor:EquityToAssetRatioIFRSSummaryOfBusinessResults") == "IFRS"
-    assert element_standard("jpcrp_cor:RevenuesUSGAAPSummaryOfBusinessResults") == "US GAAP"
-    assert element_standard("SalesRevenuesIFRS") == "IFRS"
-    assert element_standard("jpcrp_cor:NumberOfEmployees") == "neutral"
+    assert _element_standard("jpcrp_cor:NetSalesSummaryOfBusinessResults") == "Japan GAAP"
+    assert _element_standard("jppfs_cor:NetSales") == "Japan GAAP"
+    assert _element_standard("jpcrp_cor:RevenueIFRSSummaryOfBusinessResults") == "IFRS"
+    assert _element_standard("jpigp_cor:RevenueIFRS") == "IFRS"
+    assert _element_standard("jpcrp_cor:EquityToAssetRatioIFRSSummaryOfBusinessResults") == "IFRS"
+    assert _element_standard("jpcrp_cor:RevenuesUSGAAPSummaryOfBusinessResults") == "US GAAP"
+    assert _element_standard("SalesRevenuesIFRS") == "IFRS"
+    assert _element_standard("jpcrp_cor:NumberOfEmployees") == "neutral"
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +109,7 @@ PRIOR_SENTINEL = {"Japan GAAP": "444", "IFRS": "555", "US GAAP": "666"}
 
 
 def _competing():
-    return [n for n, p in STANDARD_POLICY.items() if len(p.standards) >= 2]
+    return [n for n, p in _STANDARD_POLICY.items() if len(p.standards) >= 2]
 
 
 def _period(name):
@@ -132,7 +132,7 @@ def _tables(name):
 def _rep(name, standard):
     """The field's first element of `standard` (exact id; a suffix-only
     standard gets a filer-local id, with suffix=True)."""
-    els = [e for e in field_elements(name) if element_standard(e) == standard]
+    els = [e for e in _field_elements(name) if _element_standard(e) == standard]
     exact = [e for e in els if ":" in e]
     if exact:
         return exact[0], False
@@ -226,7 +226,7 @@ def _fields_with_prior():
 def _pairs(own_standards, other_pick):
     pairs = []
     for name in _fields_with_prior():
-        stds = STANDARD_POLICY[_policy_name(name)].standards
+        stds = _STANDARD_POLICY[_policy_name(name)].standards
         for own in own_standards:
             if own not in stds:
                 continue
@@ -267,10 +267,14 @@ def test_declared_standard_outranks_jgaap(name, own, other):
 # 3: control — a J-GAAP filing tagging all three reads the J-GAAP fact.
 @pytest.mark.parametrize(
     "name",
-    [n for n in _fields_with_prior() if "Japan GAAP" in STANDARD_POLICY[_policy_name(n)].standards],
+    [
+        n
+        for n in _fields_with_prior()
+        if "Japan GAAP" in _STANDARD_POLICY[_policy_name(n)].standards
+    ],
 )
 def test_jgaap_declared_reads_jgaap(name):
-    stds = STANDARD_POLICY[_policy_name(name)].standards
+    stds = _STANDARD_POLICY[_policy_name(name)].standards
     r = _parse(_rows_for(name, stds), "Japan GAAP")
     assert getattr(r, name) == _parsed(SENTINEL[_kind(name)]["Japan GAAP"], _kind(name))
 
@@ -278,7 +282,7 @@ def test_jgaap_declared_reads_jgaap(name):
 # 4: control — no DEI standard: today's order (a scoped tier never matches).
 @pytest.mark.parametrize("name", _fields_with_prior())
 def test_no_declared_standard_keeps_todays_order(name):
-    stds = STANDARD_POLICY[_policy_name(name)].standards
+    stds = _STANDARD_POLICY[_policy_name(name)].standards
     present = {s: _rep(name, s) for s in stds}
     winner = _no_standard_winner(name, present)
     r = _parse(_rows_for(name, stds), None)
@@ -287,7 +291,7 @@ def test_no_declared_standard_keeps_todays_order(name):
 
 
 def _fallback_expected(name, own, other):
-    policy = STANDARD_POLICY[_policy_name(name)]
+    policy = _STANDARD_POLICY[_policy_name(name)]
     if policy.fallback == "none":
         return None
     rep, _ = _rep(name, other)
@@ -392,7 +396,7 @@ def test_parent_only_filer_reads_its_parent_context(name, own, other):
 def _all_pairs():
     pairs = []
     for name in _fields_with_prior():
-        stds = STANDARD_POLICY[_policy_name(name)].standards
+        stds = _STANDARD_POLICY[_policy_name(name)].standards
         pairs += [(name, own, other) for own in stds for other in stds if other != own]
     return pairs
 
@@ -434,7 +438,7 @@ def test_source_elements_show_a_fallback():
     fallback, and the source says so."""
     r = _parse([(NI_JG, CYD, "16729000000")], "IFRS")
     assert r.net_income_owners == 16_729_000_000
-    assert element_standard(r.source_elements["net_income_owners"]) == "Japan GAAP"
+    assert _element_standard(r.source_elements["net_income_owners"]) == "Japan GAAP"
 
 
 def test_source_elements_cover_prior_year_reads():
@@ -453,10 +457,10 @@ def test_none_fallback_leaves_the_field_empty():
     """The 'none' fallback: when the declared standard's fact is missing,
     another standard's fact is not served."""
     from edinet_tools.parsers.extraction import resolve_tiers
-    from edinet_tools.parsers.securities import FieldPolicy, _with_own_standard_first
+    from edinet_tools.parsers.securities import _FieldPolicy, _with_own_standard_first
 
     legacy = sec._DURATION_LEGACY["net_income_owners"]
-    none = FieldPolicy("test", ("Japan GAAP", "IFRS", "US GAAP"), "none")
+    none = _FieldPolicy("test", ("Japan GAAP", "IFRS", "US GAAP"), "none")
     tiers = _with_own_standard_first(legacy, none)
     cf = _csv([(NI_JG, CYD, "5")], "IFRS")
     kw = dict(period=CYD, is_consolidated=True)
@@ -464,3 +468,32 @@ def test_none_fallback_leaves_the_field_empty():
     assert resolve_tiers(cf, tiers, standard="Japan GAAP", **kw).value == 5
     # no declared standard: today's order, untouched
     assert resolve_tiers(cf, tiers, standard=None, **kw).value == 5
+
+
+# ---------------------------------------------------------------------------
+# Public surface: the policy machinery is private; source_elements is public
+# ---------------------------------------------------------------------------
+
+
+def test_policy_machinery_is_private():
+    for name in ("STANDARD_POLICY", "FieldPolicy", "element_standard", "field_elements"):
+        assert not hasattr(sec, name), name
+        assert hasattr(sec, "_" + name), name
+
+
+def test_source_elements_is_typed_str_to_str():
+    (f,) = [f for f in dataclasses.fields(SecuritiesReport) if f.name == "source_elements"]
+    assert f.type in (dict[str, str], "dict[str, str]")
+
+
+def test_source_elements_include_the_ifrs_trio():
+    bps = "jpcrp_cor:EquityToAssetRatioIFRSSummaryOfBusinessResults"
+    roe = "jpcrp_cor:RateOfReturnOnEquityIFRSSummaryOfBusinessResults"
+    rows = [(EPS_IFRS, CYD, "147.43"), (roe, CYD, "0.1"), (bps, CYI, "1460")]
+    r = _parse(rows, "IFRS")
+    assert r.source_elements["ifrs_summary_basic_eps"] == EPS_IFRS
+    assert r.source_elements["ifrs_summary_roe"] == roe
+    assert r.source_elements["ifrs_summary_bps"] == bps
+    # no value, no source
+    r = _parse([(EPS_IFRS, CYD, "－")], "IFRS")
+    assert "ifrs_summary_basic_eps" not in r.source_elements

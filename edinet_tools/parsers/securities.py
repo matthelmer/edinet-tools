@@ -475,11 +475,11 @@ class SecuritiesReport(ParsedReport):
 
     # Provenance (v0.9.0+): field name -> the element its value was read from
     # (the winning tier's element id), for every financial field the tier
-    # tables and the per-share block resolved; a field that resolved to None
-    # has no entry. Compare element_standard(source) with accounting_standard
-    # to see when a value is a fallback from another standard's fact. The
-    # independent IFRS summary trio is not listed (its element is fixed).
-    source_elements: dict = field(default_factory=dict)
+    # tables and the per-share block resolved, and for the IFRS summary trio
+    # (its fixed element) when it holds a value; a field that resolved to
+    # None has no entry. A source element of another standard than
+    # accounting_standard marks a value served by the fallback.
+    source_elements: dict[str, str] = field(default_factory=dict)
 
     # Guided errors for the three fields removed by the v0.8.0 ownership-basis
     # split. Not a dataclass field (no type annotation) -- a plain class
@@ -581,7 +581,7 @@ def _chain(key: str):
 # full-corpus old-vs-new re-parse. These are the LEGACY waterfalls: the
 # resolved tables (_DURATION_TIERS / _INSTANT_TIERS and the per-share
 # stages) put an own-standard stage in front of each, built from
-# STANDARD_POLICY below. The legacy table then serves a filing without a
+# _STANDARD_POLICY below. The legacy table then serves a filing without a
 # declared standard, and a filing whose own-standard fact is missing
 # (the 'legacy' fallback).
 #
@@ -819,7 +819,7 @@ _ROE_LEGACY = (
 #
 # `standards` names the standards that tag the concept with an element of
 # their own; an element's standard is read from its taxonomy name
-# (element_standard). `fallback` is what happens when the declared standard's
+# (_element_standard). `fallback` is what happens when the declared standard's
 # fact is missing:
 #   'legacy' -- the field's existing waterfall, which may serve another
 #               standard's fact (the only source the filing gives);
@@ -833,7 +833,7 @@ _ROE_LEGACY = (
 # ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
-class FieldPolicy:
+class _FieldPolicy:
     """How one financial field chooses between accounting standards."""
     concept: str
     standards: tuple
@@ -844,13 +844,13 @@ class FieldPolicy:
 _JG, _IFRS, _US = 'Japan GAAP', 'IFRS', 'US GAAP'
 
 
-def element_standard(element_id: str) -> str:
+def _element_standard(element_id: str) -> str:
     """The accounting standard an element belongs to, from its taxonomy name:
     'US GAAP' / 'IFRS' when the local name carries the standard
     (...USGAAPSummaryOfBusinessResults, ...IFRSSummaryOfBusinessResults,
     ...IFRS, including filer-local namespaces); 'Japan GAAP' for the jppfs_cor
     financial-statement taxonomy and the unmarked ...SummaryOfBusinessResults
-    highlights elements; otherwise 'neutral', which a FieldPolicy must name
+    highlights elements; otherwise 'neutral', which a _FieldPolicy must name
     explicitly (the name alone does not establish neutrality)."""
     prefix, _, local = element_id.rpartition(':')
     if 'USGAAP' in local:
@@ -865,10 +865,10 @@ def element_standard(element_id: str) -> str:
 def _p(concept, *standards, fallback=None, neutral=()):
     if fallback is None:
         fallback = 'legacy' if len(standards) >= 2 else 'n/a'
-    return FieldPolicy(concept, standards, fallback, neutral)
+    return _FieldPolicy(concept, standards, fallback, neutral)
 
 
-STANDARD_POLICY = {
+_STANDARD_POLICY = {
     # --- duration (current year; the first five also Prior1YearDuration) ---
     'net_sales': _p('Revenue: net sales / IFRS revenue / US-GAAP revenues; banks and '
                     'insurers 経常収益, brokers 営業収益', _JG, _IFRS, _US),
@@ -949,7 +949,7 @@ _IFRS_TRIO_ELEMENTS = {
 }
 
 
-def field_elements(name: str) -> tuple:
+def _field_elements(name: str) -> tuple:
     """Every element a field's tables read, in table order, without repeats
     (a prior_ field reads its current-year field's table)."""
     if name.startswith('prior_'):
@@ -971,7 +971,7 @@ def field_elements(name: str) -> tuple:
     return tuple(seen)
 
 
-def _with_own_standard_first(legacy: tuple, policy: FieldPolicy) -> tuple:
+def _with_own_standard_first(legacy: tuple, policy: _FieldPolicy) -> tuple:
     """A field's resolved tier table: one stage per declared standard, then
     the legacy waterfall.
 
@@ -995,7 +995,7 @@ def _with_own_standard_first(legacy: tuple, policy: FieldPolicy) -> tuple:
         for tier in ordered:
             if not _tier_in_scope(tier, std):
                 continue
-            own = tuple(e for e in tier.elements if element_standard(e) == std)
+            own = tuple(e for e in tier.elements if _element_standard(e) == std)
             if own:
                 stage.append(Tier(own if len(own) > 1 else own[0], standards=(std,),
                                   suffix_match=tier.suffix_match))
@@ -1006,7 +1006,7 @@ def _with_own_standard_first(legacy: tuple, policy: FieldPolicy) -> tuple:
     return tuple(stage) + legacy
 
 
-def _own_standard_stage(legacy: tuple, policy: FieldPolicy) -> tuple:
+def _own_standard_stage(legacy: tuple, policy: _FieldPolicy) -> tuple:
     """The own-standard stage alone (the per-share fields resolve it with
     coerce semantics before their legacy scan)."""
     full = _with_own_standard_first(legacy, policy)
@@ -1014,14 +1014,14 @@ def _own_standard_stage(legacy: tuple, policy: FieldPolicy) -> tuple:
 
 
 # Resolved tables: own-standard stage, then the legacy waterfall.
-_DURATION_TIERS = {name: _with_own_standard_first(tiers, STANDARD_POLICY[name])
+_DURATION_TIERS = {name: _with_own_standard_first(tiers, _STANDARD_POLICY[name])
                    for name, tiers in _DURATION_LEGACY.items()}
-_INSTANT_TIERS = {name: _with_own_standard_first(tiers, STANDARD_POLICY[name])
+_INSTANT_TIERS = {name: _with_own_standard_first(tiers, _STANDARD_POLICY[name])
                   for name, tiers in _INSTANT_LEGACY.items()}
-_NAV_OWN = _own_standard_stage(_NAV_LEGACY, STANDARD_POLICY['net_assets_per_share'])
-_EPS_OWN = _own_standard_stage(_EPS_LEGACY, STANDARD_POLICY['earnings_per_share'])
-_EQUITY_RATIO_OWN = _own_standard_stage(_EQUITY_RATIO_LEGACY, STANDARD_POLICY['equity_ratio'])
-_ROE_OWN = _own_standard_stage(_ROE_LEGACY, STANDARD_POLICY['roe'])
+_NAV_OWN = _own_standard_stage(_NAV_LEGACY, _STANDARD_POLICY['net_assets_per_share'])
+_EPS_OWN = _own_standard_stage(_EPS_LEGACY, _STANDARD_POLICY['earnings_per_share'])
+_EQUITY_RATIO_OWN = _own_standard_stage(_EQUITY_RATIO_LEGACY, _STANDARD_POLICY['equity_ratio'])
+_ROE_OWN = _own_standard_stage(_ROE_LEGACY, _STANDARD_POLICY['roe'])
 
 
 # ---------------------------------------------------------------------------
@@ -1124,18 +1124,24 @@ def _extract_per_share_block(csv_files, standard, is_consolidated):
         context_patterns=['CurrentYearDuration'],
     ))
     values['ifrs_summary_basic_eps'] = parse_decimal(ifrs_eps_str)
+    if values['ifrs_summary_basic_eps'] is not None:
+        sources['ifrs_summary_basic_eps'] = ELEMENT_MAP['earnings_per_share_ifrs']
 
     ifrs_roe_str = coerce_numeric_value(extract_value(
         csv_files, ELEMENT_MAP['roe_ifrs'],
         context_patterns=['CurrentYearDuration'],
     ))
     values['ifrs_summary_roe'] = parse_decimal(ifrs_roe_str)
+    if values['ifrs_summary_roe'] is not None:
+        sources['ifrs_summary_roe'] = ELEMENT_MAP['roe_ifrs']
 
     ifrs_bps_str = coerce_numeric_value(extract_value(
         csv_files, ELEMENT_MAP['bps_ifrs'],
         context_patterns=['CurrentYearInstant'],
     ))
     values['ifrs_summary_bps'] = parse_decimal(ifrs_bps_str)
+    if values['ifrs_summary_bps'] is not None:
+        sources['ifrs_summary_bps'] = ELEMENT_MAP['bps_ifrs']
 
     return values, provenance, sources
 
