@@ -55,3 +55,31 @@ def test_new_field_defaults_to_none(cls, name, typ):
     assert getattr(cls(doc_id="X", doc_type_code="000"), name) is None
 
 
+def _qparse(*rows):
+    data = [
+        {"要素ID": e, "コンテキストID": c, "値": v}
+        for e, c, v in [("jpdei_cor:EDINETCodeDEI", "FilingDateInstant", "E00000"), *rows]
+    ]
+    return parse_quarterly_report(
+        csv_files=[{"filename": "t.csv", "data": data}], doc_id="T", doc_type_code="140"
+    )
+
+
+def test_quarterly_reads_the_declared_standard():
+    r = _qparse(("jpdei_cor:AccountingStandardsDEI", "FilingDateInstant", "IFRS"))
+    assert r.accounting_standard == "IFRS"
+
+
+def test_quarterly_standard_is_whitespace_stripped():
+    r = _qparse(("jpdei_cor:AccountingStandardsDEI", "FilingDateInstant", "Japan GAAP\t\t"))
+    assert r.accounting_standard == "Japan GAAP"
+
+
+def test_quarterly_standard_is_none_when_not_declared():
+    assert _qparse().accounting_standard is None
+
+
+def test_quarterly_standard_dei_stays_in_unmapped_fields():
+    """Reading the standard does not move its DEI element out of the bag."""
+    r = _qparse(("jpdei_cor:AccountingStandardsDEI", "FilingDateInstant", "IFRS"))
+    assert r.unmapped_fields["AccountingStandardsDEI"] == "IFRS"

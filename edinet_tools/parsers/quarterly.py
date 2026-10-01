@@ -61,6 +61,10 @@ ELEMENT_MAP = {
     'equity_ratio': 'jpcrp_cor:EquityToAssetRatioSummaryOfBusinessResults',
 }
 
+# Read beside ELEMENT_MAP, not in it: an ELEMENT_MAP element leaves
+# unmapped_fields, and this DEI fact has always been there.
+_ACCOUNTING_STANDARD_DEI = 'jpdei_cor:AccountingStandardsDEI'
+
 # IFRS fallback elements
 IFRS_FALLBACK_MAP = {
     'jppfs_cor:NetSales': 'jpigp_cor:RevenueIFRS',
@@ -255,6 +259,10 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
     security_code = get_dei(csv_files, ELEMENT_MAP, 'security_code')
     is_consolidated_raw = get_dei(csv_files, ELEMENT_MAP, 'is_consolidated')
     is_consolidated = (is_consolidated_raw == 'true') if is_consolidated_raw else None
+    # Whitespace-stripped: some filings tag the DEI value with trailing tabs.
+    standard_raw = extract_value(csv_files, _ACCOUNTING_STANDARD_DEI,
+                                 context_patterns=['FilingDateInstant'])
+    accounting_standard = (standard_raw.strip() or None) if standard_raw else None
 
     # Format ticker
     ticker = None
@@ -322,6 +330,7 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
         filer_name=company_name or getattr(document, 'filer_name', None),
         filer_edinet_code=edinet_code or getattr(document, 'filer_edinet_code', None),
         ticker=ticker,
+        accounting_standard=accounting_standard,
         is_consolidated=is_consolidated,
 
         # Period
