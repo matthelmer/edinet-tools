@@ -144,3 +144,385 @@ def test_quarterly_standard_dei_stays_in_unmapped_fields():
     """Reading the standard does not move its DEI element out of the bag."""
     r = _qparse(("jpdei_cor:AccountingStandardsDEI", "FilingDateInstant", "IFRS"))
     assert r.unmapped_fields["AccountingStandardsDEI"] == "IFRS"
+
+
+# ---------------------------------------------------------------------------
+# The competing-source grid (cases numbered as the annual grid's, plus 10-14)
+#
+# Expected values are derived from the declaration and the legacy tables
+# (tests/_standard_grid.py), never from the resolved tables the parser uses.
+# ---------------------------------------------------------------------------
+
+from tests import _standard_grid as g  # noqa: E402
+
+# The grid is RED until the parsers resolve these tables (the next commit
+# removes this mark; every case must then pass).
+PENDING_GRID = pytest.mark.xfail(reason="own-standard resolution not wired yet")
+
+
+class Spec:
+    def __init__(self, label, mod, parse, doc_type, kinds, instant, prior, tokens):
+        self.label, self.mod, self.parse_fn, self.doc_type = label, mod, parse, doc_type
+        self.kinds, self.instant, self.prior, self.tokens = kinds, instant, prior, tokens
+
+    def base(self, name):
+        return name.removeprefix("prior_")
+
+    def policy(self, name):
+        return self.mod._STANDARD_POLICY[self.base(name)]
+
+    def tables(self, name):
+        return self.mod._LEGACY_TABLES[self.base(name)]
+
+    def kind(self, name):
+        return self.kinds.get(self.base(name), "int")
+
+    def period(self, name):
+        if name.startswith("prior_"):
+            return self.tokens["P"]
+        return self.tokens["I"] if self.base(name) in self.instant else self.tokens["D"]
+
+    def fields(self):
+        out = []
+        for name in self.mod._STANDARD_POLICY:
+            out.append(name)
+            if name in self.prior:
+                out.append(f"prior_{name}")
+        return out
+
+    def parse(self, rows, standard, consolidated="true"):
+        cf = g.csv_files(rows, standard, consolidated)
+        return self.parse_fn(csv_files=cf, doc_id="GRID", doc_type_code=self.doc_type)
+
+    def sentinel(self, name, std, prior=False):
+        if prior:
+            return g.PRIOR_SENTINEL[std]
+        return g.SENTINEL[self.kind(name)][std]
+
+    def row(self, name, std, value=None, suffix=""):
+        element, _ = g.rep(self.tables(name), std)
+        return (element, self.period(name) + suffix, value or self.sentinel(name, std))
+
+
+QS = Spec(
+    "quarterly",
+    q,
+    parse_quarterly_report,
+    "140",
+    {"eps_basic_ytd": "dec", "equity_ratio": "pct"},
+    {"total_assets", "net_assets", "net_assets_owners", "total_liabilities", "equity_ratio"},
+    ("revenue_ytd", "operating_profit_ytd", "ordinary_profit_ytd", "net_income_ytd"),
+    {"D": "CurrentYTDDuration", "P": "Prior1YTDDuration", "I": "CurrentQuarterInstant"},
+)
+_S_INSTANT = {
+    "total_assets",
+    "current_assets",
+    "total_liabilities",
+    "current_liabilities",
+    "net_assets",
+}
+SI = Spec(
+    "semi-interim",
+    s,
+    s.parse_semi_annual_report,
+    "160",
+    {"earnings_per_share": "dec"},
+    _S_INSTANT,
+    (),
+    {"D": "InterimDuration", "I": "InterimInstant"},
+)
+SQ = Spec(
+    "semi-q2r",
+    s,
+    s.parse_semi_annual_report,
+    "160",
+    {"earnings_per_share": "dec"},
+    _S_INSTANT,
+    (),
+    {"D": "CurrentYTDDuration", "I": "CurrentQuarterInstant"},
+)
+SPECS = (QS, SI, SQ)
+
+
+def _params(build):
+    out = []
+    for spec in SPECS:
+        for t in build(spec):
+            out.append(
+                pytest.param(
+                    spec, *t, id=spec.label + "-" + "-".join(str(x).replace(" ", "") for x in t)
+                )
+            )
+    return out
+
+
+def _pairs(spec, owns, other_pick):
+    out = []
+    for name in spec.fields():
+        stds = spec.policy(name).standards
+        for own in owns:
+            if own not in stds:
+                continue
+            other = other_pick(stds, own)
+            if other is not None:
+                out.append((name, own, other))
+    return out
+
+
+def _jgaap_else_other(stds, own):
+    if own != "Japan GAAP" and "Japan GAAP" in stds:
+        return "Japan GAAP"
+    rest = [x for x in stds if x != own]
+    return rest[0] if rest else None
+
+
+def _all_pairs(spec):
+    out = []
+    for name in spec.fields():
+        stds = spec.policy(name).standards
+        out += [(name, a, b) for a in stds for b in stds if a != b]
+    return out
+
+
+def _fallback_expected(spec, name, own, other):
+    if fallback_for(spec.policy(name), own) == "none":
+        return None
+    element, _ = g.rep(spec.tables(name), other)
+    if not g.reads(spec.tables(name), own, element):
+        return None
+    return g.typed(spec.sentinel(name, other), spec.kind(name))
+
+
+def _value(spec, name, r):
+    return getattr(r, name)
+
+
+@PENDING_GRID
+# 1-3: the declared standard's fact wins over every other standard's fact,
+# and the element and context it was read at are recorded.
+@pytest.mark.parametrize("spec,name,own,other", _params(_all_pairs))
+def test_declared_standard_outranks_each_other_standard(spec, name, own, other):
+    r = spec.parse([spec.row(name, own), spec.row(name, other)], own)
+    assert _value(spec, name, r) == g.typed(spec.sentinel(name, own), spec.kind(name))
+    assert r.source_elements[name] == g.rep(spec.tables(name), own)[0]
+    assert r.source_contexts[name] == spec.period(name)
+
+
+@PENDING_GRID
+@pytest.mark.parametrize(
+    "spec,name",
+    [
+        pytest.param(sp, n, id=f"{sp.label}-{n}")
+        for sp in SPECS
+        for n in sp.fields()
+        if "Japan GAAP" in sp.policy(n).standards
+    ],
+)
+def test_jgaap_declared_reads_jgaap(spec, name):
+    stds = spec.policy(name).standards
+    r = spec.parse([spec.row(name, x) for x in stds], "Japan GAAP")
+    assert _value(spec, name, r) == g.typed(spec.sentinel(name, "Japan GAAP"), spec.kind(name))
+
+
+@PENDING_GRID
+# 4: no DEI standard: the legacy order.
+@pytest.mark.parametrize(
+    "spec,name", [pytest.param(sp, n, id=f"{sp.label}-{n}") for sp in SPECS for n in sp.fields()]
+)
+def test_no_declared_standard_keeps_the_legacy_order(spec, name):
+    stds = spec.policy(name).standards
+    present = {x: g.rep(spec.tables(name), x) for x in stds}
+    winner = g.first_reader(spec.tables(name), None, present)
+    r = spec.parse([spec.row(name, x) for x in stds], None)
+    expected = None if winner is None else spec.sentinel(name, winner)
+    assert _value(spec, name, r) == g.typed(expected, spec.kind(name))
+
+
+@PENDING_GRID
+# 5: the own-standard fact is missing: the declared fallback.
+@pytest.mark.parametrize(
+    "spec,name,own,other", _params(lambda sp: _pairs(sp, g.STANDARDS, _jgaap_else_other))
+)
+def test_missing_own_fact_follows_the_declared_fallback(spec, name, own, other):
+    r = spec.parse([spec.row(name, other)], own)
+    assert _value(spec, name, r) == _fallback_expected(spec, name, own, other)
+
+
+@PENDING_GRID
+# 6: a null marker is a missing fact; a genuine zero is a value.
+@pytest.mark.parametrize("marker", ["－", "—"])
+@pytest.mark.parametrize(
+    "spec,name,own,other",
+    _params(lambda sp: _pairs(sp, ("IFRS", "US GAAP"), _jgaap_else_other)),
+)
+def test_own_null_marker_falls_through(spec, name, own, other, marker):
+    r = spec.parse([spec.row(name, other), spec.row(name, own, marker)], own)
+    assert _value(spec, name, r) == _fallback_expected(spec, name, own, other)
+
+
+@PENDING_GRID
+@pytest.mark.parametrize(
+    "spec,name,own,other",
+    _params(lambda sp: _pairs(sp, ("IFRS", "US GAAP"), _jgaap_else_other)),
+)
+def test_own_zero_is_a_value_and_wins(spec, name, own, other):
+    r = spec.parse([spec.row(name, other), spec.row(name, own, "0")], own)
+    assert _value(spec, name, r) == g.typed("0", spec.kind(name))
+
+
+# 7: each period chooses independently (the quarterly prior-year fields).
+def _prior_pairs(spec):
+    return [t for t in _pairs(spec, ("IFRS", "US GAAP"), _jgaap_else_other) if t[0] in spec.prior]
+
+
+@PENDING_GRID
+@pytest.mark.parametrize("spec,name,own,other", _params(_prior_pairs))
+def test_current_own_prior_other(spec, name, own, other):
+    own_el, _ = g.rep(spec.tables(name), own)
+    other_el, _ = g.rep(spec.tables(name), other)
+    rows = [
+        (own_el, spec.tokens["D"], g.SENTINEL["int"][own]),
+        (other_el, spec.tokens["D"], g.SENTINEL["int"][other]),
+        (other_el, spec.tokens["P"], g.PRIOR_SENTINEL[other]),
+    ]
+    r = spec.parse(rows, own)
+    assert getattr(r, name) == int(g.SENTINEL["int"][own])
+    expected = _fallback_expected(spec, name, own, other)
+    assert getattr(r, f"prior_{name}") == (
+        None if expected is None else int(g.PRIOR_SENTINEL[other])
+    )
+
+
+@PENDING_GRID
+@pytest.mark.parametrize("spec,name,own,other", _params(_prior_pairs))
+def test_prior_own_current_other(spec, name, own, other):
+    own_el, _ = g.rep(spec.tables(name), own)
+    other_el, _ = g.rep(spec.tables(name), other)
+    rows = [
+        (other_el, spec.tokens["D"], g.SENTINEL["int"][other]),
+        (own_el, spec.tokens["P"], g.PRIOR_SENTINEL[own]),
+        (other_el, spec.tokens["P"], g.PRIOR_SENTINEL[other]),
+    ]
+    r = spec.parse(rows, own)
+    assert getattr(r, name) == _fallback_expected(spec, name, own, other)
+    assert getattr(r, f"prior_{name}") == int(g.PRIOR_SENTINEL[own])
+
+
+@PENDING_GRID
+# 8: a consolidated filer's parent-only own-standard fact is not eligible.
+@pytest.mark.parametrize(
+    "spec,name,own,other", _params(lambda sp: _pairs(sp, g.STANDARDS, _jgaap_else_other))
+)
+def test_parent_only_own_fact_never_wins_for_a_consolidated_filer(spec, name, own, other):
+    r = spec.parse([spec.row(name, other), spec.row(name, own, "999", suffix=g.NC)], own)
+    assert _value(spec, name, r) == _fallback_expected(spec, name, own, other)
+
+
+# 9: a parent-only filer reads the parent context, own standard first.
+def _parent_only_pairs(spec):
+    return [
+        t
+        for t in _pairs(spec, ("IFRS", "US GAAP"), _jgaap_else_other)
+        if not g.rep(spec.tables(t[0]), t[1])[1] and not g.rep(spec.tables(t[0]), t[2])[1]
+    ]
+
+
+@PENDING_GRID
+@pytest.mark.parametrize("spec,name,own,other", _params(_parent_only_pairs))
+def test_parent_only_filer_reads_its_parent_context(spec, name, own, other):
+    rows = [spec.row(name, own, suffix=g.NC), spec.row(name, other, suffix=g.NC)]
+    r = spec.parse(rows, own, consolidated="false")
+    assert _value(spec, name, r) == g.typed(spec.sentinel(name, own), spec.kind(name))
+    assert r.source_contexts[name] == spec.period(name) + g.NC
+
+
+# 10: a declared 'none' with another standard's fact present: None, also for
+# a standard with no element of its own.
+def _none_cells(spec):
+    out = []
+    for name in spec.fields():
+        for std in g.STANDARDS:
+            if fallback_for(spec.policy(name), std) == "none":
+                out.append((name, std))
+    return out
+
+
+@PENDING_GRID
+@pytest.mark.parametrize("spec,name,declared", _params(_none_cells))
+def test_declared_none_withholds_every_other_standards_fact(spec, name, declared):
+    others = [x for x in spec.policy(name).standards if x != declared]
+    assert others or declared in spec.policy(name).standards
+    r = spec.parse([spec.row(name, x) for x in others], declared)
+    assert _value(spec, name, r) is None
+    assert name not in r.source_elements and name not in r.source_contexts
+
+
+# 11: a declared standard with no element of its own and the legacy
+# fallback: the legacy order serves another standard's fact, and the source
+# says so.
+def _legacy_no_own_cells(spec):
+    out = []
+    for name in spec.fields():
+        policy = spec.policy(name)
+        for std in g.STANDARDS:
+            if std not in policy.standards and fallback_for(policy, std) != "none":
+                out.append((name, std))
+    return out
+
+
+@PENDING_GRID
+@pytest.mark.parametrize("spec,name,declared", _params(_legacy_no_own_cells))
+def test_legacy_fallback_without_an_own_element(spec, name, declared):
+    stds = spec.policy(name).standards
+    present = {x: g.rep(spec.tables(name), x) for x in stds}
+    winner = g.first_reader(spec.tables(name), declared, present)
+    r = spec.parse([spec.row(name, x) for x in stds], declared)
+    expected = None if winner is None else spec.sentinel(name, winner)
+    assert _value(spec, name, r) == g.typed(expected, spec.kind(name))
+    if winner is not None:
+        assert element_standard(r.source_elements[name]) == winner != declared
+
+
+@PENDING_GRID
+# 13: an Interim* semi-annual never reads a CurrentYTD/CurrentQuarter fact.
+@pytest.mark.parametrize(
+    "name,declared",
+    [
+        pytest.param(n, x, id=f"{n}-{x.replace(' ', '')}")
+        for n in s._STANDARD_POLICY
+        for x in s._STANDARD_POLICY[n].standards
+    ],
+)
+def test_interim_document_ignores_the_q2r_contexts(name, declared):
+    stds = SQ.policy(name).standards
+    rows = [SQ.row(name, x) for x in stds] + [("jpcrp_cor:Marker", "InterimInstant", "1")]
+    r = SQ.parse(rows, declared)
+    assert _value(SQ, name, r) is None
+
+
+# 14: J-GAAP controls for every declared 'none': closing the legacy table to
+# IFRS / US GAAP moves no J-GAAP value, declared or undeclared.
+def _control_cells(spec):
+    return [
+        (n,)
+        for n in spec.fields()
+        if any(fallback_for(spec.policy(n), x) == "none" for x in g.STANDARDS)
+        and "Japan GAAP" in spec.policy(n).standards
+    ]
+
+
+@PENDING_GRID
+@pytest.mark.parametrize("declared", ["Japan GAAP", None])
+@pytest.mark.parametrize("spec,name", _params(_control_cells))
+def test_jgaap_control_for_every_declared_none(spec, name, declared):
+    r = spec.parse([spec.row(name, "Japan GAAP")], declared)
+    assert _value(spec, name, r) == g.typed(spec.sentinel(name, "Japan GAAP"), spec.kind(name))
+
+
+@PENDING_GRID
+def test_owners_equity_undeclared_keeps_the_legacy_order():
+    """Quarterly net_assets_owners has no J-GAAP element: closed to a
+    declared J-GAAP filing, open to one that declares nothing."""
+    row = QS.row("net_assets_owners", "IFRS")
+    assert QS.parse([row], "Japan GAAP").net_assets_owners is None
+    assert QS.parse([row], None).net_assets_owners == 222
