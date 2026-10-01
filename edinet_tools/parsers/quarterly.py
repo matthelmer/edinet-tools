@@ -108,11 +108,15 @@ def _chain(key: str):
 #
 # The legacy tables: each field's 0.8 tier (one element with at most one IFRS
 # fallback), unchanged, plus the other standards' elements as tiers scoped to
-# their own standard. A scoped tier never serves a filing of another
-# standard, nor one that declares none, so the legacy order for a J-GAAP or
-# undeclared filing is the 0.8 tier. Periods are unchanged: duration fields
-# read CurrentYTDDuration (and the prior_ fields Prior1YTDDuration), instant
-# fields CurrentQuarterInstant; the context rule is get_context_patterns.
+# their own standard. A scoped tier never serves a filing of another standard,
+# nor one that declares none, so the legacy order for a J-GAAP or undeclared
+# filing is the 0.8 tier. The 0.8 tier comes first, so its own-standard
+# element keeps its place in the own stage: a value 0.8 already read on the
+# declared standard does not move (a filing whose highlights table and
+# statements disagree keeps the statements' figure). Periods are unchanged:
+# duration fields read CurrentYTDDuration (and the prior_ fields
+# Prior1YTDDuration), instant fields CurrentQuarterInstant; the context rule
+# is get_context_patterns.
 # ---------------------------------------------------------------------------
 
 _C, _G, _J = 'jpcrp_cor:', 'jpigp_cor:', 'jppfs_cor:'
@@ -144,23 +148,23 @@ def _cash_flow_legacy(key, kind):
 
 _YTD_LEGACY = {
     'revenue_ytd': (
+        Tier(_chain('net_sales')),
         _own(_C + 'RevenueIFRS' + _SB, _IFRS),
         _own(_C + 'RevenuesUSGAAP' + _SB, _US),
-        Tier(_chain('net_sales')),
         _own((_G + 'Revenue2IFRS', _G + 'NetSalesIFRS'), _IFRS),
         _REVENUE_SUFFIX,
     ),
     'operating_profit_ytd': (
+        Tier(_chain('operating_income')),
         _own(_C + 'OperatingProfitLossIFRS' + _SB, _IFRS),
         _own(_C + 'OperatingIncomeLossUSGAAP' + _SB, _US),
-        Tier(_chain('operating_income')),
         _OPERATING_SUFFIX,
     ),
     'ordinary_profit_ytd': (Tier(_chain('ordinary_income')),),
     'net_income_ytd': (
+        Tier(_chain('net_income')),
         _own(_C + 'ProfitLossAttributableToOwnersOfParentIFRS' + _SB, _IFRS),
         _own(_C + 'NetIncomeLossAttributableToOwnersOfParentUSGAAP' + _SB, _US),
-        Tier(_chain('net_income')),
     ),
 }
 # Current period only (no prior_ read).
@@ -174,13 +178,13 @@ _CF_LEGACY = {
 }
 _INSTANT_LEGACY = {
     'total_assets': (
+        Tier(_chain('total_assets')),
         _own(_C + 'TotalAssetsIFRS' + _SB, _IFRS),
         _own(_C + 'TotalAssetsUSGAAP' + _SB, _US),
-        Tier(_chain('total_assets')),
     ),
     'net_assets': (
-        _own(_C + 'EquityIncludingPortionAttributableToNonControllingInterestUSGAAP' + _SB, _US),
         Tier(_chain('net_assets')),
+        _own(_C + 'EquityIncludingPortionAttributableToNonControllingInterestUSGAAP' + _SB, _US),
     ),
     'net_assets_owners': _securities._INSTANT_LEGACY['net_assets_owners'],
     'total_liabilities': (Tier(_chain('total_liabilities')),),

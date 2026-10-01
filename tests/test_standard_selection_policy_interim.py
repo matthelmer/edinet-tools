@@ -539,3 +539,16 @@ def test_profit_before_tax_and_income_before_taxes(name):
         assert r.income_before_taxes is None
     if r.profit_before_tax is not None:
         assert element_standard(src["profit_before_tax"]) == r.accounting_standard
+
+
+def test_the_0_8_element_keeps_its_place_in_the_own_stage():
+    """Where an IFRS filing's highlights table and its statements disagree
+    (seven quarterly cells in the corpus), the statements' figure 0.8 read
+    stays: the own stage lists the 0.8 tier's element first."""
+    rows = [
+        ("jpigp_cor:RevenueIFRS", "CurrentYTDDuration", "311"),
+        ("jpcrp_cor:RevenueIFRSSummaryOfBusinessResults", "CurrentYTDDuration", "336"),
+    ]
+    r = QS.parse(rows, "IFRS")
+    assert r.revenue_ytd == 311
+    assert r.source_elements["revenue_ytd"] == "jpigp_cor:RevenueIFRS"

@@ -167,11 +167,15 @@ def _chain(key: str):
 # The existing fields' legacy tables: the field's 0.8 tier (one element with
 # at most one IFRS fallback), unchanged, plus the other standards' elements as
 # tiers scoped to their own standard (a scoped tier never serves a filing of
-# another standard, nor one that declares none). The new fields reuse the
-# annual parser's tables and policies: the same concepts, the same elements,
-# read at this document's period token. Periods: balance-sheet fields read the
-# document's current instant token, the others its current duration token
-# (detect_period_tokens); the context rule is get_context_patterns.
+# another standard, nor one that declares none). The 0.8 tier comes first, so
+# its own-standard element keeps its place in the own stage: a value 0.8
+# already read on the declared standard does not move (a filing whose
+# highlights table and statements disagree keeps the statements' figure). The
+# new fields reuse the annual parser's tables and policies: the same concepts,
+# the same elements, read at this document's period token. Periods: balance-
+# sheet fields read the document's current instant token, the others its
+# current duration token (detect_period_tokens); the context rule is
+# get_context_patterns.
 # ---------------------------------------------------------------------------
 
 _C, _G = 'jpcrp_cor:', 'jpigp_cor:'
@@ -186,24 +190,24 @@ def _own(element, standard):
 
 _INSTANT_LEGACY = {
     'total_assets': (
+        Tier(_chain('assets')),
         _own(_C + 'TotalAssetsIFRS' + _SB, _IFRS),
         _own(_C + 'TotalAssetsUSGAAP' + _SB, _US),
-        Tier(_chain('assets')),
     ),
     'current_assets': (Tier(_chain('current_assets')),),
     'total_liabilities': (Tier(_chain('liabilities')),),
     'current_liabilities': (Tier(_chain('current_liabilities')),),
     'net_assets': (
-        _own(_C + 'EquityIncludingPortionAttributableToNonControllingInterestUSGAAP' + _SB, _US),
         Tier(_chain('net_assets')),
+        _own(_C + 'EquityIncludingPortionAttributableToNonControllingInterestUSGAAP' + _SB, _US),
     ),
 }
 _DURATION_LEGACY = {
     'net_sales': _securities._DURATION_LEGACY['net_sales'],
     'operating_income': (
+        Tier(_chain('operating_income')),
         _own(_C + 'OperatingProfitLossIFRS' + _SB, _IFRS),
         _own(_C + 'OperatingIncomeLossUSGAAP' + _SB, _US),
-        Tier(_chain('operating_income')),
         Tier(('OperatingProfitLossIFRS' + _SB, 'OperatingIncomeIFRS' + _SB,
               'OperatingIncomeLossIFRS' + _SB, 'OperatingProfitIFRS' + _SB),
              standards=(_IFRS,), suffix_match=True),
