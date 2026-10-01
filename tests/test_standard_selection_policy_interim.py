@@ -73,7 +73,7 @@ def test_the_declared_standards_are_the_standards_of_the_field_elements(mod, cls
 
 
 def test_the_decided_fallbacks():
-    """The checklist's 'none' cells (Matt and the controller, 2026-09-30)."""
+    """The decided policy's 'none' cells."""
     none = {
         (q, "operating_profit_ytd"): ("IFRS", "US GAAP"),
         (q, "ordinary_profit_ytd"): ("IFRS", "US GAAP"),

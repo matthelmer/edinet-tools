@@ -97,6 +97,10 @@ class SemiAnnualReport(ParsedReport):
     net_assets: int | None = None
 
     # Income Statement
+    # net_sales: revenue on the declared standard, the annual report's
+    # sources (J-GAAP net sales, banks' and insurers' 経常収益, brokers'
+    # 営業収益; IFRS revenue; US-GAAP revenues). Not a fund's operating
+    # revenue (OperatingRevenueFND), which this parser does not read.
     net_sales: int | None = None
     operating_income: int | None = None
     # ordinary_income: 経常利益 for J-GAAP filers; IFRS has no ordinary-income
@@ -108,12 +112,14 @@ class SemiAnnualReport(ParsedReport):
     profit_loss: int | None = None
     profit_attributable_to_owners: int | None = None
 
-    # Cash Flow
+    # Cash Flow (the half year, the highlights table first, then the
+    # statement), each on the declared standard.
     operating_cash_flow: int | None = None
     investing_cash_flow: int | None = None
     financing_cash_flow: int | None = None
 
-    # Per-Share
+    # Per-Share: basic EPS for the half year, on the declared standard (a
+    # null marker is a missing fact).
     earnings_per_share: Decimal | None = None
 
     @property

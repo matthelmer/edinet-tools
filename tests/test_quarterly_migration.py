@@ -2,9 +2,10 @@
 
 Behavior-preserving migration (0.8.0): no new gate, no new fields. The
 per-standard gate arrived in 0.9.0 (test_standard_selection_policy_interim.py);
-these tests pin the semantics the migration must not change — especially the eps coercion swap (the local marker tuple
-+ bare except became coerce_numeric_value + guarded Decimal, equivalent
-only because the shared null-marker set gained '―'/'—' first).
+these tests pin the semantics the migration must not change, especially
+the eps coercion swap (the local marker tuple + bare except became
+coerce_numeric_value + guarded Decimal, equivalent only because the shared
+null-marker set gained '―'/'—' first).
 """
 from decimal import Decimal
 
