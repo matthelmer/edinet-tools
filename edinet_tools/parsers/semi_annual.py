@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
+from . import securities as _securities
+from ._standard_policy import IFRS, JGAAP, USGAAP, FieldPolicy
 from .base import ParsedReport
 from .extraction import (
     Tier,
@@ -157,6 +159,96 @@ _DURATION_FIELD_TIERS = {
     'operating_income': (Tier(_chain('operating_income')),),
     'ordinary_income': (Tier(_chain('ordinary_income')),),
     'profit_loss': (Tier(_chain('profit_loss')),),
+}
+
+
+# ---------------------------------------------------------------------------
+# Standard-selection policy (see _standard_policy for the contract)
+#
+# The existing fields' legacy tables: the field's existing tier, unchanged,
+# plus the other standards' elements as tiers scoped to their own standard
+# (a scoped tier never serves a filing of another standard, nor one that
+# declares none). The new fields reuse the annual parser's tables and
+# policies: the same concepts, the same elements, read at this document's
+# period token.
+# ---------------------------------------------------------------------------
+
+_C, _G = 'jpcrp_cor:', 'jpigp_cor:'
+_SB = 'SummaryOfBusinessResults'
+_JG, _IFRS, _US = JGAAP, IFRS, USGAAP
+_ALL = (_JG, _IFRS, _US)
+
+
+def _own(element, standard):
+    return Tier(element, standards=(standard,))
+
+
+_INSTANT_LEGACY = {
+    'total_assets': (
+        _own(_C + 'TotalAssetsIFRS' + _SB, _IFRS),
+        _own(_C + 'TotalAssetsUSGAAP' + _SB, _US),
+        Tier(_chain('assets')),
+    ),
+    'current_assets': (Tier(_chain('current_assets')),),
+    'total_liabilities': (Tier(_chain('liabilities')),),
+    'current_liabilities': (Tier(_chain('current_liabilities')),),
+    'net_assets': (
+        _own(_C + 'EquityIncludingPortionAttributableToNonControllingInterestUSGAAP' + _SB, _US),
+        Tier(_chain('net_assets')),
+    ),
+}
+_DURATION_LEGACY = {
+    'net_sales': _securities._DURATION_LEGACY['net_sales'],
+    'operating_income': (
+        _own(_C + 'OperatingProfitLossIFRS' + _SB, _IFRS),
+        _own(_C + 'OperatingIncomeLossUSGAAP' + _SB, _US),
+        Tier(_chain('operating_income')),
+        Tier(('OperatingProfitLossIFRS' + _SB, 'OperatingIncomeIFRS' + _SB,
+              'OperatingIncomeLossIFRS' + _SB, 'OperatingProfitIFRS' + _SB),
+             standards=(_IFRS,), suffix_match=True),
+    ),
+    'ordinary_income': (Tier(_chain('ordinary_income')),),
+    'profit_before_tax': _securities._PROFIT_BEFORE_TAX_LEGACY,
+    'profit_loss': (Tier(_chain('profit_loss')),),
+    'profit_attributable_to_owners': _securities._DURATION_LEGACY['net_income_owners'],
+    'operating_cash_flow': _securities._DURATION_LEGACY['operating_cash_flow'],
+    'investing_cash_flow': _securities._DURATION_LEGACY['investing_cash_flow'],
+    'financing_cash_flow': _securities._DURATION_LEGACY['financing_cash_flow'],
+}
+_EPS_LEGACY = _securities._EPS_LEGACY
+
+_LEGACY_TABLES = {
+    **{name: (t,) for name, t in _INSTANT_LEGACY.items()},
+    **{name: (t,) for name, t in _DURATION_LEGACY.items()},
+    'earnings_per_share': (_EPS_LEGACY,),
+}
+
+_LEGACY = 'legacy'
+_annual = _securities._STANDARD_POLICY
+_STANDARD_POLICY = {
+    'total_assets': FieldPolicy('Total assets', _ALL, _LEGACY),
+    'current_assets': FieldPolicy('Current assets (FS)', (_JG, _IFRS), _LEGACY),
+    'total_liabilities': FieldPolicy('Total liabilities (FS)', (_JG, _IFRS), _LEGACY),
+    'current_liabilities': FieldPolicy('Current liabilities (FS)', (_JG, _IFRS), _LEGACY),
+    'net_assets': FieldPolicy('Net assets / total equity including non-controlling '
+                              'interests', _ALL, _LEGACY),
+    'net_sales': _annual['net_sales'],
+    # IFRS and US-GAAP filers never read the J-GAAP figure (the 0.7.1 gate).
+    'operating_income': FieldPolicy('Operating profit; no J-GAAP figure for IFRS or '
+                                    'US-GAAP filers', _ALL,
+                                    {_JG: 'legacy', _IFRS: 'none', _US: 'none'}),
+    'ordinary_income': FieldPolicy('Ordinary income; IFRS profit before tax as the '
+                                   'analogue', (_JG, _IFRS),
+                                   {_JG: 'n/a', _IFRS: 'legacy', _US: 'legacy'}),
+    'profit_before_tax': FieldPolicy('Profit before income taxes', _ALL, 'none'),
+    # US GAAP tags no total-basis profit: honest None, never the J-GAAP line.
+    'profit_loss': FieldPolicy('Profit including non-controlling interests', (_JG, _IFRS),
+                               {_JG: 'legacy', _IFRS: 'legacy', _US: 'none'}),
+    'profit_attributable_to_owners': _annual['net_income_owners'],
+    'operating_cash_flow': _annual['operating_cash_flow'],
+    'investing_cash_flow': _annual['investing_cash_flow'],
+    'financing_cash_flow': _annual['financing_cash_flow'],
+    'earnings_per_share': _annual['earnings_per_share'],
 }
 
 

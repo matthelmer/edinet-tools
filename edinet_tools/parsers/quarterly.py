@@ -13,6 +13,8 @@ from decimal import Decimal
 from datetime import date, timedelta
 from typing import Any, Optional
 
+from . import securities as _securities
+from ._standard_policy import IFRS, JGAAP, USGAAP, FieldPolicy
 from .base import ParsedReport
 from .extraction import (
     Tier,
@@ -108,6 +110,148 @@ _INSTANT_TIERS = {
     'total_assets': (Tier(_chain('total_assets')),),
     'net_assets': (Tier(_chain('net_assets')),),
     'total_liabilities': (Tier(_chain('total_liabilities')),),
+}
+
+
+# ---------------------------------------------------------------------------
+# Standard-selection policy (see _standard_policy for the contract)
+#
+# The legacy tables: each field's existing tier, unchanged, plus the other
+# standards' elements as tiers scoped to their own standard. A scoped tier
+# never serves a filing of another standard, nor one that declares none, so
+# the legacy order for a J-GAAP or undeclared filing is the tier above.
+# Periods are unchanged: duration fields read CurrentYTDDuration (and the
+# prior_ fields Prior1YTDDuration), instant fields CurrentQuarterInstant.
+# ---------------------------------------------------------------------------
+
+_C, _G, _J = 'jpcrp_cor:', 'jpigp_cor:', 'jppfs_cor:'
+_SB = 'SummaryOfBusinessResults'
+_JG, _IFRS, _US = JGAAP, IFRS, USGAAP
+
+
+def _own(element, standard):
+    return Tier(element, standards=(standard,))
+
+
+# Custom-namespace consolidated IFRS revenue / operating profit (filer-local
+# elements); bare period only, so a parent figure can never win.
+_REVENUE_SUFFIX = Tier(('SalesRevenuesIFRS', 'TotalNetRevenuesIFRS', 'RevenueIFRS' + _SB),
+                       standards=(_IFRS,), suffix_match=True)
+_OPERATING_SUFFIX = Tier(('OperatingProfitLossIFRS' + _SB, 'OperatingIncomeIFRS' + _SB,
+                          'OperatingIncomeLossIFRS' + _SB, 'OperatingProfitIFRS' + _SB),
+                         standards=(_IFRS,), suffix_match=True)
+
+
+def _cash_flow_legacy(key, kind):
+    return (
+        Tier(_chain(key)),
+        _own(_C + f'CashFlowsFromUsedIn{kind}ActivitiesIFRS' + _SB, _IFRS),
+        _own(_G + f'NetCashProvidedByUsedIn{kind}ActivitiesIFRS', _IFRS),
+        _own(_C + f'CashFlowsFromUsedIn{kind}ActivitiesUSGAAP' + _SB, _US),
+    )
+
+
+_YTD_LEGACY = {
+    'revenue_ytd': (
+        _own(_C + 'RevenueIFRS' + _SB, _IFRS),
+        _own(_C + 'RevenuesUSGAAP' + _SB, _US),
+        Tier(_chain('net_sales')),
+        _own((_G + 'Revenue2IFRS', _G + 'NetSalesIFRS'), _IFRS),
+        _REVENUE_SUFFIX,
+    ),
+    'operating_profit_ytd': (
+        _own(_C + 'OperatingProfitLossIFRS' + _SB, _IFRS),
+        _own(_C + 'OperatingIncomeLossUSGAAP' + _SB, _US),
+        Tier(_chain('operating_income')),
+        _OPERATING_SUFFIX,
+    ),
+    'ordinary_profit_ytd': (Tier(_chain('ordinary_income')),),
+    'net_income_ytd': (
+        _own(_C + 'ProfitLossAttributableToOwnersOfParentIFRS' + _SB, _IFRS),
+        _own(_C + 'NetIncomeLossAttributableToOwnersOfParentUSGAAP' + _SB, _US),
+        Tier(_chain('net_income')),
+    ),
+}
+# Current period only (no prior_ read).
+_YTD_CURRENT_LEGACY = {
+    'profit_before_tax': _securities._PROFIT_BEFORE_TAX_LEGACY,
+}
+_CF_LEGACY = {
+    'operating_cash_flow_ytd': _cash_flow_legacy('operating_cf', 'Operating'),
+    'investing_cash_flow_ytd': _cash_flow_legacy('investing_cf', 'Investing'),
+    'financing_cash_flow_ytd': _cash_flow_legacy('financing_cf', 'Financing'),
+}
+_INSTANT_LEGACY = {
+    'total_assets': (
+        _own(_C + 'TotalAssetsIFRS' + _SB, _IFRS),
+        _own(_C + 'TotalAssetsUSGAAP' + _SB, _US),
+        Tier(_chain('total_assets')),
+    ),
+    'net_assets': (
+        _own(_C + 'EquityIncludingPortionAttributableToNonControllingInterestUSGAAP' + _SB, _US),
+        Tier(_chain('net_assets')),
+    ),
+    'net_assets_owners': _securities._INSTANT_LEGACY['net_assets_owners'],
+    'total_liabilities': (Tier(_chain('total_liabilities')),),
+}
+# Per-share and ratio ('string' mode; the caller parses). EPS keeps its
+# null-marker skipping (coerce); the equity ratio keeps its legacy
+# first-non-empty-raw-string read (a marker parses to None). The IFRS ratio
+# element is the real ratio, never EquityToAssetRatioIFRS... (per-share
+# equity in yen, a taxonomy misnomer).
+_EPS_LEGACY = (
+    Tier(ELEMENT_MAP['eps_basic']),
+    _own(_C + 'BasicEarningsLossPerShareIFRS' + _SB, _IFRS),
+    _own(_C + 'BasicEarningsLossPerShareUSGAAP' + _SB, _US),
+)
+_EQUITY_RATIO_LEGACY = (
+    Tier(ELEMENT_MAP['equity_ratio']),
+    _own(_C + 'RatioOfOwnersEquityToGrossAssetsIFRS' + _SB, _IFRS),
+    _own(_C + 'EquityToAssetRatioUSGAAP' + _SB, _US),
+)
+
+_LEGACY_TABLES = {
+    **{name: (t,) for name, t in _YTD_LEGACY.items()},
+    **{name: (t,) for name, t in _YTD_CURRENT_LEGACY.items()},
+    **{name: (t,) for name, t in _CF_LEGACY.items()},
+    **{name: (t,) for name, t in _INSTANT_LEGACY.items()},
+    'eps_basic_ytd': (_EPS_LEGACY,),
+    'equity_ratio': (_EQUITY_RATIO_LEGACY,),
+}
+
+_ALL = (_JG, _IFRS, _US)
+_LEGACY = 'legacy'
+# IFRS and US-GAAP filers never read the J-GAAP figure (the 0.7.1 gate).
+_JGAAP_ONLY_FALLBACK = {_JG: 'legacy', _IFRS: 'none', _US: 'none'}
+
+_STANDARD_POLICY = {
+    'revenue_ytd': FieldPolicy('Revenue: net sales / IFRS revenue / US-GAAP revenues '
+                               '(year to date)', _ALL, _LEGACY),
+    'operating_profit_ytd': FieldPolicy('Operating profit (year to date); no J-GAAP '
+                                        'figure for IFRS or US-GAAP filers', _ALL,
+                                        _JGAAP_ONLY_FALLBACK),
+    'ordinary_profit_ytd': FieldPolicy('Ordinary profit (J-GAAP only; blank for IFRS and '
+                                       'US-GAAP filers)', (_JG,),
+                                       {_JG: 'n/a', _IFRS: 'none', _US: 'none'}),
+    'net_income_ytd': FieldPolicy('Profit attributable to owners of parent (year to date)',
+                                  _ALL, _LEGACY),
+    'profit_before_tax': FieldPolicy('Profit before income taxes (year to date)', _ALL,
+                                     'none'),
+    'total_assets': FieldPolicy('Total assets', _ALL, _LEGACY),
+    'net_assets': FieldPolicy('Net assets / total equity including non-controlling '
+                              'interests', _ALL, _LEGACY),
+    'net_assets_owners': FieldPolicy('Equity attributable to owners of parent (no J-GAAP '
+                                     'element)', (_IFRS, _US),
+                                     {s: 'none' for s in _ALL}),
+    'total_liabilities': FieldPolicy('Total liabilities (FS)', (_JG, _IFRS), _LEGACY),
+    'operating_cash_flow_ytd': FieldPolicy('Cash flows from operating activities', _ALL,
+                                           _LEGACY),
+    'investing_cash_flow_ytd': FieldPolicy('Cash flows from investing activities', _ALL,
+                                           _LEGACY),
+    'financing_cash_flow_ytd': FieldPolicy('Cash flows from financing activities', _ALL,
+                                           _LEGACY),
+    'eps_basic_ytd': FieldPolicy('Basic earnings per share (year to date)', _ALL, _LEGACY),
+    'equity_ratio': FieldPolicy('Equity-to-assets ratio (owners basis)', _ALL, _LEGACY),
 }
 
 

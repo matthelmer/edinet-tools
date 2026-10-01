@@ -814,6 +814,15 @@ _EQUITY_RATIO_LEGACY = (
     Tier(ELEMENT_MAP['equity_ratio_ifrs']),
     Tier(ELEMENT_MAP['equity_ratio_usgaap']),
 )
+# Profit before income taxes on the declared standard (profit_before_tax):
+# J-GAAP FS, IFRS highlights then FS, US-GAAP highlights. The elements are
+# kept out of ELEMENT_MAP so unmapped_fields keeps them.
+_PROFIT_BEFORE_TAX_LEGACY = (
+    Tier(ELEMENT_MAP['income_before_taxes']),
+    Tier('jpcrp_cor:ProfitLossBeforeTaxIFRSSummaryOfBusinessResults'),
+    Tier('jpigp_cor:ProfitLossBeforeTaxIFRS'),
+    Tier(ELEMENT_MAP['ordinary_income_usgaap_summary']),
+)
 _ROE_LEGACY = (
     Tier(ELEMENT_MAP['roe']),
     Tier(ELEMENT_MAP['roe_ifrs']),

@@ -28,6 +28,67 @@ STANDARDS = ("Japan GAAP", "IFRS", "US GAAP")
 NOT_FINANCIAL = {"quarter_number"}
 
 
+def _financial_fields(cls):
+    out = set()
+    for f in dataclasses.fields(cls):
+        t = str(f.type)
+        if ("int" in t or "Decimal" in t) and f.name not in NOT_FINANCIAL:
+            out.add(f.name.removeprefix("prior_"))
+    return out
+
+
+PARSERS = [
+    pytest.param(q, QuarterlyReport, id="quarterly"),
+    pytest.param(s, SemiAnnualReport, id="semi"),
+]
+
+
+@pytest.mark.parametrize("mod,cls", PARSERS)
+def test_every_interim_financial_field_has_a_declared_policy(mod, cls):
+    assert set(mod._STANDARD_POLICY) == _financial_fields(cls)
+
+
+@pytest.mark.parametrize("mod,cls", PARSERS)
+def test_every_field_and_declared_standard_has_one_fallback(mod, cls):
+    for name, policy in mod._STANDARD_POLICY.items():
+        assert policy.concept, name
+        for std in STANDARDS:
+            assert fallback_for(policy, std) in FALLBACKS, (name, std)
+
+
+@pytest.mark.parametrize("mod,cls", PARSERS)
+def test_the_declared_standards_are_the_standards_of_the_field_elements(mod, cls):
+    """A field declares exactly the standards its tables' elements belong to;
+    a standard it does not declare has no element of its own ('none
+    exist')."""
+    for name, policy in mod._STANDARD_POLICY.items():
+        found = set()
+        for el in table_elements(*mod._LEGACY_TABLES[name]):
+            std = element_standard(el)
+            if std == "neutral":
+                assert el in policy.neutral, (name, el)
+            else:
+                found.add(std)
+        assert set(policy.standards) == found, name
+
+
+def test_the_decided_fallbacks():
+    """The checklist's 'none' cells (Matt and the controller, 2026-09-30)."""
+    none = {
+        (q, "operating_profit_ytd"): ("IFRS", "US GAAP"),
+        (q, "ordinary_profit_ytd"): ("IFRS", "US GAAP"),
+        (q, "profit_before_tax"): STANDARDS,
+        (q, "net_assets_owners"): STANDARDS,
+        (s, "operating_income"): ("IFRS", "US GAAP"),
+        (s, "profit_loss"): ("US GAAP",),
+        (s, "profit_before_tax"): STANDARDS,
+    }
+    for mod in (q, s):
+        for name, policy in mod._STANDARD_POLICY.items():
+            closed = tuple(x for x in STANDARDS if fallback_for(policy, x) == "none")
+            assert closed == none.get((mod, name), ()), (mod.__name__, name)
+
+
 # ---------------------------------------------------------------------------
 # The new fields exist (values arrive with the change)
 # ---------------------------------------------------------------------------
