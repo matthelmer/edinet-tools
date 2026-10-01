@@ -383,7 +383,7 @@ def parse_semi_annual_report(document=None, *, csv_files=None, doc_id=None, doc_
     # get_context_patterns).
     instant_period, duration_period = detect_period_tokens(csv_files)
 
-    sources, contexts = {}, {}
+    sources, contexts, units = {}, {}, {}
 
     def fin(name, tiers, period):
         hit = resolve_tiers(csv_files, tiers, standard=accounting_standard,
@@ -391,6 +391,7 @@ def parse_semi_annual_report(document=None, *, csv_files=None, doc_id=None, doc_
         if hit is None:
             return None
         sources[name], contexts[name] = hit.element_id, hit.context_id
+        units[name] = hit.unit_id
         return hit.value
 
     values = {name: fin(name, tiers, instant_period)
@@ -441,6 +442,7 @@ def parse_semi_annual_report(document=None, *, csv_files=None, doc_id=None, doc_
         # Provenance
         source_elements=sources,
         source_contexts=contexts,
+        units=units,
     )
     apply_validation(report, SEMI_ANNUAL_BOUNDS, SEMI_ANNUAL_IDENTITIES)
     return report

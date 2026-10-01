@@ -554,22 +554,62 @@ class TierHit(NamedTuple):
     mode), the winning element id and the context id the fact was read at —
     free per-field provenance. A suffix tier reads the bare period, so its
     context is the period; a context-blind read (period=None) reports the
-    matched row's own context."""
+    matched row's own context. unit_id is the read row's unit id, as the
+    CSV's ユニットID gives it (None for a row without one); 'financial' mode
+    fills it, 'string' mode leaves it None."""
     value: Any
     element_id: str
     context_id: Optional[str] = None
+    unit_id: Optional[str] = None
 
 
-def _value_at(csv_files, element_id, pattern):
+# Monetary facts ('financial' mode): when a filer tags one element at one
+# context in yen and in another currency (Beat Holdings files every statement
+# fact in USD and JPY), the yen fact is read. A fact filed only in another
+# currency is read as filed, and TierHit.unit_id says which.
+PREFERRED_UNIT = 'JPY'
+_NO_UNIT = ('', '－')
+
+
+def _unit_of(row) -> Optional[str]:
+    unit = row.get('ユニットID')
+    return None if unit in _NO_UNIT else unit
+
+
+def _prefer_unit(rows, unit):
+    """The row read among one element's rows at one context: the first in
+    `unit` when there is one, else the first."""
+    for row in rows:
+        if row.get('ユニットID') == unit:
+            return row
+    return rows[0]
+
+
+def _value_at(csv_files, element_id, pattern, prefer_unit=None):
     """extract_value for ONE context pattern (or context-blind when None),
-    returning (value, context_id) — the same first-row-wins scan."""
-    if pattern is not None:
-        return extract_value(csv_files, element_id, context_patterns=[pattern]), pattern
-    for csv_file in csv_files:
-        for entry in csv_file.get('data', []):
-            if entry.get('要素ID') == element_id:
-                return unescape_entities(entry.get('値')), entry.get('コンテキストID')
-    return None, None
+    returning (value, context_id, unit_id) — the same first-row-wins scan.
+    With `prefer_unit`, a row in that unit wins over an earlier row of the
+    same element and context in another unit."""
+    if pattern is None:
+        for csv_file in csv_files:
+            for entry in csv_file.get('data', []):
+                if entry.get('要素ID') == element_id:
+                    pattern = entry.get('コンテキストID')
+                    break
+            if pattern is not None:
+                break
+        if pattern is None:
+            return None, None, None
+    rows = [
+        entry
+        for csv_file in csv_files
+        for entry in csv_file.get('data', [])
+        if entry.get('要素ID') == element_id and entry.get('コンテキストID') == pattern
+    ]
+    if not rows:
+        return None, None, None
+    row = _prefer_unit(rows, prefer_unit) if prefer_unit else rows[0]
+    return unescape_entities(row.get('値')), pattern, _unit_of(row)
 
 
 def _tier_in_scope(tier: Tier, standard: Optional[str]) -> bool:
@@ -580,29 +620,36 @@ def _tier_in_scope(tier: Tier, standard: Optional[str]) -> bool:
     return True
 
 
-def _resolve_suffix_tier(csv_files, tier, period):
+def _resolve_suffix_tier(csv_files, tier, period, prefer_unit=None):
     """The securities.py hatch scan, verbatim semantics: canonical-major,
     bare-period context only, null-marker rows skipped mid-scan, first
-    coerce-truthy value string wins."""
+    coerce-truthy value string wins. With `prefer_unit`, each matched
+    element's rows are read in that unit first."""
     for canonical in tier.elements:
-        for row in match_element_by_suffix(csv_files, canonical):
-            if (row.get('コンテキストID', '') or '') == period:
-                v = coerce_numeric_value(row.get('値', ''))
-                if v:
-                    return v, (row.get('要素ID', '') or canonical)
-    return None, None
+        rows = [r for r in match_element_by_suffix(csv_files, canonical)
+                if (r.get('コンテキストID', '') or '') == period]
+        if prefer_unit:
+            preferred = {r.get('要素ID') for r in rows if r.get('ユニットID') == prefer_unit}
+            rows = [r for r in rows
+                    if r.get('要素ID') not in preferred or r.get('ユニットID') == prefer_unit]
+        for row in rows:
+            v = coerce_numeric_value(row.get('値', ''))
+            if v:
+                return v, (row.get('要素ID', '') or canonical), _unit_of(row)
+    return None, None, None
 
 
 def _resolve_financial_tier(csv_files, tier, patterns):
     """extract_financial's within-call semantics: context level outer,
-    element chain inner, first coerce-truthy string commits the tier."""
+    element chain inner, first coerce-truthy string commits the tier. The
+    yen fact of an element and context is read before one in another unit."""
     for pattern in patterns:
         for elem in tier.elements:
-            raw, context = _value_at(csv_files, elem, pattern)
+            raw, context, unit = _value_at(csv_files, elem, pattern, PREFERRED_UNIT)
             s = coerce_numeric_value(raw)
             if s:
-                return s, elem, context
-    return None, None, None
+                return s, elem, context, unit
+    return None, None, None, None
 
 
 def resolve_tiers(
@@ -624,7 +671,8 @@ def resolve_tiers(
       tier; a coerce-truthy string that fails parse_int commits the tier
       but advances the WATERFALL (matching a get_fin returning None into
       _coalesce). `coerce` is ignored (always on — extract_financial's
-      contract).
+      contract). Where an element is filed at one context in JPY and in
+      another unit, the JPY fact is read; the hit's unit_id is the unit read.
     - 'string' (raw value strings; caller parses): the per-share/ratio
       idioms. Per tier: ONE extract_value call per element over the FULL
       pattern list (extract_value short-circuits on the first pattern with
@@ -659,31 +707,34 @@ def resolve_tiers(
         if tier.suffix_match:
             if period is None:
                 raise ValueError('suffix_match tiers require a concrete period')
-            s, elem = _resolve_suffix_tier(csv_files, tier, period)
-            if s is None:
-                continue
             if mode == 'financial':
+                s, elem, unit = _resolve_suffix_tier(csv_files, tier, period, PREFERRED_UNIT)
+                if s is None:
+                    continue
                 v = parse_int(s)
                 if v is None:
                     continue  # parse failure advances the waterfall
-                return TierHit(v, elem, period)
+                return TierHit(v, elem, period, unit)
+            s, elem, _unit = _resolve_suffix_tier(csv_files, tier, period)
+            if s is None:
+                continue
             return TierHit(s, elem, period)
 
         if mode == 'financial':
-            s, elem, context = _resolve_financial_tier(csv_files, tier, patterns)
+            s, elem, context, unit = _resolve_financial_tier(csv_files, tier, patterns)
             if s is None:
                 continue
             v = parse_int(s)
             if v is None:
                 continue  # parse failure advances the waterfall
-            return TierHit(v, elem, context)
+            return TierHit(v, elem, context, unit)
 
         # string mode: extract_value over the full pattern list, i.e. the
         # first pattern with any row for the element (a marker included).
         for elem in tier.elements:
             s, context = None, None
             for pattern in patterns:
-                s, context = _value_at(csv_files, elem, pattern)
+                s, context, _unit = _value_at(csv_files, elem, pattern)
                 if s is not None:
                     break
             candidate = coerce_numeric_value(s) if coerce else s

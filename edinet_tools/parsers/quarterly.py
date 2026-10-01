@@ -447,7 +447,7 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
     # Financials: every field reads the declared standard first (see the
     # policy above); source_elements / source_contexts record the element and
     # context of every value.
-    sources, contexts = {}, {}
+    sources, contexts, units = {}, {}, {}
 
     def fin(name, tiers, period):
         hit = resolve_tiers(csv_files, tiers, standard=accounting_standard, period=period,
@@ -455,6 +455,7 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
         if hit is None:
             return None
         sources[name], contexts[name] = hit.element_id, hit.context_id
+        units[name] = hit.unit_id
         return hit.value
 
     fields = {}
@@ -523,4 +524,5 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
         # Provenance
         source_elements=sources,
         source_contexts=contexts,
+        units=units,
     )

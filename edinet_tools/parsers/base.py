@@ -27,11 +27,15 @@ class ParsedReport:
         extraction_flags: Validation findings (bounds withheld / identities annotated)
         source_elements: Field name -> the element its value was read from
         source_contexts: Field name -> the context that element was read at
+        units: Monetary field name -> the unit id of the fact read ('JPY', or
+            the foreign currency a filer tagged it in, e.g. 'USD'). A fact
+            filed in JPY and another currency at one context is read in JPY.
 
-    The two provenance maps are filled by the parsers that record them (the
+    The provenance maps are filled by the parsers that record them (the
     securities, quarterly and semi-annual reports) for every field that holds
-    a value; a parser that records none leaves them empty, which means "not
-    recorded", never "no value".
+    a value (`units`: every monetary field; per-share figures and ratios are
+    not in it); a parser that records none leaves them empty, which means
+    "not recorded", never "no value".
     """
     doc_id: str
     doc_type_code: str
@@ -43,6 +47,7 @@ class ParsedReport:
     extraction_flags: list = field(default_factory=list)
     source_elements: dict[str, str] = field(default_factory=dict)
     source_contexts: dict[str, str] = field(default_factory=dict)
+    units: dict[str, str] = field(default_factory=dict)
 
     def fields(self) -> list[str]:
         """List all field names for this report type."""

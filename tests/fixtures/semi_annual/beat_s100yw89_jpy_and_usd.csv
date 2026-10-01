@@ -1,0 +1,424 @@
+要素ID	項目名	コンテキストID	相対年度	連結・個別	期間・時点	ユニットID	単位	値
+jppfs_cor:CashAndDeposits	現金及び預金	Prior1YearInstant	前期末	連結	時点	USD		3079000
+jppfs_cor:CashAndDeposits	現金及び預金	Prior1YearInstant	前期末	連結	時点	JPY	円	500000000
+jppfs_cor:CashAndDeposits	現金及び預金	InterimInstant	当中間期末	連結	時点	USD		1220000
+jppfs_cor:CashAndDeposits	現金及び預金	InterimInstant	当中間期末	連結	時点	JPY	円	198000000
+jppfs_cor:AccountsReceivableTrade	売掛金	Prior1YearInstant	前期末	連結	時点	USD		408000
+jppfs_cor:AccountsReceivableTrade	売掛金	Prior1YearInstant	前期末	連結	時点	JPY	円	66000000
+jppfs_cor:AccountsReceivableTrade	売掛金	InterimInstant	当中間期末	連結	時点	USD		361000
+jppfs_cor:AccountsReceivableTrade	売掛金	InterimInstant	当中間期末	連結	時点	JPY	円	59000000
+jppfs_cor:AccountsReceivableOther	未収入金	Prior1YearInstant	前期末	連結	時点	USD		200000
+jppfs_cor:AccountsReceivableOther	未収入金	Prior1YearInstant	前期末	連結	時点	JPY	円	32000000
+jppfs_cor:AccountsReceivableOther	未収入金	InterimInstant	当中間期末	連結	時点	USD		183000
+jppfs_cor:AccountsReceivableOther	未収入金	InterimInstant	当中間期末	連結	時点	JPY	円	30000000
+jppfs_cor:OtherCA	その他、流動資産	Prior1YearInstant	前期末	連結	時点	USD		233000
+jppfs_cor:OtherCA	その他、流動資産	Prior1YearInstant	前期末	連結	時点	JPY	円	38000000
+jppfs_cor:OtherCA	その他、流動資産	InterimInstant	当中間期末	連結	時点	USD		161000
+jppfs_cor:OtherCA	その他、流動資産	InterimInstant	当中間期末	連結	時点	JPY	円	26000000
+jppfs_cor:CurrentAssets	流動資産	Prior1YearInstant	前期末	連結	時点	USD		3920000
+jppfs_cor:CurrentAssets	流動資産	Prior1YearInstant	前期末	連結	時点	JPY	円	637000000
+jppfs_cor:CurrentAssets	流動資産	InterimInstant	当中間期末	連結	時点	USD		1926000
+jppfs_cor:CurrentAssets	流動資産	InterimInstant	当中間期末	連結	時点	JPY	円	313000000
+jppfs_cor:BuildingsAndStructures	建物及び構築物	Prior1YearInstant	前期末	連結	時点	USD		530000
+jppfs_cor:BuildingsAndStructures	建物及び構築物	Prior1YearInstant	前期末	連結	時点	JPY	円	86000000
+jppfs_cor:BuildingsAndStructures	建物及び構築物	InterimInstant	当中間期末	連結	時点	USD		517000
+jppfs_cor:BuildingsAndStructures	建物及び構築物	InterimInstant	当中間期末	連結	時点	JPY	円	84000000
+jppfs_cor:AccumulatedDepreciationBuildingsAndStructures	減価償却累計額、建物及び構築物	Prior1YearInstant	前期末	連結	時点	USD		-376000
+jppfs_cor:AccumulatedDepreciationBuildingsAndStructures	減価償却累計額、建物及び構築物	Prior1YearInstant	前期末	連結	時点	JPY	円	-61000000
+jppfs_cor:AccumulatedDepreciationBuildingsAndStructures	減価償却累計額、建物及び構築物	InterimInstant	当中間期末	連結	時点	USD		-443000
+jppfs_cor:AccumulatedDepreciationBuildingsAndStructures	減価償却累計額、建物及び構築物	InterimInstant	当中間期末	連結	時点	JPY	円	-72000000
+jppfs_cor:BuildingsAndStructuresNet	建物及び構築物（純額）	Prior1YearInstant	前期末	連結	時点	USD		153000
+jppfs_cor:BuildingsAndStructuresNet	建物及び構築物（純額）	Prior1YearInstant	前期末	連結	時点	JPY	円	25000000
+jppfs_cor:BuildingsAndStructuresNet	建物及び構築物（純額）	InterimInstant	当中間期末	連結	時点	USD		74000
+jppfs_cor:BuildingsAndStructuresNet	建物及び構築物（純額）	InterimInstant	当中間期末	連結	時点	JPY	円	12000000
+jppfs_cor:ToolsFurnitureAndFixtures	工具、器具及び備品	Prior1YearInstant	前期末	連結	時点	USD		185000
+jppfs_cor:ToolsFurnitureAndFixtures	工具、器具及び備品	Prior1YearInstant	前期末	連結	時点	JPY	円	30000000
+jppfs_cor:ToolsFurnitureAndFixtures	工具、器具及び備品	InterimInstant	当中間期末	連結	時点	USD		115000
+jppfs_cor:ToolsFurnitureAndFixtures	工具、器具及び備品	InterimInstant	当中間期末	連結	時点	JPY	円	19000000
+jppfs_cor:AccumulatedDepreciationToolsFurnitureAndFixtures	減価償却累計額、工具、器具及び備品	Prior1YearInstant	前期末	連結	時点	USD		-175000
+jppfs_cor:AccumulatedDepreciationToolsFurnitureAndFixtures	減価償却累計額、工具、器具及び備品	Prior1YearInstant	前期末	連結	時点	JPY	円	-28000000
+jppfs_cor:AccumulatedDepreciationToolsFurnitureAndFixtures	減価償却累計額、工具、器具及び備品	InterimInstant	当中間期末	連結	時点	USD		-109000
+jppfs_cor:AccumulatedDepreciationToolsFurnitureAndFixtures	減価償却累計額、工具、器具及び備品	InterimInstant	当中間期末	連結	時点	JPY	円	-18000000
+jppfs_cor:ToolsFurnitureAndFixturesNet	工具、器具及び備品（純額）	Prior1YearInstant	前期末	連結	時点	USD		11000
+jppfs_cor:ToolsFurnitureAndFixturesNet	工具、器具及び備品（純額）	Prior1YearInstant	前期末	連結	時点	JPY	円	2000000
+jppfs_cor:ToolsFurnitureAndFixturesNet	工具、器具及び備品（純額）	InterimInstant	当中間期末	連結	時点	USD		6000
+jppfs_cor:ToolsFurnitureAndFixturesNet	工具、器具及び備品（純額）	InterimInstant	当中間期末	連結	時点	JPY	円	1000000
+jppfs_cor:PropertyPlantAndEquipment	有形固定資産	Prior1YearInstant	前期末	連結	時点	USD		164000
+jppfs_cor:PropertyPlantAndEquipment	有形固定資産	Prior1YearInstant	前期末	連結	時点	JPY	円	27000000
+jppfs_cor:PropertyPlantAndEquipment	有形固定資産	InterimInstant	当中間期末	連結	時点	USD		81000
+jppfs_cor:PropertyPlantAndEquipment	有形固定資産	InterimInstant	当中間期末	連結	時点	JPY	円	13000000
+jppfs_cor:InvestmentSecurities	投資有価証券	Prior1YearInstant	前期末	連結	時点	USD		16507000
+jppfs_cor:InvestmentSecurities	投資有価証券	Prior1YearInstant	前期末	連結	時点	JPY	円	2681000000
+jppfs_cor:InvestmentSecurities	投資有価証券	InterimInstant	当中間期末	連結	時点	USD		13677000
+jppfs_cor:InvestmentSecurities	投資有価証券	InterimInstant	当中間期末	連結	時点	JPY	円	2221000000
+jppfs_cor:StocksOfSubsidiariesAndAffiliates	関係会社株式	Prior1YearInstant	前期末	連結	時点	USD		8686000
+jppfs_cor:StocksOfSubsidiariesAndAffiliates	関係会社株式	Prior1YearInstant	前期末	連結	時点	JPY	円	1411000000
+jppfs_cor:StocksOfSubsidiariesAndAffiliates	関係会社株式	InterimInstant	当中間期末	連結	時点	USD		8707000
+jppfs_cor:StocksOfSubsidiariesAndAffiliates	関係会社株式	InterimInstant	当中間期末	連結	時点	JPY	円	1414000000
+jppfs_cor:InvestmentsAndOtherAssets	投資その他の資産	Prior1YearInstant	前期末	連結	時点	USD		25193000
+jppfs_cor:InvestmentsAndOtherAssets	投資その他の資産	Prior1YearInstant	前期末	連結	時点	JPY	円	4091000000
+jppfs_cor:InvestmentsAndOtherAssets	投資その他の資産	InterimInstant	当中間期末	連結	時点	USD		22384000
+jppfs_cor:InvestmentsAndOtherAssets	投資その他の資産	InterimInstant	当中間期末	連結	時点	JPY	円	3635000000
+jppfs_cor:NoncurrentAssets	固定資産	Prior1YearInstant	前期末	連結	時点	USD		25357000
+jppfs_cor:NoncurrentAssets	固定資産	Prior1YearInstant	前期末	連結	時点	JPY	円	4118000000
+jppfs_cor:NoncurrentAssets	固定資産	InterimInstant	当中間期末	連結	時点	USD		22464000
+jppfs_cor:NoncurrentAssets	固定資産	InterimInstant	当中間期末	連結	時点	JPY	円	3648000000
+jppfs_cor:Assets	資産	Prior1YearInstant	前期末	連結	時点	USD		29277000
+jppfs_cor:Assets	資産	Prior1YearInstant	前期末	連結	時点	JPY	円	4754000000
+jppfs_cor:Assets	資産	InterimInstant	当中間期末	連結	時点	USD		24390000
+jppfs_cor:Assets	資産	InterimInstant	当中間期末	連結	時点	JPY	円	3961000000
+jppfs_cor:AccountsPayableTrade	買掛金	Prior1YearInstant	前期末	連結	時点	USD		44000
+jppfs_cor:AccountsPayableTrade	買掛金	Prior1YearInstant	前期末	連結	時点	JPY	円	7000000
+jppfs_cor:AccountsPayableTrade	買掛金	InterimInstant	当中間期末	連結	時点	USD		38000
+jppfs_cor:AccountsPayableTrade	買掛金	InterimInstant	当中間期末	連結	時点	JPY	円	6000000
+jpcrp090300-ssr_E05951-000:MultiSeriesBTCBondsSeriesICL		Prior1YearInstant	前期末	その他	時点	USD		6491000
+jpcrp090300-ssr_E05951-000:MultiSeriesBTCBondsSeriesICL		Prior1YearInstant	前期末	その他	時点	JPY	円	1054000000
+jpcrp090300-ssr_E05951-000:MultiSeriesBTCBondsSeriesICL		InterimInstant	当中間期末	その他	時点	USD		6458000
+jpcrp090300-ssr_E05951-000:MultiSeriesBTCBondsSeriesICL		InterimInstant	当中間期末	その他	時点	JPY	円	1049000000
+jppfs_cor:ShortTermLoansPayable	短期借入金	Prior1YearInstant	前期末	連結	時点	USD		9709000
+jppfs_cor:ShortTermLoansPayable	短期借入金	Prior1YearInstant	前期末	連結	時点	JPY	円	1577000000
+jppfs_cor:ShortTermLoansPayable	短期借入金	InterimInstant	当中間期末	連結	時点	USD		11981000
+jppfs_cor:ShortTermLoansPayable	短期借入金	InterimInstant	当中間期末	連結	時点	JPY	円	1946000000
+jppfs_cor:AccountsPayableOther	未払金	Prior1YearInstant	前期末	連結	時点	USD		2678000
+jppfs_cor:AccountsPayableOther	未払金	Prior1YearInstant	前期末	連結	時点	JPY	円	435000000
+jppfs_cor:AccountsPayableOther	未払金	InterimInstant	当中間期末	連結	時点	USD		2300000
+jppfs_cor:AccountsPayableOther	未払金	InterimInstant	当中間期末	連結	時点	JPY	円	374000000
+jppfs_cor:AccruedExpenses	未払費用	Prior1YearInstant	前期末	連結	時点	USD		1473000
+jppfs_cor:AccruedExpenses	未払費用	Prior1YearInstant	前期末	連結	時点	JPY	円	239000000
+jppfs_cor:AccruedExpenses	未払費用	InterimInstant	当中間期末	連結	時点	USD		1804000
+jppfs_cor:AccruedExpenses	未払費用	InterimInstant	当中間期末	連結	時点	JPY	円	293000000
+jppfs_cor:OtherCL	その他、流動負債	Prior1YearInstant	前期末	連結	時点	USD		176000
+jppfs_cor:OtherCL	その他、流動負債	Prior1YearInstant	前期末	連結	時点	JPY	円	29000000
+jppfs_cor:OtherCL	その他、流動負債	InterimInstant	当中間期末	連結	時点	USD		122000
+jppfs_cor:OtherCL	その他、流動負債	InterimInstant	当中間期末	連結	時点	JPY	円	20000000
+jppfs_cor:CurrentLiabilities	流動負債	Prior1YearInstant	前期末	連結	時点	USD		20572000
+jppfs_cor:CurrentLiabilities	流動負債	Prior1YearInstant	前期末	連結	時点	JPY	円	3341000000
+jppfs_cor:CurrentLiabilities	流動負債	InterimInstant	当中間期末	連結	時点	USD		22704000
+jppfs_cor:CurrentLiabilities	流動負債	InterimInstant	当中間期末	連結	時点	JPY	円	3687000000
+jppfs_cor:LongTermLoansPayable	長期借入金	Prior1YearInstant	前期末	連結	時点	USD		759000
+jppfs_cor:LongTermLoansPayable	長期借入金	Prior1YearInstant	前期末	連結	時点	JPY	円	123000000
+jppfs_cor:LongTermLoansPayable	長期借入金	InterimInstant	当中間期末	連結	時点	USD		777000
+jppfs_cor:LongTermLoansPayable	長期借入金	InterimInstant	当中間期末	連結	時点	JPY	円	126000000
+jppfs_cor:NoncurrentLiabilities	固定負債	Prior1YearInstant	前期末	連結	時点	USD		759000
+jppfs_cor:NoncurrentLiabilities	固定負債	Prior1YearInstant	前期末	連結	時点	JPY	円	123000000
+jppfs_cor:NoncurrentLiabilities	固定負債	InterimInstant	当中間期末	連結	時点	USD		777000
+jppfs_cor:NoncurrentLiabilities	固定負債	InterimInstant	当中間期末	連結	時点	JPY	円	126000000
+jppfs_cor:Liabilities	負債	Prior1YearInstant	前期末	連結	時点	USD		21330000
+jppfs_cor:Liabilities	負債	Prior1YearInstant	前期末	連結	時点	JPY	円	3464000000
+jppfs_cor:Liabilities	負債	InterimInstant	当中間期末	連結	時点	USD		23481000
+jppfs_cor:Liabilities	負債	InterimInstant	当中間期末	連結	時点	JPY	円	3813000000
+jppfs_cor:CapitalStock	資本金	Prior1YearInstant	前期末	連結	時点	USD		2334000
+jppfs_cor:CapitalStock	資本金	Prior1YearInstant	前期末	連結	時点	JPY	円	379000000
+jppfs_cor:CapitalStock	資本金	InterimInstant	当中間期末	連結	時点	USD		2350000
+jppfs_cor:CapitalStock	資本金	InterimInstant	当中間期末	連結	時点	JPY	円	382000000
+jppfs_cor:CapitalSurplus	資本剰余金	Prior1YearInstant	前期末	連結	時点	USD		489382000
+jppfs_cor:CapitalSurplus	資本剰余金	Prior1YearInstant	前期末	連結	時点	JPY	円	79471000000
+jppfs_cor:CapitalSurplus	資本剰余金	InterimInstant	当中間期末	連結	時点	USD		489951000
+jppfs_cor:CapitalSurplus	資本剰余金	InterimInstant	当中間期末	連結	時点	JPY	円	79563000000
+jppfs_cor:RetainedEarnings	利益剰余金	Prior1YearInstant	前期末	連結	時点	USD		-446272000
+jppfs_cor:RetainedEarnings	利益剰余金	Prior1YearInstant	前期末	連結	時点	JPY	円	-72470000000
+jppfs_cor:RetainedEarnings	利益剰余金	InterimInstant	当中間期末	連結	時点	USD		-448383000
+jppfs_cor:RetainedEarnings	利益剰余金	InterimInstant	当中間期末	連結	時点	JPY	円	-72813000000
+jppfs_cor:ShareholdersEquity	株主資本	Prior1YearInstant	前期末	連結	時点	USD		45444000
+jppfs_cor:ShareholdersEquity	株主資本	Prior1YearInstant	前期末	連結	時点	JPY	円	7380000000
+jppfs_cor:ShareholdersEquity	株主資本	InterimInstant	当中間期末	連結	時点	USD		43919000
+jppfs_cor:ShareholdersEquity	株主資本	InterimInstant	当中間期末	連結	時点	JPY	円	7132000000
+jppfs_cor:ForeignCurrencyTranslationAdjustment	為替換算調整勘定	Prior1YearInstant	前期末	連結	時点	USD		-34748000
+jppfs_cor:ForeignCurrencyTranslationAdjustment	為替換算調整勘定	Prior1YearInstant	前期末	連結	時点	JPY	円	-5643000000
+jppfs_cor:ForeignCurrencyTranslationAdjustment	為替換算調整勘定	InterimInstant	当中間期末	連結	時点	USD		-34714000
+jppfs_cor:ForeignCurrencyTranslationAdjustment	為替換算調整勘定	InterimInstant	当中間期末	連結	時点	JPY	円	-5637000000
+jppfs_cor:ValuationDifferenceOnAvailableForSaleSecurities	その他有価証券評価差額金	Prior1YearInstant	前期末	連結	時点	USD		-2832000
+jppfs_cor:ValuationDifferenceOnAvailableForSaleSecurities	その他有価証券評価差額金	Prior1YearInstant	前期末	連結	時点	JPY	円	-460000000
+jppfs_cor:ValuationDifferenceOnAvailableForSaleSecurities	その他有価証券評価差額金	InterimInstant	当中間期末	連結	時点	USD		-8377000
+jppfs_cor:ValuationDifferenceOnAvailableForSaleSecurities	その他有価証券評価差額金	InterimInstant	当中間期末	連結	時点	JPY	円	-1360000000
+jppfs_cor:ValuationAndTranslationAdjustments	評価・換算差額等	Prior1YearInstant	前期末	連結	時点	USD		-37580000
+jppfs_cor:ValuationAndTranslationAdjustments	評価・換算差額等	Prior1YearInstant	前期末	連結	時点	JPY	円	-6103000000
+jppfs_cor:ValuationAndTranslationAdjustments	評価・換算差額等	InterimInstant	当中間期末	連結	時点	USD		-43091000
+jppfs_cor:ValuationAndTranslationAdjustments	評価・換算差額等	InterimInstant	当中間期末	連結	時点	JPY	円	-6997000000
+jppfs_cor:SubscriptionRightsToShares	新株予約権	Prior1YearInstant	前期末	連結	時点	USD		82000
+jppfs_cor:SubscriptionRightsToShares	新株予約権	Prior1YearInstant	前期末	連結	時点	JPY	円	13000000
+jppfs_cor:SubscriptionRightsToShares	新株予約権	InterimInstant	当中間期末	連結	時点	USD		80000
+jppfs_cor:SubscriptionRightsToShares	新株予約権	InterimInstant	当中間期末	連結	時点	JPY	円	13000000
+jppfs_cor:NonControllingInterests	非支配株主持分	Prior1YearInstant	前期末	連結	時点	USD		－
+jppfs_cor:NonControllingInterests	非支配株主持分	Prior1YearInstant	前期末	連結	時点	JPY	円	－
+jppfs_cor:NonControllingInterests	非支配株主持分	InterimInstant	当中間期末	連結	時点	USD		－
+jppfs_cor:NonControllingInterests	非支配株主持分	InterimInstant	当中間期末	連結	時点	JPY	円	－
+jppfs_cor:NetAssets	純資産	Prior1YearInstant	前期末	連結	時点	USD		7947000
+jppfs_cor:NetAssets	純資産	Prior1YearInstant	前期末	連結	時点	JPY	円	1290000000
+jppfs_cor:NetAssets	純資産	InterimInstant	当中間期末	連結	時点	USD		909000
+jppfs_cor:NetAssets	純資産	InterimInstant	当中間期末	連結	時点	JPY	円	148000000
+jppfs_cor:LiabilitiesAndNetAssets	負債純資産	Prior1YearInstant	前期末	連結	時点	USD		29277000
+jppfs_cor:LiabilitiesAndNetAssets	負債純資産	Prior1YearInstant	前期末	連結	時点	JPY	円	4754000000
+jppfs_cor:LiabilitiesAndNetAssets	負債純資産	InterimInstant	当中間期末	連結	時点	USD		24390000
+jppfs_cor:LiabilitiesAndNetAssets	負債純資産	InterimInstant	当中間期末	連結	時点	JPY	円	3961000000
+jppfs_cor:NetSales	売上高	Prior1InterimDuration	前中間期	連結	期間	USD		485000
+jppfs_cor:NetSales	売上高	Prior1InterimDuration	前中間期	連結	期間	JPY	円	79000000
+jppfs_cor:NetSales	売上高	InterimDuration	当中間期	連結	期間	USD		474000
+jppfs_cor:NetSales	売上高	InterimDuration	当中間期	連結	期間	JPY	円	77000000
+jppfs_cor:CostOfSales	売上原価	Prior1InterimDuration	前中間期	連結	期間	USD		330000
+jppfs_cor:CostOfSales	売上原価	Prior1InterimDuration	前中間期	連結	期間	JPY	円	54000000
+jppfs_cor:CostOfSales	売上原価	InterimDuration	当中間期	連結	期間	USD		305000
+jppfs_cor:CostOfSales	売上原価	InterimDuration	当中間期	連結	期間	JPY	円	49000000
+jppfs_cor:GrossProfit	売上総利益又は売上総損失（△）	Prior1InterimDuration	前中間期	連結	期間	USD		156000
+jppfs_cor:GrossProfit	売上総利益又は売上総損失（△）	Prior1InterimDuration	前中間期	連結	期間	JPY	円	25000000
+jppfs_cor:GrossProfit	売上総利益又は売上総損失（△）	InterimDuration	当中間期	連結	期間	USD		169000
+jppfs_cor:GrossProfit	売上総利益又は売上総損失（△）	InterimDuration	当中間期	連結	期間	JPY	円	27000000
+jppfs_cor:DirectorsCompensationsSGA	役員報酬、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	USD		200000
+jppfs_cor:DirectorsCompensationsSGA	役員報酬、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	JPY	円	32000000
+jppfs_cor:DirectorsCompensationsSGA	役員報酬、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	USD		200000
+jppfs_cor:DirectorsCompensationsSGA	役員報酬、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	JPY	円	32000000
+jppfs_cor:SalariesAndAllowancesSGA	給料及び手当、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	USD		257000
+jppfs_cor:SalariesAndAllowancesSGA	給料及び手当、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	JPY	円	42000000
+jppfs_cor:SalariesAndAllowancesSGA	給料及び手当、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	USD		238000
+jppfs_cor:SalariesAndAllowancesSGA	給料及び手当、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	JPY	円	39000000
+jppfs_cor:AdvertisingExpensesSGA	広告宣伝費、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	USD		6000
+jppfs_cor:AdvertisingExpensesSGA	広告宣伝費、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	JPY	円	1000000
+jppfs_cor:AdvertisingExpensesSGA	広告宣伝費、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	USD		73000
+jppfs_cor:AdvertisingExpensesSGA	広告宣伝費、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	JPY	円	12000000
+jppfs_cor:DepreciationSGA	減価償却費、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	USD		82000
+jppfs_cor:DepreciationSGA	減価償却費、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	JPY	円	13000000
+jppfs_cor:DepreciationSGA	減価償却費、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	USD		81000
+jppfs_cor:DepreciationSGA	減価償却費、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	JPY	円	13000000
+jppfs_cor:ProvisionOfAllowanceForDoubtfulAccountsSGA	貸倒引当金繰入額、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	USD		－
+jppfs_cor:ProvisionOfAllowanceForDoubtfulAccountsSGA	貸倒引当金繰入額、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	JPY	円	－
+jppfs_cor:ProvisionOfAllowanceForDoubtfulAccountsSGA	貸倒引当金繰入額、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	USD		-3000
+jppfs_cor:ProvisionOfAllowanceForDoubtfulAccountsSGA	貸倒引当金繰入額、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	JPY	円	-0
+jppfs_cor:CommissionFeeSGA	支払手数料、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	USD		798000
+jppfs_cor:CommissionFeeSGA	支払手数料、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	JPY	円	130000000
+jppfs_cor:CommissionFeeSGA	支払手数料、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	USD		818000
+jppfs_cor:CommissionFeeSGA	支払手数料、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	JPY	円	133000000
+jppfs_cor:RentsSGA	地代家賃、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	USD		33000
+jppfs_cor:RentsSGA	地代家賃、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	JPY	円	5000000
+jppfs_cor:RentsSGA	地代家賃、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	USD		33000
+jppfs_cor:RentsSGA	地代家賃、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	JPY	円	5000000
+jppfs_cor:OtherSGA	その他、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	USD		215000
+jppfs_cor:OtherSGA	その他、販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	JPY	円	35000000
+jppfs_cor:OtherSGA	その他、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	USD		174000
+jppfs_cor:OtherSGA	その他、販売費及び一般管理費	InterimDuration	当中間期	連結	期間	JPY	円	28000000
+jppfs_cor:SellingGeneralAndAdministrativeExpenses	販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	USD		1591000
+jppfs_cor:SellingGeneralAndAdministrativeExpenses	販売費及び一般管理費	Prior1InterimDuration	前中間期	連結	期間	JPY	円	258000000
+jppfs_cor:SellingGeneralAndAdministrativeExpenses	販売費及び一般管理費	InterimDuration	当中間期	連結	期間	USD		1614000
+jppfs_cor:SellingGeneralAndAdministrativeExpenses	販売費及び一般管理費	InterimDuration	当中間期	連結	期間	JPY	円	262000000
+jppfs_cor:OperatingIncome	営業利益又は営業損失（△）	Prior1InterimDuration	前中間期	連結	期間	USD		-1435000
+jppfs_cor:OperatingIncome	営業利益又は営業損失（△）	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-233000000
+jppfs_cor:OperatingIncome	営業利益又は営業損失（△）	InterimDuration	当中間期	連結	期間	USD		-1445000
+jppfs_cor:OperatingIncome	営業利益又は営業損失（△）	InterimDuration	当中間期	連結	期間	JPY	円	-235000000
+jppfs_cor:InterestAndDividendsIncomeNOI	受取利息及び配当金、営業外収益	Prior1InterimDuration	前中間期	連結	期間	USD		1000
+jppfs_cor:InterestAndDividendsIncomeNOI	受取利息及び配当金、営業外収益	Prior1InterimDuration	前中間期	連結	期間	JPY	円	0
+jppfs_cor:InterestAndDividendsIncomeNOI	受取利息及び配当金、営業外収益	InterimDuration	当中間期	連結	期間	USD		95000
+jppfs_cor:InterestAndDividendsIncomeNOI	受取利息及び配当金、営業外収益	InterimDuration	当中間期	連結	期間	JPY	円	16000000
+jppfs_cor:EquityInEarningsOfAffiliatesNOI	持分法による投資利益、営業外収益	Prior1InterimDuration	前中間期	連結	期間	USD		53000
+jppfs_cor:EquityInEarningsOfAffiliatesNOI	持分法による投資利益、営業外収益	Prior1InterimDuration	前中間期	連結	期間	JPY	円	9000000
+jppfs_cor:EquityInEarningsOfAffiliatesNOI	持分法による投資利益、営業外収益	InterimDuration	当中間期	連結	期間	USD		21000
+jppfs_cor:EquityInEarningsOfAffiliatesNOI	持分法による投資利益、営業外収益	InterimDuration	当中間期	連結	期間	JPY	円	3000000
+jppfs_cor:ForeignExchangeGainsNOI	為替差益、営業外収益	Prior1InterimDuration	前中間期	連結	期間	USD		46000
+jppfs_cor:ForeignExchangeGainsNOI	為替差益、営業外収益	Prior1InterimDuration	前中間期	連結	期間	JPY	円	8000000
+jppfs_cor:ForeignExchangeGainsNOI	為替差益、営業外収益	InterimDuration	当中間期	連結	期間	USD		11000
+jppfs_cor:ForeignExchangeGainsNOI	為替差益、営業外収益	InterimDuration	当中間期	連結	期間	JPY	円	2000000
+jppfs_cor:NonOperatingIncome	営業外収益	Prior1InterimDuration	前中間期	連結	期間	USD		100000
+jppfs_cor:NonOperatingIncome	営業外収益	Prior1InterimDuration	前中間期	連結	期間	JPY	円	16000000
+jppfs_cor:NonOperatingIncome	営業外収益	InterimDuration	当中間期	連結	期間	USD		127000
+jppfs_cor:NonOperatingIncome	営業外収益	InterimDuration	当中間期	連結	期間	JPY	円	21000000
+jppfs_cor:InterestExpensesNOE	支払利息、営業外費用	Prior1InterimDuration	前中間期	連結	期間	USD		147000
+jppfs_cor:InterestExpensesNOE	支払利息、営業外費用	Prior1InterimDuration	前中間期	連結	期間	JPY	円	24000000
+jppfs_cor:InterestExpensesNOE	支払利息、営業外費用	InterimDuration	当中間期	連結	期間	USD		778000
+jppfs_cor:InterestExpensesNOE	支払利息、営業外費用	InterimDuration	当中間期	連結	期間	JPY	円	126000000
+jppfs_cor:NonOperatingExpenses	営業外費用	Prior1InterimDuration	前中間期	連結	期間	USD		147000
+jppfs_cor:NonOperatingExpenses	営業外費用	Prior1InterimDuration	前中間期	連結	期間	JPY	円	24000000
+jppfs_cor:NonOperatingExpenses	営業外費用	InterimDuration	当中間期	連結	期間	USD		778000
+jppfs_cor:NonOperatingExpenses	営業外費用	InterimDuration	当中間期	連結	期間	JPY	円	126000000
+jppfs_cor:OrdinaryIncome	経常利益又は経常損失（△）	Prior1InterimDuration	前中間期	連結	期間	USD		-1482000
+jppfs_cor:OrdinaryIncome	経常利益又は経常損失（△）	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-241000000
+jppfs_cor:OrdinaryIncome	経常利益又は経常損失（△）	InterimDuration	当中間期	連結	期間	USD		-2096000
+jppfs_cor:OrdinaryIncome	経常利益又は経常損失（△）	InterimDuration	当中間期	連結	期間	JPY	円	-340000000
+jppfs_cor:IncomeBeforeIncomeTaxes	税引前当期純利益又は税引前当期純損失（△）	Prior1InterimDuration	前中間期	連結	期間	USD		-1482000
+jppfs_cor:IncomeBeforeIncomeTaxes	税引前当期純利益又は税引前当期純損失（△）	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-241000000
+jppfs_cor:IncomeBeforeIncomeTaxes	税引前当期純利益又は税引前当期純損失（△）	InterimDuration	当中間期	連結	期間	USD		-2096000
+jppfs_cor:IncomeBeforeIncomeTaxes	税引前当期純利益又は税引前当期純損失（△）	InterimDuration	当中間期	連結	期間	JPY	円	-340000000
+jppfs_cor:IncomeTaxesCurrent	法人税、住民税及び事業税	Prior1InterimDuration	前中間期	連結	期間	USD		1000
+jppfs_cor:IncomeTaxesCurrent	法人税、住民税及び事業税	Prior1InterimDuration	前中間期	連結	期間	JPY	円	0
+jppfs_cor:IncomeTaxesCurrent	法人税、住民税及び事業税	InterimDuration	当中間期	連結	期間	USD		15000
+jppfs_cor:IncomeTaxesCurrent	法人税、住民税及び事業税	InterimDuration	当中間期	連結	期間	JPY	円	2000000
+jppfs_cor:IncomeTaxes	法人税等	Prior1InterimDuration	前中間期	連結	期間	USD		1000
+jppfs_cor:IncomeTaxes	法人税等	Prior1InterimDuration	前中間期	連結	期間	JPY	円	0
+jppfs_cor:IncomeTaxes	法人税等	InterimDuration	当中間期	連結	期間	USD		15000
+jppfs_cor:IncomeTaxes	法人税等	InterimDuration	当中間期	連結	期間	JPY	円	2000000
+jppfs_cor:ProfitLoss	当期純利益又は当期純損失（△）（平成26年3月28日財規等改正後）	Prior1InterimDuration	前中間期	連結	期間	USD		-1482000
+jppfs_cor:ProfitLoss	当期純利益又は当期純損失（△）（平成26年3月28日財規等改正後）	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-241000000
+jppfs_cor:ProfitLoss	当期純利益又は当期純損失（△）（平成26年3月28日財規等改正後）	InterimDuration	当中間期	連結	期間	USD		-2111000
+jppfs_cor:ProfitLoss	当期純利益又は当期純損失（△）（平成26年3月28日財規等改正後）	InterimDuration	当中間期	連結	期間	JPY	円	-343000000
+jppfs_cor:ProfitLossAttributableToOwnersOfParent	親会社株主に帰属する当期純利益又は親会社株主に帰属する当期純損失（△）	Prior1InterimDuration	前中間期	連結	期間	USD		-1482000
+jppfs_cor:ProfitLossAttributableToOwnersOfParent	親会社株主に帰属する当期純利益又は親会社株主に帰属する当期純損失（△）	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-241000000
+jppfs_cor:ProfitLossAttributableToOwnersOfParent	親会社株主に帰属する当期純利益又は親会社株主に帰属する当期純損失（△）	InterimDuration	当中間期	連結	期間	USD		-2111000
+jppfs_cor:ProfitLossAttributableToOwnersOfParent	親会社株主に帰属する当期純利益又は親会社株主に帰属する当期純損失（△）	InterimDuration	当中間期	連結	期間	JPY	円	-343000000
+jppfs_cor:ProfitLoss	当期純利益又は当期純損失（△）（平成26年3月28日財規等改正後）	Prior1InterimDuration	前中間期	連結	期間	USD		-1482000
+jppfs_cor:ProfitLoss	当期純利益又は当期純損失（△）（平成26年3月28日財規等改正後）	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-241000000
+jppfs_cor:ProfitLoss	当期純利益又は当期純損失（△）（平成26年3月28日財規等改正後）	InterimDuration	当中間期	連結	期間	USD		-2111000
+jppfs_cor:ProfitLoss	当期純利益又は当期純損失（△）（平成26年3月28日財規等改正後）	InterimDuration	当中間期	連結	期間	JPY	円	-343000000
+jppfs_cor:ForeignCurrencyTranslationAdjustmentNetOfTaxOCI	為替換算調整勘定（税引後）、その他の包括利益	Prior1InterimDuration	前中間期	連結	期間	USD		-325000
+jppfs_cor:ForeignCurrencyTranslationAdjustmentNetOfTaxOCI	為替換算調整勘定（税引後）、その他の包括利益	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-53000000
+jppfs_cor:ForeignCurrencyTranslationAdjustmentNetOfTaxOCI	為替換算調整勘定（税引後）、その他の包括利益	InterimDuration	当中間期	連結	期間	USD		34000
+jppfs_cor:ForeignCurrencyTranslationAdjustmentNetOfTaxOCI	為替換算調整勘定（税引後）、その他の包括利益	InterimDuration	当中間期	連結	期間	JPY	円	6000000
+jppfs_cor:ValuationDifferenceOnAvailableForSaleSecuritiesNetOfTaxOCI	その他有価証券評価差額金（税引後）、その他の包括利益	Prior1InterimDuration	前中間期	連結	期間	USD		935000
+jppfs_cor:ValuationDifferenceOnAvailableForSaleSecuritiesNetOfTaxOCI	その他有価証券評価差額金（税引後）、その他の包括利益	Prior1InterimDuration	前中間期	連結	期間	JPY	円	152000000
+jppfs_cor:ValuationDifferenceOnAvailableForSaleSecuritiesNetOfTaxOCI	その他有価証券評価差額金（税引後）、その他の包括利益	InterimDuration	当中間期	連結	期間	USD		-5545000
+jppfs_cor:ValuationDifferenceOnAvailableForSaleSecuritiesNetOfTaxOCI	その他有価証券評価差額金（税引後）、その他の包括利益	InterimDuration	当中間期	連結	期間	JPY	円	-900000000
+jppfs_cor:OtherComprehensiveIncome	その他の包括利益	Prior1InterimDuration	前中間期	連結	期間	USD		610000
+jppfs_cor:OtherComprehensiveIncome	その他の包括利益	Prior1InterimDuration	前中間期	連結	期間	JPY	円	99000000
+jppfs_cor:OtherComprehensiveIncome	その他の包括利益	InterimDuration	当中間期	連結	期間	USD		-5511000
+jppfs_cor:OtherComprehensiveIncome	その他の包括利益	InterimDuration	当中間期	連結	期間	JPY	円	-895000000
+jppfs_cor:ComprehensiveIncome	包括利益	Prior1InterimDuration	前中間期	連結	期間	USD		-872000
+jppfs_cor:ComprehensiveIncome	包括利益	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-142000000
+jppfs_cor:ComprehensiveIncome	包括利益	InterimDuration	当中間期	連結	期間	USD		-7622000
+jppfs_cor:ComprehensiveIncome	包括利益	InterimDuration	当中間期	連結	期間	JPY	円	-1238000000
+jppfs_cor:ComprehensiveIncomeAttributableToOwnersOfTheParent	親会社株主に係る包括利益、包括利益	Prior1InterimDuration	前中間期	連結	期間	USD		-872000
+jppfs_cor:ComprehensiveIncomeAttributableToOwnersOfTheParent	親会社株主に係る包括利益、包括利益	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-142000000
+jppfs_cor:ComprehensiveIncomeAttributableToOwnersOfTheParent	親会社株主に係る包括利益、包括利益	InterimDuration	当中間期	連結	期間	USD		-7622000
+jppfs_cor:ComprehensiveIncomeAttributableToOwnersOfTheParent	親会社株主に係る包括利益、包括利益	InterimDuration	当中間期	連結	期間	JPY	円	-1238000000
+jppfs_cor:ComprehensiveIncomeAttributableToNonControllingInterests	非支配株主に係る包括利益、包括利益	Prior1InterimDuration	前中間期	連結	期間	USD		－
+jppfs_cor:ComprehensiveIncomeAttributableToNonControllingInterests	非支配株主に係る包括利益、包括利益	Prior1InterimDuration	前中間期	連結	期間	JPY	円	－
+jppfs_cor:ComprehensiveIncomeAttributableToNonControllingInterests	非支配株主に係る包括利益、包括利益	InterimDuration	当中間期	連結	期間	USD		－
+jppfs_cor:ComprehensiveIncomeAttributableToNonControllingInterests	非支配株主に係る包括利益、包括利益	InterimDuration	当中間期	連結	期間	JPY	円	－
+jppfs_cor:IncomeBeforeIncomeTaxes	税引前当期純利益又は税引前当期純損失（△）	Prior1InterimDuration	前中間期	連結	期間	USD		-1482000
+jppfs_cor:IncomeBeforeIncomeTaxes	税引前当期純利益又は税引前当期純損失（△）	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-241000000
+jppfs_cor:IncomeBeforeIncomeTaxes	税引前当期純利益又は税引前当期純損失（△）	InterimDuration	当中間期	連結	期間	USD		-2096000
+jppfs_cor:IncomeBeforeIncomeTaxes	税引前当期純利益又は税引前当期純損失（△）	InterimDuration	当中間期	連結	期間	JPY	円	-340000000
+jppfs_cor:DepreciationAndAmortizationOpeCF	減価償却費、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		95000
+jppfs_cor:DepreciationAndAmortizationOpeCF	減価償却費、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	15000000
+jppfs_cor:DepreciationAndAmortizationOpeCF	減価償却費、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		82000
+jppfs_cor:DepreciationAndAmortizationOpeCF	減価償却費、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	13000000
+jppfs_cor:InterestAndDividendsIncomeOpeCF	受取利息及び受取配当金、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		-1000
+jppfs_cor:InterestAndDividendsIncomeOpeCF	受取利息及び受取配当金、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-0
+jppfs_cor:InterestAndDividendsIncomeOpeCF	受取利息及び受取配当金、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		-0
+jppfs_cor:InterestAndDividendsIncomeOpeCF	受取利息及び受取配当金、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	-0
+jppfs_cor:InterestExpensesOpeCF	支払利息、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		147000
+jppfs_cor:InterestExpensesOpeCF	支払利息、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	24000000
+jppfs_cor:InterestExpensesOpeCF	支払利息、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		778000
+jppfs_cor:InterestExpensesOpeCF	支払利息、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	126000000
+jppfs_cor:ForeignExchangeLossesGainsOpeCF	為替差損益（△は益）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		-46000
+jppfs_cor:ForeignExchangeLossesGainsOpeCF	為替差損益（△は益）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-8000000
+jppfs_cor:ForeignExchangeLossesGainsOpeCF	為替差損益（△は益）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		-122000
+jppfs_cor:ForeignExchangeLossesGainsOpeCF	為替差損益（△は益）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	-20000000
+jppfs_cor:EquityInEarningsLossesOfAffiliatesOpeCF	持分法による投資損益（△は益）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		-53000
+jppfs_cor:EquityInEarningsLossesOfAffiliatesOpeCF	持分法による投資損益（△は益）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-9000000
+jppfs_cor:EquityInEarningsLossesOfAffiliatesOpeCF	持分法による投資損益（△は益）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		-21000
+jppfs_cor:EquityInEarningsLossesOfAffiliatesOpeCF	持分法による投資損益（△は益）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	-3000000
+jpcrp090300-ssr_E05951-000:ProvisionForUncollectableAccountsOpeCF		Prior1InterimDuration	前中間期	その他	期間	USD		－
+jpcrp090300-ssr_E05951-000:ProvisionForUncollectableAccountsOpeCF		Prior1InterimDuration	前中間期	その他	期間	JPY	円	－
+jpcrp090300-ssr_E05951-000:ProvisionForUncollectableAccountsOpeCF		InterimDuration	当中間期	その他	期間	USD		-3000
+jpcrp090300-ssr_E05951-000:ProvisionForUncollectableAccountsOpeCF		InterimDuration	当中間期	その他	期間	JPY	円	-0
+jppfs_cor:DecreaseIncreaseInNotesAndAccountsReceivableTradeOpeCF	売上債権の増減額（△は増加）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		9000
+jppfs_cor:DecreaseIncreaseInNotesAndAccountsReceivableTradeOpeCF	売上債権の増減額（△は増加）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	1000000
+jppfs_cor:DecreaseIncreaseInNotesAndAccountsReceivableTradeOpeCF	売上債権の増減額（△は増加）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		50000
+jppfs_cor:DecreaseIncreaseInNotesAndAccountsReceivableTradeOpeCF	売上債権の増減額（△は増加）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	8000000
+jppfs_cor:IncreaseDecreaseInNotesAndAccountsPayableTradeOpeCF	仕入債務の増減額（△は減少）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		17000
+jppfs_cor:IncreaseDecreaseInNotesAndAccountsPayableTradeOpeCF	仕入債務の増減額（△は減少）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	3000000
+jppfs_cor:IncreaseDecreaseInNotesAndAccountsPayableTradeOpeCF	仕入債務の増減額（△は減少）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		-7000
+jppfs_cor:IncreaseDecreaseInNotesAndAccountsPayableTradeOpeCF	仕入債務の増減額（△は減少）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	-1000000
+jppfs_cor:DecreaseIncreaseInOtherCurrentAssetsOpeCF	その他の流動資産の増減額（△は増加）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		322000
+jppfs_cor:DecreaseIncreaseInOtherCurrentAssetsOpeCF	その他の流動資産の増減額（△は増加）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	52000000
+jppfs_cor:DecreaseIncreaseInOtherCurrentAssetsOpeCF	その他の流動資産の増減額（△は増加）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		88000
+jppfs_cor:DecreaseIncreaseInOtherCurrentAssetsOpeCF	その他の流動資産の増減額（△は増加）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	14000000
+jppfs_cor:IncreaseDecreaseInOtherCurrentLiabilitiesOpeCF	その他の流動負債の増減額（△は減少）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		-66000
+jppfs_cor:IncreaseDecreaseInOtherCurrentLiabilitiesOpeCF	その他の流動負債の増減額（△は減少）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-11000000
+jppfs_cor:IncreaseDecreaseInOtherCurrentLiabilitiesOpeCF	その他の流動負債の増減額（△は減少）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		-28000
+jppfs_cor:IncreaseDecreaseInOtherCurrentLiabilitiesOpeCF	その他の流動負債の増減額（△は減少）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	-5000000
+jppfs_cor:SubtotalOpeCF	小計、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		-1060000
+jppfs_cor:SubtotalOpeCF	小計、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-172000000
+jppfs_cor:SubtotalOpeCF	小計、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		-1277000
+jppfs_cor:SubtotalOpeCF	小計、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	-207000000
+jppfs_cor:InterestExpensesPaidOpeCFFinCF	利息の支払額、営業活動によるキャッシュ・フロー又は財務活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		－
+jppfs_cor:InterestExpensesPaidOpeCFFinCF	利息の支払額、営業活動によるキャッシュ・フロー又は財務活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	－
+jppfs_cor:InterestExpensesPaidOpeCFFinCF	利息の支払額、営業活動によるキャッシュ・フロー又は財務活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		-209000
+jppfs_cor:InterestExpensesPaidOpeCFFinCF	利息の支払額、営業活動によるキャッシュ・フロー又は財務活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	-34000000
+jpcrp090300-ssr_E05951-000:FinanceLeaseInterestPaidOpeCF		Prior1InterimDuration	前中間期	その他	期間	USD		-7000
+jpcrp090300-ssr_E05951-000:FinanceLeaseInterestPaidOpeCF		Prior1InterimDuration	前中間期	その他	期間	JPY	円	-1000000
+jpcrp090300-ssr_E05951-000:FinanceLeaseInterestPaidOpeCF		InterimDuration	当中間期	その他	期間	USD		-3000
+jpcrp090300-ssr_E05951-000:FinanceLeaseInterestPaidOpeCF		InterimDuration	当中間期	その他	期間	JPY	円	-0
+jppfs_cor:IncomeTaxesPaidRefundOpeCF	法人税等の支払額又は還付額（△は支払）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		-0
+jppfs_cor:IncomeTaxesPaidRefundOpeCF	法人税等の支払額又は還付額（△は支払）、営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-0
+jppfs_cor:IncomeTaxesPaidRefundOpeCF	法人税等の支払額又は還付額（△は支払）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		-15000
+jppfs_cor:IncomeTaxesPaidRefundOpeCF	法人税等の支払額又は還付額（△は支払）、営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	-2000000
+jppfs_cor:NetCashProvidedByUsedInOperatingActivities	営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		-1066000
+jppfs_cor:NetCashProvidedByUsedInOperatingActivities	営業活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-173000000
+jppfs_cor:NetCashProvidedByUsedInOperatingActivities	営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		-1504000
+jppfs_cor:NetCashProvidedByUsedInOperatingActivities	営業活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	-244000000
+jppfs_cor:InterestAndDividendsIncomeReceivedOpeCFInvCF	利息及び配当金の受取額、営業活動によるキャッシュ・フロー又は投資活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		2000
+jppfs_cor:InterestAndDividendsIncomeReceivedOpeCFInvCF	利息及び配当金の受取額、営業活動によるキャッシュ・フロー又は投資活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	0
+jppfs_cor:InterestAndDividendsIncomeReceivedOpeCFInvCF	利息及び配当金の受取額、営業活動によるキャッシュ・フロー又は投資活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		－
+jppfs_cor:InterestAndDividendsIncomeReceivedOpeCFInvCF	利息及び配当金の受取額、営業活動によるキャッシュ・フロー又は投資活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	－
+jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF	有形固定資産の取得による支出、投資活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		-1000
+jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF	有形固定資産の取得による支出、投資活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-0
+jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF	有形固定資産の取得による支出、投資活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		－
+jppfs_cor:PurchaseOfPropertyPlantAndEquipmentInvCF	有形固定資産の取得による支出、投資活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	－
+jpcrp090300-ssr_E05951-000:AcquisitionOfInvestmentSecuritiesInvCF		Prior1InterimDuration	前中間期	その他	期間	USD		-15501000
+jpcrp090300-ssr_E05951-000:AcquisitionOfInvestmentSecuritiesInvCF		Prior1InterimDuration	前中間期	その他	期間	JPY	円	-2517000000
+jpcrp090300-ssr_E05951-000:AcquisitionOfInvestmentSecuritiesInvCF		InterimDuration	当中間期	その他	期間	USD		-2715000
+jpcrp090300-ssr_E05951-000:AcquisitionOfInvestmentSecuritiesInvCF		InterimDuration	当中間期	その他	期間	JPY	円	-441000000
+jppfs_cor:NetCashProvidedByUsedInInvestmentActivities	投資活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		-15501000
+jppfs_cor:NetCashProvidedByUsedInInvestmentActivities	投資活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-2517000000
+jppfs_cor:NetCashProvidedByUsedInInvestmentActivities	投資活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		-2715000
+jppfs_cor:NetCashProvidedByUsedInInvestmentActivities	投資活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	-441000000
+jppfs_cor:NetIncreaseDecreaseInShortTermLoansPayableFinCF	短期借入金の純増減額（△は減少）、財務活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		11589000
+jppfs_cor:NetIncreaseDecreaseInShortTermLoansPayableFinCF	短期借入金の純増減額（△は減少）、財務活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	1882000000
+jppfs_cor:NetIncreaseDecreaseInShortTermLoansPayableFinCF	短期借入金の純増減額（△は減少）、財務活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		1814000
+jppfs_cor:NetIncreaseDecreaseInShortTermLoansPayableFinCF	短期借入金の純増減額（△は減少）、財務活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	295000000
+jpcrp090300-ssr_E05951-000:ProceedsFromIssuanceOfNewSharesInvCF		Prior1InterimDuration	前中間期	その他	期間	USD		－
+jpcrp090300-ssr_E05951-000:ProceedsFromIssuanceOfNewSharesInvCF		Prior1InterimDuration	前中間期	その他	期間	JPY	円	－
+jpcrp090300-ssr_E05951-000:ProceedsFromIssuanceOfNewSharesInvCF		InterimDuration	当中間期	その他	期間	USD		584000
+jpcrp090300-ssr_E05951-000:ProceedsFromIssuanceOfNewSharesInvCF		InterimDuration	当中間期	その他	期間	JPY	円	95000000
+jpcrp090300-ssr_E05951-000:ExpensesOfFinanceLeaseObligationsInvCF		Prior1InterimDuration	前中間期	その他	期間	USD		-68000
+jpcrp090300-ssr_E05951-000:ExpensesOfFinanceLeaseObligationsInvCF		Prior1InterimDuration	前中間期	その他	期間	JPY	円	-11000000
+jpcrp090300-ssr_E05951-000:ExpensesOfFinanceLeaseObligationsInvCF		InterimDuration	当中間期	その他	期間	USD		-74000
+jpcrp090300-ssr_E05951-000:ExpensesOfFinanceLeaseObligationsInvCF		InterimDuration	当中間期	その他	期間	JPY	円	-12000000
+jppfs_cor:NetCashProvidedByUsedInFinancingActivities	財務活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	USD		11522000
+jppfs_cor:NetCashProvidedByUsedInFinancingActivities	財務活動によるキャッシュ・フロー	Prior1InterimDuration	前中間期	連結	期間	JPY	円	1871000000
+jppfs_cor:NetCashProvidedByUsedInFinancingActivities	財務活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	USD		2324000
+jppfs_cor:NetCashProvidedByUsedInFinancingActivities	財務活動によるキャッシュ・フロー	InterimDuration	当中間期	連結	期間	JPY	円	377000000
+jppfs_cor:EffectOfExchangeRateChangeOnCashAndCashEquivalents	現金及び現金同等物に係る換算差額	Prior1InterimDuration	前中間期	連結	期間	USD		-242000
+jppfs_cor:EffectOfExchangeRateChangeOnCashAndCashEquivalents	現金及び現金同等物に係る換算差額	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-39000000
+jppfs_cor:EffectOfExchangeRateChangeOnCashAndCashEquivalents	現金及び現金同等物に係る換算差額	InterimDuration	当中間期	連結	期間	USD		36000
+jppfs_cor:EffectOfExchangeRateChangeOnCashAndCashEquivalents	現金及び現金同等物に係る換算差額	InterimDuration	当中間期	連結	期間	JPY	円	6000000
+jppfs_cor:NetIncreaseDecreaseInCashAndCashEquivalents	現金及び現金同等物の増減額（△は減少）	Prior1InterimDuration	前中間期	連結	期間	USD		-5287000
+jppfs_cor:NetIncreaseDecreaseInCashAndCashEquivalents	現金及び現金同等物の増減額（△は減少）	Prior1InterimDuration	前中間期	連結	期間	JPY	円	-859000000
+jppfs_cor:NetIncreaseDecreaseInCashAndCashEquivalents	現金及び現金同等物の増減額（△は減少）	InterimDuration	当中間期	連結	期間	USD		-1859000
+jppfs_cor:NetIncreaseDecreaseInCashAndCashEquivalents	現金及び現金同等物の増減額（△は減少）	InterimDuration	当中間期	連結	期間	JPY	円	-302000000
+jppfs_cor:CashAndCashEquivalents	現金及び現金同等物の残高	Prior2YearInstant	前々期末	連結	時点	USD		9180000
+jppfs_cor:CashAndCashEquivalents	現金及び現金同等物の残高	Prior2YearInstant	前々期末	連結	時点	JPY	円	1491000000
+jppfs_cor:CashAndCashEquivalents	現金及び現金同等物の残高	Prior1YearInstant	前期末	連結	時点	USD		3079000
+jppfs_cor:CashAndCashEquivalents	現金及び現金同等物の残高	Prior1YearInstant	前期末	連結	時点	JPY	円	500000000
+jppfs_cor:CashAndCashEquivalents	現金及び現金同等物の残高	Prior1InterimInstant	前中間期末	連結	時点	USD		3893000
+jppfs_cor:CashAndCashEquivalents	現金及び現金同等物の残高	Prior1InterimInstant	前中間期末	連結	時点	JPY	円	632000000
+jppfs_cor:CashAndCashEquivalents	現金及び現金同等物の残高	InterimInstant	当中間期末	連結	時点	USD		1220000
+jppfs_cor:CashAndCashEquivalents	現金及び現金同等物の残高	InterimInstant	当中間期末	連結	時点	JPY	円	198000000
+jpdei_cor:NumberOfSubmissionDEI	提出回数、DEI	FilingDateInstant	提出日時点	その他	時点	pure		1
+jpcrp_cor:Type1SemiAnnualConsolidatedBalanceSheetTextBlock	第一種中間連結貸借対照表 [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	①【中間連結貸借対照表】          前連結会計年度2025年12月31日(単位：千米ドル)前連結会計年度2025年12月31日(単位：百万円)当中間連結会計期間末2026年６月30日(単位：千米ドル)当中間連結会計期間末2026年６月30日(単位：百万円)資産の部     流動資産      現金及び預金3,0795001,220198  売掛金※1 4086636159  未収入金2003218330  その他2333816126  流動資産合計3,9206371,926313 固定資産      有形固定資産       建物及び構築物5308651784    減価償却累計額△376△61△443△72    建物及び構築物（純額）153257412   工具、器具及び備品1853011519    減価償却累計額△175△28△109△18    工具、器具及び備品（純額）11261   有形固定資産合計164278113  投資その他の資産       投資有価証券16,5072,68113,6772,221   関係会社株式8,6861,4118,7071,414   投資その他の資産合計※1 25,1934,09122,3843,635  固定資産合計25,3574,11822,4643,648 資産合計29,2774,75424,3903,961             前連結会計年度2025年12月31日(単位：千米ドル)前連結会計年度2025年12月31日(単位：百万円)当中間連結会計期間末2026年６月30日(単位：千米ドル)当中間連結会計期間末2026年６月30日(単位：百万円)負債の部     流動負債      買掛金447386  マルチ・シリーズBTCボンド-第1回6,4911,0546,4581,049  短期借入金9,7091,57711,9811,946  未払金2,6784352,300374  未払費用1,4732391,804293  その他1762912220  流動負債合計20,5723,34122,7043,687 固定負債      長期借入金759123777126  固定負債合計759123777126 負債合計21,3303,46423,4813,813純資産の部     株主資本      資本金2,3343792,350382  資本剰余金489,38279,471489,95179,563  利益剰余金△446,272△72,470△448,383△72,813  株主資本合計45,4447,38043,9197,132 その他の包括利益累計額      為替換算調整勘定△34,748△5,643△34,714△5,637  その他有価証券評価差額金△2,832△460△8,377△1,360  評価・換算差額等合計△37,580△6,103△43,091△6,997 新株予約権82138013 非支配株主持分---- 純資産合計7,9471,290909148負債純資産合計29,2774,75424,3903,961  
+jpcrp_cor:Type1SemiAnnualConsolidatedStatementOfIncomeTextBlock	第一種中間連結損益計算書 [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	【中間連結損益計算書】          前中間連結会計期間自 2025年１月１日至 2025年６月30日(単位：千米ドル)前中間連結会計期間自 2025年１月１日至 2025年６月30日(単位：百万円)当中間連結会計期間自 2026年１月１日至 2026年６月30日(単位：千米ドル)当中間連結会計期間自 2026年１月１日至 2026年６月30日(単位：百万円)売上高4857947477売上原価3305430549売上総利益1562516927販売費及び一般管理費     役員報酬2003220032 給料及び手当2574223839 広告宣伝費617312 減価償却費82138113 貸倒引当金繰入額--△3△0 支払手数料798130818133 地代家賃335335 その他2153517428 販売費及び一般管理費合計1,5912581,614262営業損失（△）△1,435△233△1,445△235営業外収益     受取利息及び配当金109516 持分法による投資利益539213 為替差益468112 営業外収益合計1001612721営業外費用     支払利息14724778126 営業外費用合計14724778126経常損失（△）△1,482△241△2,096△340税金等調整前中間純損失（△）△1,482△241△2,096△340法人税、住民税及び事業税10152法人税等合計10152中間純損失（△）△1,482△241△2,111△343親会社株主に帰属する中間純損失（△)△1,482△241△2,111△343  
+jpcrp_cor:Type1SemiAnnualConsolidatedStatementOfComprehensiveIncomeTextBlock	第一種中間連結包括利益計算書 [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	 【中間連結包括利益計算書】          前中間連結会計期間自 2025年１月１日至 2025年６月30日(単位：千米ドル)前中間連結会計期間自 2025年１月１日至 2025年６月30日(単位：百万円)当中間連結会計期間自 2026年１月１日至 2026年６月30日(単位：千米ドル)当中間連結会計期間自 2026年１月１日至 2026年６月30日(単位：百万円)中間純損失（△）△1,482△241△2,111△343その他の包括利益     為替換算調整勘定△325△53346 その他有価証券評価差額金935152△5,545△900 その他の包括利益合計61099△5,511△895包括利益△872△142△7,622△1,238（内訳）     親会社株主に係る包括利益△872△142△7,622△1,238 非支配株主に係る包括利益----  
+jpcrp_cor:Type1SemiAnnualConsolidatedStatementOfCashFlowsTextBlock	第一種中間連結キャッシュ・フロー計算書 [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	 ③【中間連結キャッシュ・フロー計算書】          前中間連結会計期間自 2025年１月１日至 2025年６月30日(単位：千米ドル)前中間連結会計期間自 2025年１月１日至 2025年６月30日(単位：百万円)当中間連結会計期間自 2026年１月１日至 2026年６月30日(単位：千米ドル)当中間連結会計期間自 2026年１月１日至 2026年６月30日(単位：百万円)営業活動によるキャッシュ・フロー     税金等調整前中間純損失（△）△1,482△241△2,096△340 減価償却費95158213 受取利息及び受取配当金△1△0△0△0 支払利息14724778126 為替差損益（△は益）△46△8△122△20 持分法による投資損益（△は益）△53△9△21△3 貸倒引当金繰入額--△3△0 売上債権の増減額（△は増加）91508 仕入債務の増減額（△は減少）173△7△1 その他の流動資産の増減額（△は増加）322528814 その他の流動負債の増減額（△は減少）△66△11△28△5 小計△1,060△172△1,277△207 利息の支払額--△209△34 ファイナンス・リース利息の支払額△7△1△3△0 法人税等の支払額又は還付額（△は支払）△0△0△15△2 営業活動によるキャッシュ・フロー△1,066△173△1,504△244投資活動によるキャッシュ・フロー     利息及び配当金の受取額20-- 有形固定資産の取得による支出△1△0-- 投資有価証券の取得△15,501△2,517△2,715△441 投資活動によるキャッシュ・フロー△15,501△2,517△2,715△441財務活動によるキャッシュ・フロー     短期借入金の純増減額（△は減少）11,5891,8821,814295 新株発行による収入--58495 ファイナンス・リース債務の支出△68△11△74△12 財務活動によるキャッシュ・フロー11,5221,8712,324377現金及び現金同等物に係る換算差額△242△39366現金及び現金同等物の増減額（△は減少）△5,287△859△1,859△302現金及び現金同等物の期首残高9,1801,4913,079500現金及び現金同等物の期末残高3,8936321,220198  
+jpdei_cor:EDINETCodeDEI	EDINETコード、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	E05951
+jpdei_cor:FundCodeDEI	ファンドコード、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:SecurityCodeDEI	証券コード、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	93990
+jpdei_cor:FilerNameInJapaneseDEI	提出者名（日本語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	ビート・ホールディングス・リミテッド
+jpdei_cor:FilerNameInEnglishDEI	提出者名（英語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	Beat Holdings Limited
+jpdei_cor:FundNameInJapaneseDEI	ファンド名称（日本語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:FundNameInEnglishDEI	ファンド名称（英語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:CabinetOfficeOrdinanceDEI	府令、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	企業内容等の開示に関する内閣府令
+jpdei_cor:DocumentTypeDEI	様式、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	第九号の三様式
+jpdei_cor:AccountingStandardsDEI	会計基準、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	Japan GAAP
+jpdei_cor:WhetherConsolidatedFinancialStatementsArePreparedDEI	連結決算の有無、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	true
+jpdei_cor:IndustryCodeWhenConsolidatedFinancialStatementsArePreparedInAccordanceWithIndustrySpecificRegulationsDEI	別記事業（連結）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	cte
+jpdei_cor:IndustryCodeWhenFinancialStatementsArePreparedInAccordanceWithIndustrySpecificRegulationsDEI	別記事業（個別）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:CurrentFiscalYearStartDateDEI	当事業年度開始日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2026-01-01
+jpdei_cor:CurrentPeriodEndDateDEI	当会計期間終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2026-06-30
+jpdei_cor:TypeOfCurrentPeriodDEI	当会計期間の種類、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	HY
+jpdei_cor:CurrentFiscalYearEndDateDEI	当事業年度終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2026-12-31
+jpdei_cor:PreviousFiscalYearStartDateDEI	前事業年度開始日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2025-01-01
+jpdei_cor:ComparativePeriodEndDateDEI	比較対象会計期間終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2025-06-30
+jpdei_cor:PreviousFiscalYearEndDateDEI	前事業年度終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2025-12-31
+jpdei_cor:NextFiscalYearStartDateDEI	次の事業年度開始日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:EndDateOfQuarterlyOrSemiAnnualPeriodOfNextFiscalYearDEI	次の中間期の会計期間終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:AmendmentFlagDEI	訂正の有無、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	false
+jpdei_cor:IdentificationOfDocumentSubjectToAmendmentDEI	訂正対象書類の書類管理番号、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:ReportAmendmentFlagDEI	記載事項訂正のフラグ、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	false
+jpdei_cor:XBRLAmendmentFlagDEI	XBRL訂正のフラグ、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	false

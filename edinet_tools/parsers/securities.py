@@ -1015,11 +1015,15 @@ def _extract_dei_block(csv_files) -> dict:
     }
 
 
+# Integer fields that are not amounts of money (no unit recorded in `units`).
+_NON_MONETARY_FIELDS = frozenset({'num_employees'})
+
+
 def _extract_financials(csv_files, standard, is_consolidated):
     """Every integer financial field, resolved from the tier tables.
-    Returns (values, sources, contexts) — field -> winning element id and
-    the context it was read at."""
-    out, sources, contexts = {}, {}, {}
+    Returns (values, sources, contexts, units) — field -> winning element
+    id, the context it was read at, and (monetary fields) its unit id."""
+    out, sources, contexts, units = {}, {}, {}, {}
 
     def fin(name, tiers, period):
         hit = resolve_tiers(csv_files, tiers, standard=standard,
@@ -1028,6 +1032,8 @@ def _extract_financials(csv_files, standard, is_consolidated):
         if hit is not None:
             sources[name] = hit.element_id
             contexts[name] = hit.context_id
+            if name not in _NON_MONETARY_FIELDS:
+                units[name] = hit.unit_id
 
     for field_name, tiers in _DURATION_TIERS.items():
         fin(field_name, tiers, 'CurrentYearDuration')
@@ -1035,7 +1041,7 @@ def _extract_financials(csv_files, standard, is_consolidated):
         fin(f'prior_{field_name}', _DURATION_TIERS[field_name], 'Prior1YearDuration')
     for field_name, tiers in _INSTANT_TIERS.items():
         fin(field_name, tiers, 'CurrentYearInstant')
-    return out, sources, contexts
+    return out, sources, contexts, units
 
 
 def _extract_per_share_block(csv_files, standard, is_consolidated):
@@ -1152,7 +1158,8 @@ def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_t
     standard = dei['accounting_standard']
     is_consolidated = dei['is_consolidated']
 
-    financials, sources, contexts = _extract_financials(csv_files, standard, is_consolidated)
+    financials, sources, contexts, units = _extract_financials(
+        csv_files, standard, is_consolidated)
     per_share, provenance, per_share_sources, per_share_contexts = _extract_per_share_block(
         csv_files, standard, is_consolidated)
 
@@ -1183,6 +1190,7 @@ def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_t
         **per_share,
         source_elements={**sources, **per_share_sources},
         source_contexts={**contexts, **per_share_contexts},
+        units=units,
 
         # Segments (v0.7.0+)
         segments=segments,

@@ -31,3 +31,11 @@ S100MHAZ  Doc 140 quarterly report, Q2 to August 2021, IFRS, parent-only: tags t
 S100M4N0  Doc 140 quarterly report, Q1 to June 2021, IFRS, consolidated.
 S100X2FP  Doc 160 semi-annual report, half year to September 2025, US GAAP.
 S100YV2R  Doc 160 semi-annual report, half year to June 2026, IFRS.
+
+Foreign-currency filers, type=1 only (downloaded 2026-09-30, unmodified, full packages); the
+matching CSVs are tests/fixtures/semi_annual (EDINET's type=5 conversion, full, unfiltered):
+S100YW89  Doc 160 semi-annual report, half year to June 2026, J-GAAP: every statement fact
+          tagged twice at the same context, USD then JPY. Its inline header carries a DOCTYPE
+          declaration, which the inline reader refuses; the instance reads.
+S100YUQZ  Doc 160 semi-annual report, half year to June 2026, IFRS: the statements in USD only,
+          the highlights table in USD and JPY.
