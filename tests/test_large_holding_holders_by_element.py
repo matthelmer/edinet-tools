@@ -201,3 +201,62 @@ def test_item_3_stock_is_counted_in_stock_lines_held():
     )
     assert (r.joint_holders[0].stock_lines_held, r.joint_holders[0].shares_held) == (1250, 1250)
     assert (r.stock_lines_held, r.shares_held) == (1250, 1250)
+
+
+PURPOSE = "jplvh_cor:PurposeOfHolding"
+PROPOSAL = "jplvh_cor:ActOfMakingImportantProposalEtc"
+
+
+@pytest.mark.parametrize("source", SOURCES)
+def test_s100yrdm_each_holder_states_its_own_purpose(source):
+    r = parsed("S100YRDM", source)
+    p1, p2, p3 = (h.purpose for h in r.joint_holders)
+    assert p1.startswith("投資及び経営陣に対する経営の助言") and "ニッポン・アクティブ・バリュー・ファンド" in p1
+    assert p2.startswith("投資及び経営陣に対する経営の助言") and "エヌエーブイエフ" in p2
+    assert p3.startswith("提出者は、発行者の株価が過小評価されており")
+    assert [h.important_proposal for h in r.joint_holders] == ["上記（2）保有目的に記載のとおり。"] * 3
+    # the report-level purpose stays the primary filer's
+    assert r.purpose == p1
+
+
+@pytest.mark.parametrize("source", SOURCES)
+def test_s100yd3h_each_holder_states_its_own_purpose(source):
+    r = parsed("S100YD3H", source)
+    purposes = [h.purpose for h in r.joint_holders]
+    assert "ニッポン・アクティブ・バリュー・ファンド" in purposes[0]
+    assert "エヌエーブイエフ" in purposes[1]
+    assert purposes[2].startswith("提出者は、")
+    assert len(set(purposes)) == 3
+
+
+@pytest.mark.parametrize("source", SOURCES)
+def test_s100y8gb_a_holder_that_states_no_purpose_gives_none(source):
+    first, second = parsed("S100Y8GB", source).joint_holders
+    assert first.purpose.startswith("株主価値向上に資する、資本政策及びコーポレートガバナンス")
+    assert second.purpose is None  # filed as 「－」
+    assert (first.important_proposal, second.important_proposal) == (None, None)  # 「該当なし」
+
+
+def test_holder_purpose_is_read_in_the_holders_own_context():
+    r = _lh(
+        [
+            (PURPOSE, H1, "  純投資  "),
+            (PURPOSE, H2, "経営参加"),
+            (PROPOSAL, H2, "株主提案を行う予定"),
+        ]
+    )
+    h1, h2 = r.joint_holders
+    assert (h1.purpose, h1.important_proposal) == ("純投資", None)
+    assert (h2.purpose, h2.important_proposal) == ("経営参加", "株主提案を行う予定")
+
+
+def test_holder_purpose_is_left_out_of_equality_and_hashing():
+    from dataclasses import fields, replace
+
+    from edinet_tools.parsers.large_holding import JointHolder
+
+    by_name = {f.name: f for f in fields(JointHolder)}
+    for name in ("purpose", "important_proposal"):
+        assert not by_name[name].compare and not by_name[name].hash
+    h = parsed("S100Y8GB", "csv").joint_holders[0]
+    assert replace(h, purpose="x", important_proposal="y") == h

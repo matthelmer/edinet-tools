@@ -143,6 +143,13 @@ class JointHolder:
     # Excluded from hashing and equality so JointHolder stays hashable.
     text_blocks: dict = field(default_factory=dict, hash=False, compare=False)
 
+    # The holder's own 保有目的 (PurposeOfHolding) and 重要提案行為等
+    # (ActOfMakingImportantProposalEtc), read in its own context as plain strings; None
+    # when the holder states none (「－」, 「該当なし」) (0.9.0). Narrative like text_blocks,
+    # so likewise excluded from hashing and equality: a holder is equal by identity and counts.
+    purpose: str | None = field(default=None, hash=False, compare=False)
+    important_proposal: str | None = field(default=None, hash=False, compare=False)
+
 
 @dataclass
 class LargeHoldingReport(ParsedReport):
@@ -459,6 +466,8 @@ _HOLDER_FIELDS: dict[str, tuple[tuple[str, ...], type]] = {
     'shares_held': (('jplvh_cor:TotalNumberOfStocksEtcHeld',), int),
     'warrants_held': (('jplvh_cor:SubscriptionRightsToSharesArticle27233MainClause',), int),
     'convertible_bonds_held': (('jplvh_cor:ConvertibleBondsArticle27233MainClause',), int),
+    'purpose': ((ELEMENT_MAP['purpose'],), str),
+    'important_proposal': ((ELEMENT_MAP['important_proposal'],), str),
 }
 _HOLDER_ELEMENTS = frozenset(
     [e for elements, _t in _HOLDER_FIELDS.values() for e in elements] + list(STOCK_LINE_ELEMENTS)
