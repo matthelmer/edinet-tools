@@ -551,9 +551,25 @@ class Tier:
 
 class TierHit(NamedTuple):
     """A resolved tier: the value (int in 'financial' mode, str in 'string'
-    mode) plus the winning element id — free per-field provenance."""
+    mode), the winning element id and the context id the fact was read at —
+    free per-field provenance. A suffix tier reads the bare period, so its
+    context is the period; a context-blind read (period=None) reports the
+    matched row's own context."""
     value: Any
     element_id: str
+    context_id: Optional[str] = None
+
+
+def _value_at(csv_files, element_id, pattern):
+    """extract_value for ONE context pattern (or context-blind when None),
+    returning (value, context_id) — the same first-row-wins scan."""
+    if pattern is not None:
+        return extract_value(csv_files, element_id, context_patterns=[pattern]), pattern
+    for csv_file in csv_files:
+        for entry in csv_file.get('data', []):
+            if entry.get('要素ID') == element_id:
+                return unescape_entities(entry.get('値')), entry.get('コンテキストID')
+    return None, None
 
 
 def _tier_in_scope(tier: Tier, standard: Optional[str]) -> bool:
@@ -581,13 +597,12 @@ def _resolve_financial_tier(csv_files, tier, patterns):
     """extract_financial's within-call semantics: context level outer,
     element chain inner, first coerce-truthy string commits the tier."""
     for pattern in patterns:
-        context_patterns = [pattern] if pattern is not None else None
         for elem in tier.elements:
-            s = coerce_numeric_value(
-                extract_value(csv_files, elem, context_patterns=context_patterns))
+            raw, context = _value_at(csv_files, elem, pattern)
+            s = coerce_numeric_value(raw)
             if s:
-                return s, elem
-    return None, None
+                return s, elem, context
+    return None, None, None
 
 
 def resolve_tiers(
@@ -651,26 +666,29 @@ def resolve_tiers(
                 v = parse_int(s)
                 if v is None:
                     continue  # parse failure advances the waterfall
-                return TierHit(v, elem)
-            return TierHit(s, elem)
+                return TierHit(v, elem, period)
+            return TierHit(s, elem, period)
 
         if mode == 'financial':
-            s, elem = _resolve_financial_tier(csv_files, tier, patterns)
+            s, elem, context = _resolve_financial_tier(csv_files, tier, patterns)
             if s is None:
                 continue
             v = parse_int(s)
             if v is None:
                 continue  # parse failure advances the waterfall
-            return TierHit(v, elem)
+            return TierHit(v, elem, context)
 
-        # string mode
+        # string mode: extract_value over the full pattern list, i.e. the
+        # first pattern with any row for the element (a marker included).
         for elem in tier.elements:
-            s = extract_value(
-                csv_files, elem,
-                context_patterns=patterns if period is not None else None)
+            s, context = None, None
+            for pattern in patterns:
+                s, context = _value_at(csv_files, elem, pattern)
+                if s is not None:
+                    break
             candidate = coerce_numeric_value(s) if coerce else s
             if candidate:
-                return TierHit(candidate, elem)
+                return TierHit(candidate, elem, context)
 
     return None
 

@@ -9,15 +9,23 @@ PROCESSING PHILOSOPHY: Store raw XBRL values faithfully. No interpretation.
 - Ratios as decimals (0.086 = 8.6%)
 - Downstream consumers determine meaning
 """
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from decimal import Decimal
 from datetime import date
 
 
+from ._standard_policy import (
+    IFRS,
+    JGAAP,
+    USGAAP,
+    FieldPolicy as _FieldPolicy,
+    element_standard as _element_standard,
+    own_standard_stage as _own_standard_stage,
+    with_own_standard_first as _with_own_standard_first,
+)
 from .base import ParsedReport
 from .extraction import (
     Tier,
-    _tier_in_scope,
     resolve_tiers,
     get_dei,
     extract_csv_from_zip,
@@ -479,13 +487,12 @@ class SecuritiesReport(ParsedReport):
     # residual miss, so an empty `segments` is not silently read as single-segment.
     segments_extraction_incomplete: bool = False
 
-    # Provenance (v0.9.0+): field name -> the element its value was read from
-    # (the winning tier's element id), for every financial field the tier
-    # tables and the per-share block resolved, and for the IFRS summary trio
-    # (its fixed element) when it holds a value; a field that resolved to
-    # None has no entry. A source element of another standard than
-    # accounting_standard marks a value served by the fallback.
-    source_elements: dict[str, str] = field(default_factory=dict)
+    # Provenance (source_elements / source_contexts, on ParsedReport): every
+    # financial field the tier tables and the per-share block resolved, and
+    # the IFRS summary trio (its fixed element and context) when it holds a
+    # value; a field that resolved to None has no entry. A source element of
+    # another standard than accounting_standard marks a value served by the
+    # fallback.
 
     # Guided errors for the three fields removed by the v0.8.0 ownership-basis
     # split. Not a dataclass field (no type annotation) -- a plain class
@@ -838,34 +845,7 @@ _ROE_LEGACY = (
 # instant fields read CurrentYearInstant.
 # ---------------------------------------------------------------------------
 
-@dataclass(frozen=True)
-class _FieldPolicy:
-    """How one financial field chooses between accounting standards."""
-    concept: str
-    standards: tuple
-    fallback: str
-    neutral: tuple = ()
-
-
-_JG, _IFRS, _US = 'Japan GAAP', 'IFRS', 'US GAAP'
-
-
-def _element_standard(element_id: str) -> str:
-    """The accounting standard an element belongs to, from its taxonomy name:
-    'US GAAP' / 'IFRS' when the local name carries the standard
-    (...USGAAPSummaryOfBusinessResults, ...IFRSSummaryOfBusinessResults,
-    ...IFRS, including filer-local namespaces); 'Japan GAAP' for the jppfs_cor
-    financial-statement taxonomy and the unmarked ...SummaryOfBusinessResults
-    highlights elements; otherwise 'neutral', which a _FieldPolicy must name
-    explicitly (the name alone does not establish neutrality)."""
-    prefix, _, local = element_id.rpartition(':')
-    if 'USGAAP' in local:
-        return _US
-    if local.endswith('IFRS') or 'IFRSSummaryOfBusinessResults' in local:
-        return _IFRS
-    if prefix == 'jppfs_cor' or local.endswith('SummaryOfBusinessResults'):
-        return _JG
-    return 'neutral'
+_JG, _IFRS, _US = JGAAP, IFRS, USGAAP
 
 
 def _p(concept, *standards, fallback=None, neutral=()):
@@ -977,48 +957,6 @@ def _field_elements(name: str) -> tuple:
     return tuple(seen)
 
 
-def _with_own_standard_first(legacy: tuple, policy: _FieldPolicy) -> tuple:
-    """A field's resolved tier table: one stage per declared standard, then
-    the legacy waterfall.
-
-    Each stage holds, in legacy order, the legacy tiers' elements of that
-    standard only, scoped to it (standards=(std,)), with no chain of its own:
-    a filing that declares the standard reads its own facts before any other
-    standard's. A legacy tier out of scope for a standard (the 0.7.1
-    operating-income gate) contributes nothing to that standard's stage. A
-    last-resort tier keeps its place after the stage's other tiers but is not
-    deferred past the legacy table (it is the standard's own fact).
-
-    The legacy table follows unchanged: it serves a filing without a declared
-    standard, and, under the 'legacy' fallback, a filing whose own-standard
-    fact is missing. Under 'none' the legacy table is closed to the declared
-    standards, so a missing own fact is an honest None."""
-    if len(policy.standards) < 2:
-        return legacy
-    stage = []
-    ordered = [t for t in legacy if not t.last_resort] + [t for t in legacy if t.last_resort]
-    for std in policy.standards:
-        for tier in ordered:
-            if not _tier_in_scope(tier, std):
-                continue
-            own = tuple(e for e in tier.elements if _element_standard(e) == std)
-            if own:
-                stage.append(Tier(own if len(own) > 1 else own[0], standards=(std,),
-                                  suffix_match=tier.suffix_match))
-    if policy.fallback == 'none':
-        closed = policy.standards
-        legacy = tuple(replace(t, exclude_standards=(t.exclude_standards or ()) + closed)
-                       for t in legacy)
-    return tuple(stage) + legacy
-
-
-def _own_standard_stage(legacy: tuple, policy: _FieldPolicy) -> tuple:
-    """The own-standard stage alone (the per-share fields resolve it with
-    coerce semantics before their legacy scan)."""
-    full = _with_own_standard_first(legacy, policy)
-    return full[:len(full) - len(legacy)]
-
-
 # Resolved tables: own-standard stage, then the legacy waterfall.
 _DURATION_TIERS = {name: _with_own_standard_first(tiers, _STANDARD_POLICY[name])
                    for name, tiers in _DURATION_LEGACY.items()}
@@ -1061,8 +999,9 @@ def _extract_dei_block(csv_files) -> dict:
 
 def _extract_financials(csv_files, standard, is_consolidated):
     """Every integer financial field, resolved from the tier tables.
-    Returns (values, sources) — sources maps field -> winning element id."""
-    out, sources = {}, {}
+    Returns (values, sources, contexts) — field -> winning element id and
+    the context it was read at."""
+    out, sources, contexts = {}, {}, {}
 
     def fin(name, tiers, period):
         hit = resolve_tiers(csv_files, tiers, standard=standard,
@@ -1070,6 +1009,7 @@ def _extract_financials(csv_files, standard, is_consolidated):
         out[name] = hit.value if hit else None
         if hit is not None:
             sources[name] = hit.element_id
+            contexts[name] = hit.context_id
 
     for field_name, tiers in _DURATION_TIERS.items():
         fin(field_name, tiers, 'CurrentYearDuration')
@@ -1077,13 +1017,14 @@ def _extract_financials(csv_files, standard, is_consolidated):
         fin(f'prior_{field_name}', _DURATION_TIERS[field_name], 'Prior1YearDuration')
     for field_name, tiers in _INSTANT_TIERS.items():
         fin(field_name, tiers, 'CurrentYearInstant')
-    return out, sources
+    return out, sources, contexts
 
 
 def _extract_per_share_block(csv_files, standard, is_consolidated):
     """Per-share metrics, ratios, and the independent IFRS summary trio.
-    Returns (values, provenance, sources) — provenance feeds apply_validation;
-    sources maps field -> winning element id (source_elements).
+    Returns (values, provenance, sources, contexts) — provenance feeds
+    apply_validation; sources / contexts map field -> winning element id and
+    its context (source_elements / source_contexts).
 
     Each per-share / ratio field resolves its own-standard stage first with
     coerce semantics (a marker-valued own-standard fact falls through), then
@@ -1100,11 +1041,13 @@ def _extract_per_share_block(csv_files, standard, is_consolidated):
     values = {}
     provenance = {}
     sources = {}
+    contexts = {}
 
     def put(name, hit, parse):
         values[name] = parse(hit.value) if hit else None
         if values[name] is not None:
             sources[name] = hit.element_id
+            contexts[name] = hit.context_id
 
     put('net_assets_per_share',
         string_hit(_NAV_OWN, _NAV_LEGACY, 'CurrentYearInstant', True), parse_decimal)
@@ -1132,6 +1075,7 @@ def _extract_per_share_block(csv_files, standard, is_consolidated):
     values['ifrs_summary_basic_eps'] = parse_decimal(ifrs_eps_str)
     if values['ifrs_summary_basic_eps'] is not None:
         sources['ifrs_summary_basic_eps'] = ELEMENT_MAP['earnings_per_share_ifrs']
+        contexts['ifrs_summary_basic_eps'] = 'CurrentYearDuration'
 
     ifrs_roe_str = coerce_numeric_value(extract_value(
         csv_files, ELEMENT_MAP['roe_ifrs'],
@@ -1140,6 +1084,7 @@ def _extract_per_share_block(csv_files, standard, is_consolidated):
     values['ifrs_summary_roe'] = parse_decimal(ifrs_roe_str)
     if values['ifrs_summary_roe'] is not None:
         sources['ifrs_summary_roe'] = ELEMENT_MAP['roe_ifrs']
+        contexts['ifrs_summary_roe'] = 'CurrentYearDuration'
 
     ifrs_bps_str = coerce_numeric_value(extract_value(
         csv_files, ELEMENT_MAP['bps_ifrs'],
@@ -1148,8 +1093,9 @@ def _extract_per_share_block(csv_files, standard, is_consolidated):
     values['ifrs_summary_bps'] = parse_decimal(ifrs_bps_str)
     if values['ifrs_summary_bps'] is not None:
         sources['ifrs_summary_bps'] = ELEMENT_MAP['bps_ifrs']
+        contexts['ifrs_summary_bps'] = 'CurrentYearInstant'
 
-    return values, provenance, sources
+    return values, provenance, sources, contexts
 
 
 def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_type_code=None) -> SecuritiesReport:
@@ -1188,8 +1134,8 @@ def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_t
     standard = dei['accounting_standard']
     is_consolidated = dei['is_consolidated']
 
-    financials, sources = _extract_financials(csv_files, standard, is_consolidated)
-    per_share, provenance, per_share_sources = _extract_per_share_block(
+    financials, sources, contexts = _extract_financials(csv_files, standard, is_consolidated)
+    per_share, provenance, per_share_sources, per_share_contexts = _extract_per_share_block(
         csv_files, standard, is_consolidated)
 
     # Categorize all elements
@@ -1218,6 +1164,7 @@ def parse_securities_report(document=None, *, csv_files=None, doc_id=None, doc_t
         **financials,
         **per_share,
         source_elements={**sources, **per_share_sources},
+        source_contexts={**contexts, **per_share_contexts},
 
         # Segments (v0.7.0+)
         segments=segments,
