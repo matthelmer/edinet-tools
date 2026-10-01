@@ -423,6 +423,24 @@ def test_an_identity_in_one_currency_is_still_checked():
     assert [f.severity for f in flags] == ["annotated"]
 
 
+def test_a_marker_on_the_yen_row_falls_through_to_the_next_element():
+    """The yen fact of an element and context is the one read; when it is a null marker the
+    tier moves to its next element, never to the dollar figure of the same element."""
+    cf = _rows(
+        ("jppfs_cor:NetSales", "CurrentYearDuration", "USD", "10"),
+        ("jppfs_cor:NetSales", "CurrentYearDuration", "JPY", "－"),
+        ("jpigp_cor:RevenueIFRS", "CurrentYearDuration", "JPY", "20"),
+    )
+    hit = resolve_tiers(
+        cf,
+        (Tier(("jppfs_cor:NetSales", "jpigp_cor:RevenueIFRS")),),
+        standard="Japan GAAP",
+        period="CurrentYearDuration",
+        is_consolidated=True,
+    )
+    assert (hit.value, hit.element_id, hit.unit_id) == (20, "jpigp_cor:RevenueIFRS", "JPY")
+
+
 def test_a_context_blind_read_of_a_row_without_a_context_key_returns_its_value():
     cf = [{"filename": "t.csv", "data": [{"要素ID": "x:A", "値": "123"}]}]
     hit = resolve_tiers(
