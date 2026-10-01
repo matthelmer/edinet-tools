@@ -430,3 +430,10 @@ def test_a_file_that_is_not_xml_is_refused_not_a_parse_error():
 def test_an_instance_that_is_not_xml_is_refused_not_a_parse_error():
     with pytest.raises(UnsupportedInlineXBRL, match="not well-formed XML"):
         read_instance(b"<x><y></x>")
+
+
+def test_an_unclosed_doctype_is_named_as_such():
+    with pytest.raises(UnsupportedInlineXBRL, match="unclosed DOCTYPE"):
+        read_inline_xbrl({"a_ixbrl.htm": b'<?xml version="1.0"?><!DOCTYPE html PUBLIC "x"'})
+    with pytest.raises(UnsupportedInlineXBRL, match="internal subset"):
+        read_inline_xbrl({"a_ixbrl.htm": b'<?xml version="1.0"?><!DOCTYPE x [ ]><x/>'})

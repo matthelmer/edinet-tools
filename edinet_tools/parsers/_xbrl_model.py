@@ -246,10 +246,14 @@ _ENTITY_RE = re.compile(r"<!\s*ENTITY", re.IGNORECASE)
 _DOCTYPE_RE = re.compile(r"<!\s*DOCTYPE", re.IGNORECASE)
 
 
+_SUBSET, _UNCLOSED = "with an internal subset", "unclosed"
+
+
 def _doctype_end(text: str, start: int):
-    """The index just past the closing '>' of the DOCTYPE whose name starts at `start`, or None
-    when it carries an internal subset ('[' outside its quoted literals) or never closes (a
-    '<' outside its literals comes first)."""
+    """(index just past the closing '>', None) for the plain DOCTYPE whose name starts at
+    `start`; (None, _SUBSET) when it carries an internal subset ('[' outside its quoted
+    literals); (None, _UNCLOSED) when it never closes (a '<' outside its literals, or the end
+    of the text, comes first)."""
     quote = None
     for i in range(start, len(text)):
         ch = text[i]
@@ -258,11 +262,13 @@ def _doctype_end(text: str, start: int):
                 quote = None
         elif ch in "\"'":
             quote = ch
-        elif ch in "[<":
-            return None
+        elif ch == "[":
+            return None, _SUBSET
+        elif ch == "<":
+            return None, _UNCLOSED
         elif ch == ">":
-            return i + 1
-    return None
+            return i + 1, None
+    return None, _UNCLOSED
 
 
 def _codec(data: bytes):
@@ -295,10 +301,13 @@ def guard_dtd(data: bytes, name: str) -> bytes:
         candidates.append(data.replace(b"\x00", b"").decode("latin-1"))
     for c in candidates:
         for m in _DOCTYPE_RE.finditer(c):
-            if _doctype_end(c, m.end()) is None:
+            end, problem = _doctype_end(c, m.end())
+            if problem == _SUBSET:
                 raise UnsupportedInlineXBRL(
                     f"{name}: a DOCTYPE declaration with an internal subset is refused"
                 )
+            if problem == _UNCLOSED:
+                raise UnsupportedInlineXBRL(f"{name}: an unclosed DOCTYPE declaration is refused")
         if _ENTITY_RE.search(c):
             raise UnsupportedInlineXBRL(f"{name}: an ENTITY declaration is refused")
 
@@ -307,7 +316,7 @@ def guard_dtd(data: bytes, name: str) -> bytes:
         text = data[skip:].decode(codec)
     except UnicodeDecodeError:
         return data
-    spans = [(m.start(), _doctype_end(text, m.end())) for m in _DOCTYPE_RE.finditer(text)]
+    spans = [(m.start(), _doctype_end(text, m.end())[0]) for m in _DOCTYPE_RE.finditer(text)]
     if not spans:
         return data
     for start, end in spans:
