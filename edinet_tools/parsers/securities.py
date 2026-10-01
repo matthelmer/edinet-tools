@@ -358,6 +358,12 @@ class SecuritiesReport(ParsedReport):
     # Income Statement (Current Year)
     net_sales: int | None = None
     operating_income: int | None = None
+    # ordinary_income: 経常利益 for J-GAAP filers. IFRS and US GAAP have no
+    # ordinary-income concept, so for IFRS and US-GAAP filers this field holds
+    # profit before tax as the analogue (IFRS: ProfitLossBeforeTaxIFRS; US
+    # GAAP: the summary's income before income taxes), read on the declared
+    # standard like every other field. prior_ordinary_income is the same,
+    # for the prior year.
     ordinary_income: int | None = None
     # net_income split by ownership basis (v0.8.0+): net_income_owners is
     # attributable to owners of parent (親会社株主に帰属する当期純利益 / IFRS
