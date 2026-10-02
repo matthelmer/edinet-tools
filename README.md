@@ -18,7 +18,8 @@ import edinet_tools
 
 toyota = edinet_tools.entity("7203")
 docs = toyota.documents(days=30)   # requires EDINET_API_KEY (see Configuration)
-report = docs[0].parse()  # → SecuritiesReport, LargeHoldingReport, etc.
+if docs:                            # a quiet month returns an empty list
+    report = docs[0].parse()  # → SecuritiesReport, LargeHoldingReport, etc.
 ```
 
 ## Install
@@ -129,6 +130,7 @@ earnings = toyota.documents(doc_type="120", days=365)
 ### Parsing
 
 ```python
+doc = earnings[0]   # Toyota's annual report, from the example above
 report = doc.parse()
 
 # Securities Report — consolidated financials (J-GAAP, IFRS, US-GAAP)
@@ -200,7 +202,9 @@ from edinet_tools.parsers.xbrl_rows import extract_rows_from_package
 
 files = extract_rows_from_package(zip_bytes, source="xbrl")
 for row in files[0]["data"]:
-    row["要素ID"], row["値"], row["html"], row["decimals"], row["period_end"]
+    row["要素ID"], row["値"], row["html"], row["decimals"]
+    row["period_start"], row["period_end"]   # a fact over a period
+    row["instant"]                           # a fact at a point in time
 ```
 
 On the filings tested, typed fields match across sources apart from the documented differences (the 30,000-character cut, whitespace, and text the CSV drops around angle brackets). The reader uses only the standard library. It refuses what it does not implement with a named error (`UnsupportedInlineXBRL`) rather than guessing.
@@ -210,9 +214,10 @@ On the filings tested, typed fields match across sources apart from the document
 ```python
 from edinet_tools.api import fetch_document
 
-csv_zip = fetch_document("S100ABC")            # XBRL CSV (default)
-pdf = fetch_document("S100ABC", type=2)        # PDF
-filing_zip = fetch_document("S100ABC", type=1) # the filing: inline XBRL, HTML and the .xbrl instance
+doc_id = "S100Y8NY"                           # Toyota's annual report, filed 2026-06-10
+csv_zip = fetch_document(doc_id)              # XBRL CSV (default)
+pdf = fetch_document(doc_id, type=2)          # PDF
+filing_zip = fetch_document(doc_id, type=1)   # the filing: inline XBRL, HTML and the .xbrl instance
 ```
 
 ## Configuration
