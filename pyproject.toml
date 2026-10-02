@@ -8,7 +8,7 @@ version = "0.8.4"
 authors = [
     {name = "Matt Helmer"},
 ]
-description = "Python package for accessing Japanese corporate financial data from EDINET"
+description = "Typed Python parsers for Japan's EDINET filings, read from EDINET's CSV or the filing's own XBRL"
 readme = "README.md"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
@@ -24,7 +24,7 @@ classifiers = [
     "Topic :: Office/Business :: Financial",
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
-keywords = ["finance", "japan", "edinet", "financial-data", "xbrl", "corporate-filings"]
+keywords = ["finance", "japan", "edinet", "financial-data", "xbrl", "inline-xbrl", "ifrs", "corporate-filings"]
 
 dependencies = []
 
@@ -43,6 +43,7 @@ dev = [
 "Homepage" = "https://github.com/matthelmer/edinet-tools"
 "Repository" = "https://github.com/matthelmer/edinet-tools"
 "Bug Reports" = "https://github.com/matthelmer/edinet-tools/issues"
+"Changelog" = "https://github.com/matthelmer/edinet-tools/blob/main/CHANGELOG.md"
 
 
 [tool.setuptools.packages.find]
