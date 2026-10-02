@@ -106,8 +106,9 @@ def csv_drops_angle_text(csv_norm: str, xbrl_norm: str) -> bool:
     """EDINET's CSV conversion mangles literal text in angle brackets inside a text section,
     as if it were a tag. Per "<", followed by non-ASCII text, it drops the whole "<...>"
     segment ("<取締役会>", S100Z59P) or only the "<" ("<参考情報：...>", S100YOXP; an unclosed
-    "<―――損益", S100YSD1; S100YNQE does both in one section). True only when the CSV text is
-    the XBRL text with such edits and nothing else changed; a "<" followed by ASCII (a real
+    "<―――損益", S100YSD1; S100YNQE does both in one section), and the same for a "<" followed
+    by a digit or by ">" ("<77>" and the empty legend "<>", S100Z488; "<0565>", S100TD9S). True only when the CSV text is the XBRL
+    text with such edits and nothing else changed; a "<" followed by an ASCII letter (a real
     HTML tag) is never excused."""
     if csv_norm == xbrl_norm or "<" not in xbrl_norm:
         return False
@@ -128,7 +129,7 @@ def csv_drops_angle_text(csv_norm: str, xbrl_norm: str) -> bool:
             ch = xbrl_norm[i]
             if j < m and csv_norm[j] == ch:
                 nxt.add((i + 1, j + 1))
-            if ch == "<" and i + 1 < n and ord(xbrl_norm[i + 1]) > 127:
+            if ch == "<" and i + 1 < n and (ord(xbrl_norm[i + 1]) > 127 or xbrl_norm[i + 1].isdigit() or xbrl_norm[i + 1] == ">"):
                 nxt.add((i + 1, j))  # the "<" alone dropped
                 close = xbrl_norm.find(">", i + 1)
                 start = i + 1
@@ -418,6 +419,16 @@ def test_csv_drops_angle_text_is_narrow():
     diffs = []
     compare("取締役会は", "<取締役会>取締役会は", "filer_name", diffs)  # not a text path
     assert diffs == [("filer_name", "other")]
+
+
+def test_csv_drops_angle_text_that_starts_with_a_digit():
+    """A tag never starts with a digit and is never empty: EDINET's CSV still drops "<77>" (a leased area in
+    S100Z488's facilities table) and "<0565>" (an area code, S100TD9S's cover page)."""
+    assert csv_drops_angle_text("13711542", "137<77>11542")
+    assert csv_drops_angle_text("28-2121", "<0565>28-2121")
+    assert csv_drops_angle_text("上記中内数は", "上記中<>内数は")  # the empty legend, S100Z488
+    assert not csv_drops_angle_text("137", "137<77>11542")  # more than the brackets
+    assert not csv_drops_angle_text("取締役会は", "<b>取締役会は")  # an ASCII letter is a tag
 
 
 def test_angle_drop_is_capped_at_100_characters():
