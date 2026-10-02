@@ -150,6 +150,22 @@ def csv_was_cut(csv_value: str) -> bool:
     return len(csv_value) >= 29000 and len(csv_value) + 4 * csv_value.count("&") >= CSV_LIMIT
 
 
+def _csv_dash(value):
+    return isinstance(value, str) and value.strip() in ("－", "-")
+
+
+def compare_sections(csv_sections, xbrl_sections, nil, path, diffs):
+    """A holder's (or a context's) text sections. A section the CSV shows as 「－」 and the
+    XBRL marks xsi:nil is left out of the XBRL sections by design: kind 'nil_section'."""
+    for k in set(csv_sections) - set(xbrl_sections):
+        kind = "nil_section" if k in nil and _csv_dash(csv_sections[k]) else "other"
+        diffs.append((f"{path}[{k}]", kind))
+    for k in set(xbrl_sections) - set(csv_sections):
+        diffs.append((f"{path}[{k}]", "other"))
+    for k in set(csv_sections) & set(xbrl_sections):
+        compare(csv_sections[k], xbrl_sections[k], f"{path}[{k}]", diffs, True)
+
+
 def compare(csv_value, xbrl_value, path, diffs, text=False):
     """Record every difference as (path, kind); kind 'other' is a parity failure.
 
@@ -157,6 +173,22 @@ def compare(csv_value, xbrl_value, path, diffs, text=False):
     read from a TextBlock): only there may values differ by whitespace, by the CSV's cut, or by
     literal angle-bracket text the CSV drops.
     Anywhere else (names, codes, dates, numbers) any difference is 'other'."""
+    if type(csv_value).__name__ == "JointHolder" and type(csv_value) is type(xbrl_value):
+        nil = set(xbrl_value.nil_text_blocks)
+        for f in fields(csv_value):
+            a, b = getattr(csv_value, f.name), getattr(xbrl_value, f.name)
+            if f.name == "text_blocks":
+                compare_sections(a, b, nil, f"{path}.text_blocks", diffs)
+            elif f.name == "nil_text_blocks":
+                # the CSV cannot tell nil from a filed dash, so it names none
+                if a:
+                    diffs.append((f"{path}.nil_text_blocks", "other"))
+                for k in b:
+                    if not _csv_dash(csv_value.text_blocks.get(k)):
+                        diffs.append((f"{path}.nil_text_blocks[{k}]", "other"))
+            else:
+                compare(a, b, f"{path}.{f.name}", diffs, text)
+        return
     if is_dataclass(csv_value) and type(csv_value) is type(xbrl_value):
         # walk every field: == would skip fields declared compare=False (JointHolder.text_blocks)
         for f in fields(csv_value):
@@ -255,6 +287,12 @@ def diff_reports(csv_report, xbrl_report, text_elements=frozenset()):
                 is_text = f.name == "text_blocks" or is_text_element(k)
                 compare(a[k], b[k], f"{f.name}[{k}]", diffs, is_text)
             continue
+        if f.name == "text_blocks_by_context":
+            nil = {k for h in xbrl_report.joint_holders for k in h.nil_text_blocks}
+            for ctx in set(a) | set(b):
+                compare_sections(a.get(ctx, {}), b.get(ctx, {}), nil,
+                                 f"text_blocks_by_context[{ctx}]", diffs)
+            continue
         is_text = (
             f.name in texts
             or f.name == "text_blocks_by_context"
@@ -286,9 +324,9 @@ def report_diffs(doc, source="xbrl"):
 # one that disappears, fails the test instead of hiding among the allowed kinds.
 EXPECTED_DIFFS = {
     "S100Y4NW": {"whitespace": 200, "beyond_30000": 4},
-    "S100Y8GB": {"whitespace": 27},
-    "S100YRDM": {"whitespace": 16},
-    "S100YD3H": {"whitespace": 11},
+    "S100Y8GB": {"whitespace": 27, "nil_section": 12},
+    "S100YRDM": {"whitespace": 16, "nil_section": 34},
+    "S100YD3H": {"whitespace": 11, "nil_section": 36},
     "S100YWE2": {"whitespace": 94},
     "S100YO5B": {"whitespace": 207, "beyond_30000": 6},
     "S100YOXP": {"whitespace": 144, "csv_drops_angle_text": 3, "beyond_30000": 3},

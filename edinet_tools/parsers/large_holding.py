@@ -143,6 +143,15 @@ class JointHolder:
     # Excluded from hashing and equality so JointHolder stays hashable.
     text_blocks: dict = field(default_factory=dict, hash=False, compare=False)
 
+    # Keys of the holder's text sections filed as xsi:nil: no text, which the CSV shows as
+    # 「－」. Known only on the XBRL sources (the CSV cannot tell nil from a filed dash);
+    # these keys are never in text_blocks (0.9.0).
+    nil_text_blocks: tuple = field(default=(), hash=False, compare=False)
+
+    # The holder's own plain "...NA" statements (key -> text), e.g. 「該当なし。」 for its
+    # collateral agreements, where the matching text section is nil (0.9.0).
+    not_applicable: dict = field(default_factory=dict, hash=False, compare=False)
+
     # The holder's own 保有目的 (PurposeOfHolding) and 重要提案行為等
     # (ActOfMakingImportantProposalEtc), read in its own context as plain strings; None
     # when the holder states none (「－」, 「該当なし」) (0.9.0). Narrative like text_blocks,
@@ -514,10 +523,32 @@ def _text_blocks_by_context(csv_files: list) -> dict[str, dict[str, str]]:
         for row in csv_file.get('data', []) or []:
             elem_id = row.get('要素ID', '') or ''
             ctx = row.get('コンテキストID', '') or ''
-            if 'TextBlock' not in elem_id or _holder_key(ctx) is None or row.get('値') is None:
+            if ('TextBlock' not in elem_id or _holder_key(ctx) is None or row.get('値') is None
+                    or row.get('nil') is True):
                 continue
             out.setdefault(ctx, {}).setdefault(
                 _text_block_key(elem_id), unescape_entities(row.get('値')))
+    return out
+
+
+def _holder_nil_and_na(csv_files: list) -> dict[str, tuple[list[str], dict[str, str]]]:
+    """{holder context ID: (text-section keys filed as xsi:nil, {"...NA" key: statement})}.
+    A nil fact carries nil=True on the XBRL rows; CSV rows carry no such flag."""
+    out: dict[str, tuple[list[str], dict[str, str]]] = {}
+    for csv_file in csv_files or []:
+        for row in csv_file.get('data', []) or []:
+            elem_id = row.get('要素ID', '') or ''
+            ctx = row.get('コンテキストID', '') or ''
+            if _holder_key(ctx) is None:
+                continue
+            key = _text_block_key(elem_id)
+            nil = row.get('nil') is True
+            if 'TextBlock' in elem_id and nil:
+                keys = out.setdefault(ctx, ([], {}))[0]
+                if key not in keys:
+                    keys.append(key)
+            elif 'TextBlock' not in elem_id and key.endswith('NA') and not nil and row.get('値'):
+                out.setdefault(ctx, ([], {}))[1].setdefault(key, unescape_entities(row.get('値')))
     return out
 
 
@@ -561,6 +592,7 @@ def _extract_joint_holders(csv_files: list, by_context: dict | None = None) -> l
 
     if by_context is None:
         by_context = _text_blocks_by_context(csv_files)
+    nil_and_na = _holder_nil_and_na(csv_files)
     holders = []
     for i, key in enumerate(sorted(raw), start=1):
         fields: dict = {}
@@ -575,10 +607,18 @@ def _extract_joint_holders(csv_files: list, by_context: dict | None = None) -> l
             _normalize_holder_value(raw[key].get(e), int) for e in STOCK_LINE_ELEMENTS
         )
         blocks: dict[str, str] = {}
+        nil_keys: list[str] = []
+        na: dict[str, str] = {}
         for ctx in contexts[key]:
             for k, v in by_context.get(ctx, {}).items():
                 blocks.setdefault(k, v)
-        holders.append(JointHolder(holder_number=i, text_blocks=blocks, **fields))
+            ctx_nil, ctx_na = nil_and_na.get(ctx, ([], {}))
+            nil_keys += [k for k in ctx_nil if k not in nil_keys and k not in blocks]
+            for k, v in ctx_na.items():
+                na.setdefault(k, v)
+        holders.append(JointHolder(holder_number=i, text_blocks=blocks,
+                                   nil_text_blocks=tuple(k for k in nil_keys if k not in blocks),
+                                   not_applicable=na, **fields))
     return holders
 
 

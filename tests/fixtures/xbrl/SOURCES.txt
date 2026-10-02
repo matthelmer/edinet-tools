@@ -39,3 +39,6 @@ S100YW89  Doc 160 semi-annual report, half year to June 2026, J-GAAP: every stat
           declaration, which the inline reader refuses; the instance reads.
 S100YUQZ  Doc 160 semi-annual report, half year to June 2026, IFRS: the statements in USD only,
           the highlights table in USD and JPY.
+S100XQ87  Doc 350 joint report, three holders (two SPCs and an adviser): 16 of the holders'
+          text sections are filed as xsi:nil, and each SPC states its collateral agreements
+          as a plain "...NA" element (該当なし。). Type=1 only.
