@@ -89,6 +89,12 @@ _DIGITS = str.maketrans("０１２３４５６７８９", "0123456789")
 # TR 2011-07-31 numdotdecimal: groups of three separated by comma, space or no-break space,
 # optional decimal fraction after a dot.
 _NUMDOTDECIMAL_RE = re.compile(r"^[0-9]{1,3}(?:[,  ]?[0-9]{3})*(?:\.[0-9]+)?$")
+# TR 2011-07-31 numunitdecimal: the unit word is the decimal separator ("127円00銭" = 127.00).
+# Integer part as numdotdecimal's, then unit text, then the fraction digits, then optional
+# unit text. ASCII digits only, as for numdotdecimal.
+_NUMUNITDECIMAL_RE = re.compile(
+    r"^([0-9]{1,3}(?:[,.  ]?[0-9]{3})*)\s*[^0-9\s.,]+\s*([0-9]+)\s*[^0-9\s.,]*$"
+)
 _PLAIN_DECIMAL_RE = re.compile(r"^[0-9]+(?:\.[0-9]+)?$")
 _DATE_CJK_RE = re.compile(r"^([0-9]{4})\s*年\s*([0-9]{1,2})\s*月\s*([0-9]{1,2})\s*日$")
 _DATE_ERA_RE = re.compile(
@@ -121,6 +127,13 @@ def _t_numdotdecimal(shown: str) -> str:
     return re.sub(r"[,  ]", "", s)
 
 
+def _t_numunitdecimal(shown: str) -> str:
+    m = _NUMUNITDECIMAL_RE.match(shown.strip())
+    if not m:
+        raise UnsupportedInlineXBRL(f"ixt:numunitdecimal: {shown!r} does not fit the format")
+    return re.sub(r"[,.  ]", "", m.group(1)) + "." + m.group(2)
+
+
 def _t_dateyearmonthdaycjk(shown: str) -> str:
     m = _DATE_CJK_RE.match(shown.strip().translate(_DIGITS))
     if not m:
@@ -142,6 +155,7 @@ def _t_dateerayearmonthdayjp(shown: str) -> str:
 # filings and their instance documents are here.
 _FORMATS = {
     (IXT_2011, "numdotdecimal"): ("nonFraction", _t_numdotdecimal),
+    (IXT_2011, "numunitdecimal"): ("nonFraction", _t_numunitdecimal),
     (IXT_2011, "dateyearmonthdaycjk"): ("nonNumeric", _t_dateyearmonthdaycjk),
     (IXT_2011, "dateerayearmonthdayjp"): ("nonNumeric", _t_dateerayearmonthdayjp),
 }

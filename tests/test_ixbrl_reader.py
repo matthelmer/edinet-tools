@@ -181,6 +181,43 @@ def test_nonfraction_text_that_does_not_fit_its_format_fails_loudly():
         )
 
 
+def test_nonfraction_numunitdecimal_reads_yen_and_sen():
+    """TR 2011-07-31 numunitdecimal: the unit word is the decimal separator. S100Z4DE (Doc 120,
+    2026) files its dividend per share as 127円00銭; the instance states 127.00."""
+    f = one(
+        facts_of(
+            '<ix:nonFraction name="x:DPS" contextRef="FilingDateInstant" unitRef="JPYPerShares"'
+            ' decimals="2" scale="0" format="ixt:numunitdecimal">127円00銭</ix:nonFraction>'
+        ),
+        "x:DPS",
+    )
+    assert f.value == "127.00"
+
+
+@pytest.mark.parametrize(
+    "shown, value",
+    [("1,234円50銭", "1234.50"), ("0円75銭", "0.75"), ("12 円 5 銭", "12.5")],
+)
+def test_numunitdecimal_forms(shown, value):
+    f = one(
+        facts_of(
+            '<ix:nonFraction name="x:N" contextRef="FilingDateInstant" unitRef="JPYPerShares"'
+            f' decimals="2" format="ixt:numunitdecimal">{shown}</ix:nonFraction>'
+        ),
+        "x:N",
+    )
+    assert f.value == value
+
+
+@pytest.mark.parametrize("shown", ["円50銭", "１２７円００銭", "127.5円", "12円34円56銭", "127", "5円"])
+def test_numunitdecimal_that_does_not_fit_fails_loudly(shown):
+    with pytest.raises(UnsupportedInlineXBRL, match="numunitdecimal"):
+        facts_of(
+            '<ix:nonFraction name="x:N" contextRef="FilingDateInstant" unitRef="JPYPerShares"'
+            f' decimals="2" format="ixt:numunitdecimal">{shown}</ix:nonFraction>'
+        )
+
+
 # --- ix:nonNumeric -------------------------------------------------------------------------
 
 
