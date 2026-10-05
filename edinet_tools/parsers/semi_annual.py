@@ -90,6 +90,8 @@ class SemiAnnualReport(ParsedReport):
     # Period
     period_start: date | None = None
     period_end: date | None = None
+    # Stated cover date, which may be the original report's date in an
+    # amendment; use Document/list metadata for the document's submission.
     filing_date: date | None = None
 
     # Balance Sheet
@@ -155,6 +157,8 @@ class SemiAnnualReport(ParsedReport):
 def _filing_date(csv_files: list) -> date | None:
     """Read a stated submission date; the financial period is not evidence.
 
+    In an amendment this can be the original report's date; actual document
+    submission comes from Document/list metadata, not this field.
     Cover pages carry the date in real EDINET filings. Retain support for
     the legacy DEI field when supplied, but do not choose between conflicting
     valid dates, including duplicates spread across files in a fund package.

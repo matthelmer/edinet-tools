@@ -1,5 +1,7 @@
 """The filing date belongs to the cover page, never the financial period."""
 from datetime import date
+import gzip
+import json
 from pathlib import Path
 
 import pytest
@@ -85,3 +87,17 @@ def test_conflicting_dates_across_package_files_are_unknown():
     ]} for name, value in [('a.csv', '2026-08-06'), ('b.csv', '2026-08-07')]]
     report = parse_semi_annual_report(csv_files=files, doc_id='CONFLICT', doc_type_code='160')
     assert report.filing_date is None
+
+
+def test_amendment_keeps_original_cover_date_not_document_submission():
+    # Nabtesco S100Z4CE, Doc 170: the complete saved CSV states 2024-08-09.
+    # Original instance independently checked: FilingDateInstant is 2026-09-30,
+    # and the cover title identifies the amendment of that date. Do not replace
+    # the stated original cover date with the context's amendment date.
+    fixture = FIXTURES.parent / 'semi_annual' / 'S100Z4CE.json.gz'
+    with gzip.open(fixture, 'rt', encoding='utf-8') as handle:
+        files = json.load(handle)
+    report = parse_semi_annual_report(csv_files=files, doc_id='S100Z4CE', doc_type_code='170')
+    assert report.filing_date == date(2024, 8, 9)
+    assert report.period_end == date(2024, 6, 30)
+    assert '2026年９月30日付け訂正報告書' in report.raw_fields['jpcrp_cor:DocumentTitleCoverPage']

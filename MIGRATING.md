@@ -21,6 +21,8 @@ path; installing 0.9.0 does not leave previously parsed values unchanged.
   Missing, invalid or conflicting dates return `None`; write that unknown
   over an old substituted period end when re-parsing. The valid legacy
   submission-date DEI field remains supported. `period_end` is unchanged.
+  On amendments this may be the original report's cover date; use
+  `Document`/EDINET list metadata for the actual document submission date.
 - **Keep both share-count bases.** `JointHolder.shares_held` changes from
   the main-clause stock line to the member's filed 総数. It can be zero or
   negative, and member totals need not sum to the group's figure.

@@ -93,6 +93,8 @@ re-parsing stored reports.
   not the financial period end. Canon's S100YUDN now reads August 6, 2026,
   rather than June 30. A valid legacy submission-date DEI fact is still
   accepted; absent, invalid or conflicting dates return `None`.
+  On amendments this may be the original report's cover date; use
+  `Document`/EDINET list metadata for the actual document submission date.
 - Integer fields no longer pass through binary floating point. A filed
   `9007199254740993` stays that integer rather than becoming
   `9007199254740992`. Fractional input retains the existing truncation
