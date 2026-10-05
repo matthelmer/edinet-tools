@@ -1059,8 +1059,14 @@ def _extract_financials(csv_files, standard, is_consolidated):
     out, sources, contexts, units = {}, {}, {}, {}
 
     def fin(name, tiers, period):
+        # A filer that stopped consolidating can still print last year's
+        # group owners' profit in the bare context. It is not the prior
+        # parent-only profit beside the current parent-only statements.
+        parent_owners = (is_consolidated is False and name in
+                         ('net_income_owners', 'prior_net_income_owners'))
         hit = resolve_tiers(csv_files, tiers, standard=standard,
-                            period=period, is_consolidated=is_consolidated)
+                            period=period, is_consolidated=is_consolidated,
+                            allow_bare_fallback=not parent_owners)
         out[name] = hit.value if hit else None
         if hit is not None:
             sources[name] = hit.element_id

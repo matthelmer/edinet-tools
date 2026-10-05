@@ -236,7 +236,11 @@ _INSTANT_LEGACY = {
     ),
 }
 _DURATION_LEGACY = {
-    'net_sales': _securities._DURATION_LEGACY['net_sales'],
+    # Additional J-GAAP half-year highlights spelling (営業収入). Keep the
+    # existing revenue choices ahead of it; no fund/REIT headline policy
+    # or annual revenue-tier change is implied by this missing-fact repair.
+    'net_sales': _securities._DURATION_LEGACY['net_sales'] + (
+        _own(_C + 'OperatingRevenue2' + _SB, _JG),),
     'operating_income': (
         Tier(_chain('operating_income')),
         _own(_C + 'OperatingProfitLossIFRS' + _SB, _IFRS),
