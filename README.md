@@ -84,7 +84,7 @@ EDINET defines 42 document types spanning corporate disclosure, capital markets 
 | 100 | Issuance Supplementary | Supplementary shelf registration drawdown documents |
 | 110 | Issuance Withdrawal | Withdrawal of issuance registration |
 
-Amendments (codes such as 130, 150 and 190) route to the same parser as their base type and set `is_amendment = True`.
+Amendments route to the same parser as their base type. Amendment attributes vary by report: for example, extraordinary reports (180/190) expose `amendment_flag` and `report_amendment_flag`, not `is_amendment`. Use the document type and the report's actual fields.
 
 ```python
 from edinet_tools import supported_doc_types, doc_type
@@ -264,6 +264,16 @@ Or set it in code with `edinet_tools.configure(api_key="...")`. Entity lookup an
 - Where a filing's highlights table and its statements disagree, the parser follows a documented order and does not judge which figure is right. `source_elements` shows which was read.
 - A package containing several sub-funds can produce different typed values on CSV and XBRL because their file orders differ. A report-wide identity does not establish the sub-fund of every field; inspect the source rows before using these values together.
 - The instance reader cannot distinguish an escaped non-TextBlock string from plain text. Such a value can contain HTML that the inline reader renders as text.
+
+- A report's `filing_date` can be the original cover date even when its content is amended. This includes half-year 170, holdings 360, tender 250/300, internal-control 236, extraordinary 190 and fund-registration 040. Use document-list submission metadata for chronology. An amended extraordinary report's tagged reason can also belong to the original; the amendment's own correction document is not read.
+- `ExtraordinaryReport.event_type` is a keyword guess from the reason text. It does not establish which entity had an event: a subsidiary's dissolution can produce `dissolution` for the parent's report. Read the source reason and content before attributing an event.
+- Shelf supplement (100) `planned_amount` describes the parent shelf's ceiling; `remaining_balance` is the filed 【残高】. Use `offering_amount_text` for this supplement's offering and `remaining_amount_text` for 【残額】. These are filed text sections, not calculated amounts.
+
+- Supported document codes do not imply complete coverage of every form. Typed fields are incomplete for issuer self-tenders (`jptoi_cor`), investment-corporation buybacks (`jpsps-sbr_cor`), investment-corporation shelf forms (080/100 under `jpsps_cor`), and company-form registrations (030/040 under `jpcrp_cor`). Read the original source facts when fields are missing.
+- Segment rows can include subtotals and different periods, scopes and metrics. They are not automatically additive or necessarily a revenue table; the parser does not reconstruct the presentation hierarchy. `segments_extraction_incomplete=True` means incomplete or uncertain extraction, including total-only evidence. `False` does not establish completeness. Inspect the rows and source before summing.
+- `text_blocks` is keyed only by element name; repeated contexts overwrite earlier entries. It can contain a parent-only note instead of the consolidated note or only one director's entry. Use `raw_facts` with element/context identity for all occurrences; per-holder text has its own holder-aware interface.
+- Some legacy typed strings and top-level text sections represent a nil fact as `－`. Do not globally convert filed dashes to missing values: use the native fact's `nil` metadata when the distinction matters. `raw_facts` in a typed report is a CSV-shaped view, not a substitute for that native metadata.
+- `joint_holder_count` counts parsed holder sections, including departing holders; it can differ from the cover's current-group count. Group denominator/date fields require group evidence on a joint report and may be `None` even when member rows agree.
 
 The full list is under "Known limits" in the [CHANGELOG](CHANGELOG.md).
 

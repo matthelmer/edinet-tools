@@ -389,6 +389,20 @@ def _group_value(csv_files: list, key: str, element_id: str | None = None) -> st
     return extract_value(csv_files, element_id)
 
 
+def _group_metadata_value(csv_files: list, key: str) -> str | None:
+    """Denominator/date for the group holding, or the sole holder's own fact.
+
+    A joint filing with no group metadata is unknown. Unlike a holding
+    amount, a missing denominator or date cannot be inferred from zero exits.
+    """
+    value = _first_value(csv_files, ELEMENT_MAP[key], _is_total_context)
+    if value is not _ABSENT:
+        return value
+    if len(_holder_keys(csv_files)) > 1:
+        return None
+    return _primary_holder_value(csv_files, key)
+
+
 def _sum_or_none(values) -> int | None:
     present = [v for v in values if v is not None]
     return sum(present) if present else None
@@ -418,19 +432,14 @@ def _primary_holder_value(csv_files: list, key: str) -> str | None:
     yields its first holder. Positional first-match only for legacy filings
     with no axis at all."""
     element_id = ELEMENT_MAP[key]
-    best = None
-    for csv_file in csv_files or []:
-        for row in csv_file.get('data', []) or []:
-            if row.get('要素ID') != element_id:
-                continue
-            m = _HOLDER_AXIS_RE.search(row.get('コンテキストID', '') or '')
-            if not m:
-                continue
-            k = (0, int(m.group(1))) if m.group(1) is not None else (1, int(m.group(2)))
-            if best is None or k < best[0]:
-                v = row.get('値')
-                best = (k, unescape_entities(v) if v is not None else None)
-    return extract_value(csv_files, element_id) if best is None else best[1]
+    holders = _holder_keys(csv_files)
+    if not holders:
+        return extract_value(csv_files, element_id)
+    # Select identity from all facts, before selecting a field. An untagged
+    # lead-holder cell must not promote the next holder who tagged a value.
+    primary = min(holders)
+    value = _first_value(csv_files, element_id, lambda ctx: _holder_key(ctx) == primary)
+    return None if value is _ABSENT else value
 
 
 def _any_holder_value(csv_files: list, key: str) -> str | None:
@@ -757,7 +766,7 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
                            or getattr(document, 'filer_edinet_code', None)),
         filer_address=get('filer_address'),
         filer_type=get('filer_type'),
-        filer_business=get('filer_business'),
+        filer_business=_primary_holder_value(csv_files, 'filer_business'),
 
         # Target
         target_company=get('target_company'),
@@ -770,7 +779,7 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
         ownership_pct=ownership_pct,
         prior_ownership_pct=prior_ownership_pct,
         ownership_change=ownership_change,
-        shares_outstanding=parse_int(get('shares_outstanding')),
+        shares_outstanding=parse_int(_group_metadata_value(csv_files, 'shares_outstanding')),
 
         # Purpose & Intent. `purpose` is per-holder with no group row; the
         # PRIMARY filer's is reported here, selected by its axis context rather
@@ -784,13 +793,13 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
         # Dates
         filing_date=filing_date,
         trigger_date=parse_date(get('trigger_date')),
-        base_date=parse_date(get('base_date')),
+        base_date=parse_date(_group_metadata_value(csv_files, 'base_date')),
 
         # Funding
-        acquisition_fund_own=parse_int(get('acquisition_fund_own')),
-        acquisition_fund_borrowing=parse_int(get('acquisition_fund_borrowing')),
-        acquisition_fund_other=parse_int(get('acquisition_fund_other')),
-        acquisition_fund_total=parse_int(get('acquisition_fund_total')),
+        acquisition_fund_own=parse_int(_primary_holder_value(csv_files, 'acquisition_fund_own')),
+        acquisition_fund_borrowing=parse_int(_primary_holder_value(csv_files, 'acquisition_fund_borrowing')),
+        acquisition_fund_other=parse_int(_primary_holder_value(csv_files, 'acquisition_fund_other')),
+        acquisition_fund_total=parse_int(_primary_holder_value(csv_files, 'acquisition_fund_total')),
 
         # Joint-filing flag (FilerLargeVolumeHolder<N>Member axis presence, N >= 2)
         is_joint_filing=is_joint_filing,

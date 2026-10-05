@@ -115,6 +115,19 @@ re-parsing stored reports.
   11,404 entities and 6,374 fund records. The compatibility lookup cache is
   rebuilt from the same files, retaining the existing translation fallbacks.
 
+### Cover-field corrections from source review
+
+- Shelf supplements expose `offering_amount_text` and `remaining_amount_text`
+  separately. Existing `planned_amount` (parent shelf ceiling) and
+  `remaining_balance` (the cover's 【残高】) retain their values; their descriptions
+  no longer call them this offering's amount or its available capacity.
+- Corporate extraordinary reports also read contact addresses from
+  `NearestPlaceOfContactCoverPage`; the older and fund-form elements remain supported.
+- Amendment cover dates and reasons can belong to the original report. Use
+  document-list submission metadata for chronology. Extraordinary reports expose
+  two raw amendment flags, not the previously advertised `is_amendment` attribute;
+  their `event_type` remains a keyword heuristic, not a filed classification.
+
 ### Reader boundaries and known limits
 
 - The readers refuse entity declarations and DOCTYPE internal subsets,
@@ -147,6 +160,28 @@ re-parsing stored reports.
   sources because CSV and native XBRL order their files differently.
   A report's identity does not establish the sub-fund of every field.
   Inspect source rows before combining figures from these reports.
+
+- Form coverage remains incomplete for issuer self-tenders (`jptoi_cor`),
+  investment-corporation buybacks (`jpsps-sbr_cor`), investment-corporation
+  shelf forms (080/100), and company-form registrations (030/040). Source
+  facts remain available even where their typed cover fields are missing.
+- Segment rows do not reconstruct a presentation hierarchy. Subtotals can
+  appear beside their children, and rows can contain only head count or
+  other non-revenue metrics. Do not sum mixed periods/scopes or assume rows
+  partition revenue. The incomplete flag includes uncertain total-only
+  extraction; a false flag does not prove all members were found.
+- `text_blocks` keeps the last value for a repeated element name, irrespective
+  of context. Use `raw_facts` to retain the distinct contexts. Legacy string
+  fields/top-level blocks can render nil as a dash; native fact `nil` metadata
+  distinguishes it from a filed dash. No blanket dash normalization is applied.
+- Holder counts describe parsed sections, not necessarily active membership.
+  Joint-report denominator/date values need group evidence; agreeing member
+  rows alone do not fill a missing group fact in this release.
+- Revenue coverage is incomplete for custom insurer elements, REIT
+  `OperatingRevenueINV` and fund `OperatingRevenueFND`. A returned sales figure
+  may differ from a separately tagged broader operating-revenue headline.
+  Source provenance identifies the chosen fact; it is not a claim that every
+  filing's economic top line is supported.
 
 ## v0.8.4 — 2026-09-10
 

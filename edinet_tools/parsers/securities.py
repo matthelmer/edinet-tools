@@ -661,7 +661,11 @@ _DURATION_LEGACY = {
         Tier(_chain('net_sales_summary')),
         Tier(_chain('net_sales_ifrs_summary')),
         Tier(_chain('net_sales_usgaap_summary')),
-        Tier(_chain('ordinary_revenue_summary')),
+        # J-GAAP bank/insurer gross revenue is not IFRS insurance revenue.
+        # First-IFRS-year filings may retain the old J-GAAP comparison table;
+        # it cannot fill either current or prior revenue under the new basis.
+        Tier(_chain('ordinary_revenue_summary'),
+             exclude_standards=('IFRS', 'US GAAP')),
         Tier(_chain('operating_revenue1_summary')),
         Tier(_chain('net_sales_broker_fs')),
         # Custom-namespace consolidated IFRS revenue (e.g. Toyota's
@@ -805,7 +809,14 @@ _INSTANT_LEGACY = {
     'lease_obligations_current': (Tier(_chain('lease_obligations_current')),),
     'lease_obligations_noncurrent': (
         Tier(_chain('lease_obligations_noncurrent')),),
-    'commercial_paper': (Tier(_chain('commercial_paper')),),
+    'commercial_paper': (
+        Tier(_chain('commercial_paper')),
+        # Filed J-GAAP liability element (Acom, Daiwa, Mizuho). Keep the
+        # existing spelling first for compatibility; do not borrow a J-GAAP
+        # comparison or parent fact into an IFRS/US-GAAP group balance sheet.
+        Tier('jppfs_cor:CommercialPapersLiabilities',
+             exclude_standards=('IFRS', 'US GAAP')),
+    ),
     # IFRS balance-sheet debt (v0.8.0+): new concepts, never fallbacks for
     # the J-GAAP fields — distinct line items get distinct fields.
     'bonds_and_borrowings_current_ifrs': (
@@ -1059,8 +1070,14 @@ def _extract_financials(csv_files, standard, is_consolidated):
     out, sources, contexts, units = {}, {}, {}, {}
 
     def fin(name, tiers, period):
+        # A filer that stopped consolidating can still print last year's
+        # group owners' profit in the bare context. It is not the prior
+        # parent-only profit beside the current parent-only statements.
+        parent_owners = (is_consolidated is False and name in
+                         ('net_income_owners', 'prior_net_income_owners'))
         hit = resolve_tiers(csv_files, tiers, standard=standard,
-                            period=period, is_consolidated=is_consolidated)
+                            period=period, is_consolidated=is_consolidated,
+                            allow_bare_fallback=not parent_owners)
         out[name] = hit.value if hit else None
         if hit is not None:
             sources[name] = hit.element_id

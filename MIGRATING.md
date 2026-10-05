@@ -16,6 +16,17 @@ path; installing 0.9.0 does not leave previously parsed values unchanged.
   Quarterly `ordinary_profit_ytd` and
   `prior_ordinary_profit_ytd` are `None` on IFRS and US GAAP; use
   `profit_before_tax` for the current profit-before-tax figure.
+- **Check shelf-supplement amount meanings.** Existing `planned_amount` is the
+  parent shelf's planned amount/ceiling, and `remaining_balance` reads 【残高】.
+  Their values have not been repurposed. New `offering_amount_text` and
+  `remaining_amount_text` expose this offering and the separate 【残額】 section.
+  They preserve filed text, units and qualifications; update consumers explicitly.
+- **Use document-list submission dates for chronology.** Amended 170, 360,
+  250/300, 236, 190 and 040 packages may retain the original cover date.
+  Extraordinary-report reasons may also be the original's; the non-XBRL
+  correction document is outside this reader. Its amendment fields are
+  `amendment_flag` and `report_amendment_flag`; `event_type` is a keyword heuristic
+  and can describe a subsidiary rather than the filer.
 - **Re-check stored semi-annual filing dates.** `filing_date` now reads the
   cover page's stated submission date instead of falling back to `period_end`.
   Missing, invalid or conflicting dates return `None`; write that unknown

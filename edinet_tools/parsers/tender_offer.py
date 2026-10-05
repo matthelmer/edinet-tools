@@ -232,6 +232,8 @@ def parse_tender_offer(document=None, *, csv_files=None, doc_id=None, doc_type_c
     price_text = get('price_text')
     shares_text = get('shares_text')
     period_text = get('period_text')
+    if period_text is None:
+        period_text = extract_value(csv_files, 'jptoo-ton_cor:PeriodOfPurchaseEtcTextBlock')
     funding_text = get('funding_text')
     settlement_date_text = get('settlement_date_text')
 

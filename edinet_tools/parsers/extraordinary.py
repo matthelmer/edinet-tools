@@ -65,6 +65,7 @@ ELEMENT_MAP = {
     'contact_person_corp': 'jpcrp-esr_cor:NameOfContactPersonCoverPage',
     'contact_address_fund': 'jpsps-esr_cor:PlaceOfContactCoverPage',
     'contact_address_corp': 'jpcrp-esr_cor:PlaceOfContactCoverPage',
+    'contact_address_corp_nearest': 'jpcrp-esr_cor:NearestPlaceOfContactCoverPage',
     'contact_phone_fund': 'jpsps-esr_cor:TelephoneNumberCoverPage',
     'contact_phone_corp': 'jpcrp-esr_cor:TelephoneNumberCoverPage',
 }
@@ -109,7 +110,7 @@ class ExtraordinaryReport(ParsedReport):
 
     # Content
     reason_for_filing: str | None = None
-    event_type: str | None = None  # Derived from reason text
+    event_type: str | None = None  # Keyword heuristic; not a filed event or entity attribution
 
     @property
     def filer(self):
@@ -223,7 +224,8 @@ def parse_extraordinary_report(document=None, *, csv_files=None, doc_id=None, do
     # Contact info - try both namespaces
     place_of_filing = get('place_of_filing_fund') or get('place_of_filing_corp')
     contact_person = get('contact_person_fund') or get('contact_person_corp')
-    contact_address = get('contact_address_fund') or get('contact_address_corp')
+    contact_address = (get('contact_address_fund') or get('contact_address_corp')
+                       or get('contact_address_corp_nearest'))
     contact_phone = get('contact_phone_fund') or get('contact_phone_corp')
 
     # Extract reason for filing - try both namespaces

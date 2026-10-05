@@ -686,6 +686,7 @@ def resolve_tiers(
     mode: str = 'financial',
     coerce: bool = True,
     prefer_unit: Optional[str] = None,
+    allow_bare_fallback: bool = True,
 ) -> Optional[TierHit]:
     """Resolve a per-field tier table to a TierHit, or None (honest absence).
 
@@ -714,6 +715,11 @@ def resolve_tiers(
     parser's legacy semantics until its ratified context fix lands.
     Suffix tiers require a concrete period.
 
+    allow_bare_fallback=False restricts an explicitly parent-only filing to
+    its NonConsolidatedMember context. Use it where a bare historical group
+    fact cannot answer the parent-only question. Other callers retain their
+    existing bare-context fallback.
+
     standard/period/is_consolidated are keyword-only so call sites read as
     data, matching the tier tables they resolve.
     """
@@ -721,6 +727,8 @@ def resolve_tiers(
         raise ValueError(f"unknown mode: {mode!r}")
     if period is not None:
         patterns = get_context_patterns(is_consolidated, period)
+        if is_consolidated is False and not allow_bare_fallback:
+            patterns = [p for p in patterns if p != period]
     else:
         patterns = [None]
 
@@ -734,6 +742,8 @@ def resolve_tiers(
         if tier.suffix_match:
             if period is None:
                 raise ValueError('suffix_match tiers require a concrete period')
+            if period not in patterns:
+                continue
             if mode == 'financial':
                 s, elem, unit = _resolve_suffix_tier(csv_files, tier, period, PREFERRED_UNIT)
                 if s is None:
