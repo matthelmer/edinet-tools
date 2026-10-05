@@ -337,7 +337,8 @@ def report_diffs(doc, source="xbrl", doc_type=None):
 # Exact difference counts per fixture (both XBRL sources give the same): a new difference, or
 # one that disappears, fails the test instead of hiding among the allowed kinds.
 EXPECTED_DIFFS = {
-    "S100Y4NW": {"whitespace": 200, "beyond_30000": 4},
+    # The recovered period_text adds its own CSV/native whitespace difference.
+    "S100Y4NW": {"whitespace": 201, "beyond_30000": 4},
     "S100Y8GB": {"whitespace": 27, "nil_section": 12},
     "S100YRDM": {"whitespace": 16, "nil_section": 34},
     "S100YD3H": {"whitespace": 11, "nil_section": 36},
