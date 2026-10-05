@@ -70,6 +70,7 @@ _SEGMENT_NAME_SUFFIXES = (
 # anchors them to the actual segment table and keeps same-named members from
 # other axes (a geographic "Other", an equity "Total") out.
 _AGGREGATION_MEMBERS = {
+    'OtherReportableSegments',
     'ReconcilingItems',
     'ReportableSegments',
     'TotalOfReportableSegmentsAndOthers',

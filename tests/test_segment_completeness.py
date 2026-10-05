@@ -67,3 +67,29 @@ def test_unrelated_unknown_member_does_not_create_coverage_warning():
     ]}])
     assert len(rows) == 1
     assert not incomplete
+
+
+def test_real_other_reportable_segments_is_a_reconciling_row():
+    rows, _, _ = parse_segments_from_csv(filing('S100Z488')['csv_files'])
+    others = [s for s in rows if s.segment_name == 'OtherReportableSegments']
+    assert others and all(s.axis_family == 'TotalReconciling' for s in others)
+    current = next(s for s in others if s.period == 'CurrentYearDuration')
+    assert current.metrics['RevenuesFromExternalCustomers'] == '8193000000'
+
+
+def test_real_filer_subtotal_is_preserved_without_inventing_hierarchy():
+    rows, _, _ = parse_segments_from_csv(filing('S100Z404')['csv_files'])
+    current = {s.segment_name: s for s in rows if s.period == 'CurrentYearDuration'}
+    assert current['GreenBusinessReportableSegments'].metrics[
+        'RevenuesFromExternalCustomers'] == '15482734000'
+    assert current['KantoAreaGreenBusinessReportableSegments'].metrics[
+        'RevenuesFromExternalCustomers'] == '8065101000'
+    # The definition linkbase nests three geographical green-business members
+    # under GreenBusiness. CSV has no hierarchy; these rows must not be summed.
+    assert current['GreenBusinessReportableSegments'].axis_family == 'OperatingSegments'
+
+
+def test_real_orix_rows_do_not_claim_a_revenue_table():
+    rows, text_only, _ = parse_segments_from_csv(filing('S100YG5L')['csv_files'])
+    assert rows and not text_only
+    assert {metric for s in rows for metric in s.metrics} == {'NumberOfEmployees'}
