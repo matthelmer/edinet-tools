@@ -145,7 +145,9 @@ re-parsing stored reports.
   `remaining_balance` (the cover's 【残高】) retain their values; their descriptions
   no longer call them this offering's amount or its available capacity.
 - Corporate extraordinary reports also read contact addresses from
-  `NearestPlaceOfContactCoverPage`; the older and fund-form elements remain supported.
+  `NearestPlaceOfContactCoverPage`, with the person and phone from that same
+  cover-page office block. A missing field stays unknown rather than borrowing
+  another office's details. The older and fund-form elements remain supported.
 - Amendment cover dates and reasons can belong to the original report. Use
   document-list submission metadata for chronology. Extraordinary reports expose
   two raw amendment flags, not the previously advertised `is_amendment` attribute;
