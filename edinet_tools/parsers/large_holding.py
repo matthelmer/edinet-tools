@@ -711,11 +711,13 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
     # Filer name (try multiple element IDs)
     filer_name = get('filer_name_alt1') or get('filer_name_alt2') or getattr(document, 'filer_name', None)
 
-    # Target ticker (normalize to 4-digit + .T format)
+    # Target ticker (four-character code + .T). Fold filed fullwidth digits
+    # for lookup; raw_fields/raw_facts retain the original issuer code.
     target_ticker_raw = get('target_ticker')
     target_ticker = None
     if target_ticker_raw:
-        ticker_digits = target_ticker_raw.strip()[:4]
+        ticker_digits = target_ticker_raw.translate(
+            str.maketrans('０１２３４５６７８９', '0123456789')).strip()[:4]
         target_ticker = f"{ticker_digits}.T"
 
     # Holding figures for the whole group: explicit total-context selection (0.8.4).

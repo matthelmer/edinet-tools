@@ -21,7 +21,14 @@ path; installing 0.9.0 does not leave previously parsed values unchanged.
   Their values have not been repurposed. New `offering_amount_text` and
   `remaining_amount_text` expose this offering and the separate 【残額】 section.
   They preserve filed text, units and qualifications; update consumers explicitly.
-- **Use document-list submission dates for chronology.** Amended 170, 360,
+- **Review values that become unknown when re-parsing stored reports.**
+  Missing lead-holder facts must not retain another holder's business,
+  purpose or funding; a group without its own denominator/date remains
+  unknown. Parent-only owners' profit must not retain a historical group
+  figure, and IFRS revenue must not retain J-GAAP ordinary revenue. An
+  updater that skips `None` preserves the old error. Review affected rows
+  and explicitly replace disproved values; do not blanket-clear all fields.
+- **Use document-list submission dates for chronology.** Amended 150, 170, 360,
   250/300, 236, 190 and 040 packages may retain the original cover date.
   Extraordinary-report reasons may also be the original's; the non-XBRL
   correction document is outside this reader. Its amendment fields are

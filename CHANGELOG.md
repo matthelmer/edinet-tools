@@ -13,7 +13,7 @@ re-parsing stored reports.
 
 ### Added
 
-- **Native XBRL reading, with no runtime dependencies.**
+- **Native XBRL reading, without additional runtime dependencies.**
   `Document.parse(source="xbrl")` reads inline XBRL from the type-1 package;
   `source="instance"` reads its `.xbrl` instance. `"ixbrl"` is an alias of
   `"xbrl"`. The default remains `source="csv"`. For saved bytes, use
@@ -89,6 +89,25 @@ re-parsing stored reports.
 
 ### Fixed
 
+- Missing lead-holder business, purpose and funding facts no longer read a
+  co-holder's value. Group denominator and base date use the group facts;
+  joint filings without those facts return `None`.
+- Parent-only annual reports no longer borrow historical consolidated
+  owners' profit. IFRS and US GAAP revenue no longer falls back to the
+  J-GAAP bank/insurer ordinary-revenue summary. A missing own-standard
+  revenue remains `None`.
+- Recover the J-GAAP half-year `OperatingRevenue2` summary alias and annual
+  `CommercialPapersLiabilities`, respecting period and consolidation scope.
+  Existing commercial-paper alias precedence is unchanged.
+- Tender opinions and periods recognize the newer filed element names.
+  The four optional opinion sections prefer their filed content over the
+  corresponding not-applicable element, while preserving literal dashes.
+- Instance-reader tables preserve empty self-closing cells, keeping later
+  values in their original columns.
+- Segment extraction flags unfamiliar members sharing segment metrics and
+  tables whose individual members cannot be established. The flag reports
+  incomplete or uncertain extraction; it does not recover missing rows.
+  `OtherReportableSegments` is classified as a reconciling row.
 - Semi-annual `filing_date` reads the cover page's stated submission date,
   not the financial period end. Canon's S100YUDN now reads August 6, 2026,
   rather than June 30. A valid legacy submission-date DEI fact is still
@@ -117,6 +136,10 @@ re-parsing stored reports.
 
 ### Cover-field corrections from source review
 
+- Large-holding target tickers fold fullwidth digits for lookup (`６１４６`
+  becomes `6146.T`); raw issuer-code facts retain the filed characters.
+- The Doc 310/320 parser documentation now identifies the offeror as the
+  respondent to the target company's questions.
 - Shelf supplements expose `offering_amount_text` and `remaining_amount_text`
   separately. Existing `planned_amount` (parent shelf ceiling) and
   `remaining_balance` (the cover's 【残高】) retain their values; their descriptions
