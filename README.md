@@ -129,11 +129,15 @@ earnings = toyota.documents(doc_type="120", days=365)
 
 ### Parsing
 
+Each block below runs as written (with `EDINET_API_KEY` set) and fetches one real filing.
+
+**Annual securities report** (doc type 120):
+
 ```python
 doc = earnings[0]   # Toyota's annual report, from the example above
 report = doc.parse()
 
-# Securities Report — consolidated financials (J-GAAP, IFRS, US-GAAP)
+# Consolidated financials (J-GAAP, IFRS, US-GAAP)
 report.net_sales
 report.operating_cash_flow
 report.roe
@@ -146,26 +150,6 @@ report.net_income_total     # includes non-controlling interests
 report.net_assets_total
 report.net_assets_owners    # None for J-GAAP filers (never filed as one element)
 
-# Large Shareholding Report
-report.filer_name
-report.target_company
-report.ownership_pct        # joint filing → the co-filers' GROUP total, not
-report.is_joint_filing      #   the named filer's own stake (~half are joint)
-report.joint_holders
-
-# Tender Offer
-report.acquirer_name
-report.target_name
-report.holding_ratio_after
-
-# Any report
-report.fields()     # List available typed fields
-report.to_dict()    # Export as dictionary
-report.raw_fields        # All XBRL elements by element ID
-report.text_blocks       # Narrative text block content
-report.extraction_flags  # parse-time structural checks (0.8.0): impossible
-                         # values are withheld as None, never served
-
 # Where a financial field came from: securities, quarterly and semi-annual
 # reports fill these; other report types leave them empty. A field missing
 # from a map means its source was not recorded, not that it has none.
@@ -173,6 +157,41 @@ report.source_elements   # field -> XBRL element read
 report.source_contexts   # field -> context read
 report.units             # monetary / per-share field -> unit id, e.g. "JPY",
                          # "JPYPerShares"; yen is read first when both are filed
+```
+
+**Large shareholding (5%) report** (doc type 350):
+
+```python
+# A joint report by three holders, filed 2026-07-24
+report = edinet_tools.fetch_and_parse("S100YRDM", "350")
+
+report.filer_name
+report.target_company
+report.ownership_pct        # joint filing → the co-filers' GROUP total, not
+report.is_joint_filing      #   the named filer's own stake (~half are joint)
+report.joint_holders        # each holder's own name, code and share count
+```
+
+**Tender offer registration** (doc type 240):
+
+```python
+# Kaga Electronics' offer for Shinko Shoji, filed 2026-05-18
+report = edinet_tools.fetch_and_parse("S100Y4NW", "240")
+
+report.acquirer_name
+report.target_name
+report.holding_ratio_after
+```
+
+**Any report:**
+
+```python
+report.fields()     # List available typed fields
+report.to_dict()    # Export as dictionary
+report.raw_fields        # All XBRL elements by element ID
+report.text_blocks       # Narrative text block content
+report.extraction_flags  # parse-time structural checks (0.8.0): impossible
+                         # values are withheld as None, never served
 ```
 
 ### Reading the filing's own XBRL
