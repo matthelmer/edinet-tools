@@ -809,7 +809,14 @@ _INSTANT_LEGACY = {
     'lease_obligations_current': (Tier(_chain('lease_obligations_current')),),
     'lease_obligations_noncurrent': (
         Tier(_chain('lease_obligations_noncurrent')),),
-    'commercial_paper': (Tier(_chain('commercial_paper')),),
+    'commercial_paper': (
+        Tier(_chain('commercial_paper')),
+        # Filed J-GAAP liability element (Acom, Daiwa, Mizuho). Keep the
+        # existing spelling first for compatibility; do not borrow a J-GAAP
+        # comparison or parent fact into an IFRS/US-GAAP group balance sheet.
+        Tier('jppfs_cor:CommercialPapersLiabilities',
+             exclude_standards=('IFRS', 'US GAAP')),
+    ),
     # IFRS balance-sheet debt (v0.8.0+): new concepts, never fallbacks for
     # the J-GAAP fields — distinct line items get distinct fields.
     'bonds_and_borrowings_current_ifrs': (
