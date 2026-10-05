@@ -661,7 +661,11 @@ _DURATION_LEGACY = {
         Tier(_chain('net_sales_summary')),
         Tier(_chain('net_sales_ifrs_summary')),
         Tier(_chain('net_sales_usgaap_summary')),
-        Tier(_chain('ordinary_revenue_summary')),
+        # J-GAAP bank/insurer gross revenue is not IFRS insurance revenue.
+        # First-IFRS-year filings may retain the old J-GAAP comparison table;
+        # it cannot fill either current or prior revenue under the new basis.
+        Tier(_chain('ordinary_revenue_summary'),
+             exclude_standards=('IFRS', 'US GAAP')),
         Tier(_chain('operating_revenue1_summary')),
         Tier(_chain('net_sales_broker_fs')),
         # Custom-namespace consolidated IFRS revenue (e.g. Toyota's
