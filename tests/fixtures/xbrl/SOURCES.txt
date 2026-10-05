@@ -6,6 +6,8 @@ S100Y4NW  Doc 240 tender offer registration (purpose section longer than the CSV
 S100Y8GB  Doc 350 joint 5% report, two holders, a trading table per holder
 S100YRDM  Doc 350 joint 5% report, three holders, holder 3 reports under Item 2 (discretionary accounts)
 S100YD3H  Doc 350 joint 5% report
+S100Z4AV  Doc 350 joint 5% change report, five holders (downloaded 2026-10-05): holder 1 reports
+          on the 本文 line and under Item 2, holder 2 under Item 2 only with 0 on the 本文 line
 S100YWE2  Doc 160 semi-annual report (with AuditDoc)
 
 S100YO5B  Doc 040 amended securities registration of an investment trust: three filings (fund

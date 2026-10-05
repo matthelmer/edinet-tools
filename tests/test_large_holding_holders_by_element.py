@@ -54,6 +54,29 @@ def test_s100yd3h_dalton_share_count(source):
     assert all(h.shares_held is not None for h in r.joint_holders)
 
 
+@pytest.mark.parametrize("source", SOURCES)
+def test_s100z4av_holders_split_across_the_main_clause_and_item_2(source):
+    """光通信's group on 手間いらず (2477), filed 2026-09-29. Holder 1 reports 64,800 on the
+    本文 line and 86,100 under Item 2; holder 2 reports 0 on the 本文 line and 21,600 under
+    Item 2. Each holder's shares_held is its own 総数 row, which is also what the filing's
+    breakdown table (共同保有における株券等保有割合の内訳) prints. Read from the 本文 line
+    alone, holder 1 came out at 64,800, holder 2 at 0, and the five summed to 510,300
+    against a filed group total of 618,000."""
+    r = parsed("S100Z4AV", source)
+    assert [h.edinet_code for h in r.joint_holders] == [
+        "E35239", "E35629", "E41499", "E33140", "E36209"]
+    assert [h.shares_held for h in r.joint_holders] == [150900, 21600, 390700, 25600, 29200]
+    # a zero on the 本文 line is not a holder with nothing: holder 2 holds under Item 2
+    assert r.joint_holders[1].shares_held == 21600
+    # the group figure is the filing's own 総数 row; on this filing the holders' rows add up to it
+    assert r.shares_held == 618000
+    assert sum(h.shares_held for h in r.joint_holders) == r.shares_held
+    assert str(r.ownership_pct) == "0.0954"
+    # no deductions on this filing: the stock lines before deductions equal 総数
+    assert [h.stock_lines_held for h in r.joint_holders] == [150900, 21600, 390700, 25600, 29200]
+    assert r.stock_lines_held == 618000
+
+
 H1 = "FilingDateInstant_jplvh010000-lvh_E99999-000FilerLargeVolumeHolder1Member"
 H2 = "FilingDateInstant_jplvh010000-lvh_E99999-000FilerLargeVolumeHolder2Member"
 STOCK = "jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233"
