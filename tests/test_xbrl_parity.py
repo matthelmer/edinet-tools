@@ -167,19 +167,29 @@ def compare_sections(csv_sections, xbrl_sections, nil, path, diffs):
         compare(csv_sections[k], xbrl_sections[k], f"{path}[{k}]", diffs, True)
 
 
-def compare(csv_value, xbrl_value, path, diffs, text=False):
+def compare(csv_value, xbrl_value, path, diffs, text=False, escaped=frozenset()):
     """Record every difference as (path, kind); kind 'other' is a parity failure.
 
     `text` marks a text-section path (a TextBlock's value, a text_blocks entry, a typed field
     read from a TextBlock): only there may values differ by whitespace, by the CSV's cut, or by
     literal angle-bracket text the CSV drops.
-    Anywhere else (names, codes, dates, numbers) any difference is 'other'."""
+    Anywhere else (names, codes, dates, numbers) any difference is 'other'.
+    `escaped` holds the local names of the elements this filing's inline XBRL escapes: a
+    holder's "...NA" statement is a text section only when its element is one of them."""
     if type(csv_value).__name__ == "JointHolder" and type(csv_value) is type(xbrl_value):
         nil = set(xbrl_value.nil_text_blocks)
         for f in fields(csv_value):
             a, b = getattr(csv_value, f.name), getattr(xbrl_value, f.name)
             if f.name == "text_blocks":
                 compare_sections(a, b, nil, f"{path}.text_blocks", diffs)
+            elif f.name == "not_applicable":
+                # the "no collateral agreement" line filed as an HTML fragment (S100MJ6R):
+                # the CSV pads it with spaces; text by the filer's own mark, nothing wider
+                if set(a) != set(b):
+                    diffs.append((f"{path}.not_applicable.keys", "other"))
+                for k in set(a) & set(b):
+                    compare(a[k], b[k], f"{path}.not_applicable[{k}]", diffs,
+                            text or k in escaped)
             elif f.name == "nil_text_blocks":
                 # the CSV cannot tell nil from a filed dash, so it names none
                 if a:
@@ -188,7 +198,7 @@ def compare(csv_value, xbrl_value, path, diffs, text=False):
                     if not _csv_dash(csv_value.text_blocks.get(k)):
                         diffs.append((f"{path}.nil_text_blocks[{k}]", "other"))
             else:
-                compare(a, b, f"{path}.{f.name}", diffs, text)
+                compare(a, b, f"{path}.{f.name}", diffs, text, escaped)
         return
     if is_dataclass(csv_value) and type(csv_value) is type(xbrl_value):
         # walk every field: == would skip fields declared compare=False (JointHolder.text_blocks)
@@ -199,6 +209,7 @@ def compare(csv_value, xbrl_value, path, diffs, text=False):
                 f"{path}.{f.name}",
                 diffs,
                 text or f.name == "text_blocks",
+                escaped,
             )
         return
     if isinstance(csv_value, str) and isinstance(xbrl_value, str):
@@ -218,14 +229,14 @@ def compare(csv_value, xbrl_value, path, diffs, text=False):
         if set(csv_value) != set(xbrl_value):
             diffs.append((path + ".keys", "other"))
         for k in set(csv_value) & set(xbrl_value):
-            compare(csv_value[k], xbrl_value[k], f"{path}[{k}]", diffs, text)
+            compare(csv_value[k], xbrl_value[k], f"{path}[{k}]", diffs, text, escaped)
         return
     if isinstance(csv_value, list) and isinstance(xbrl_value, list):
         if len(csv_value) != len(xbrl_value):
             diffs.append((path + ".len", "other"))
             return
         for i, (a, b) in enumerate(zip(csv_value, xbrl_value)):
-            compare(a, b, f"{path}[{i}]", diffs, text)
+            compare(a, b, f"{path}[{i}]", diffs, text, escaped)
         return
     # containers are walked above (== on a list of dataclasses would skip compare=False fields)
     if csv_value == xbrl_value and type(csv_value) is type(xbrl_value):
@@ -257,6 +268,7 @@ def diff_reports(csv_report, xbrl_report, text_elements=frozenset()):
         )
 
     diffs = []
+    escaped = frozenset(e.rsplit(":", 1)[-1] for e in text_elements)
     texts = text_fields(csv_report)
     text_values = {
         f.value
@@ -299,7 +311,7 @@ def diff_reports(csv_report, xbrl_report, text_elements=frozenset()):
             or f.name == "text_blocks_by_context"
             or (isinstance(a, str) and (a in text_values or b in text_values))
         )
-        compare(a, b, f.name, diffs, is_text)
+        compare(a, b, f.name, diffs, is_text, escaped)
     return diffs
 
 
@@ -310,10 +322,11 @@ def escaped_elements(zip_bytes) -> frozenset:
     )
 
 
-def report_diffs(doc, source="xbrl"):
+def report_diffs(doc, source="xbrl", doc_type=None):
+    doc_type = doc_type or DOCS[doc]
     csv_files = extract_csv_from_zip((FIXTURES / f"{doc}_type5.zip").read_bytes())
-    csv_report = _parser_for(DOCS[doc])(csv_files=csv_files, doc_id=doc, doc_type_code=DOCS[doc])
-    xbrl_report = parse_xbrl(type1(doc), DOCS[doc], doc_id=doc, source=source)
+    csv_report = _parser_for(doc_type)(csv_files=csv_files, doc_id=doc, doc_type_code=doc_type)
+    xbrl_report = parse_xbrl(type1(doc), doc_type, doc_id=doc, source=source)
     return (
         csv_report,
         xbrl_report,
@@ -341,6 +354,37 @@ def test_csv_and_xbrl_reports_differ_only_by_the_documented_improvements(doc, so
     others = [path for path, kind in diffs if kind == "other"]
     assert not others, others
     assert dict(collections.Counter(kind for _path, kind in diffs)) == EXPECTED_DIFFS[doc]
+
+
+COLLATERAL_NA = "SignificantContractsRelatedToSaidStocksEtcSuchAsCollateralAgreementsNA"
+
+
+def test_s100mj6r_an_escaped_not_applicable_statement_differs_by_whitespace_only():
+    """A holder's "...NA" statement filed as an escaped fragment: the "no collateral agreement"
+    line on a 2021 report (1,018 such cells among 22,884 packages from 2021-2022). The CSV
+    pads the text with spaces; the inline XBRL reads the same text without them. The filer
+    marked the element as escaped, so it is a text section and whitespace may differ."""
+    _csv, _xbrl, diffs = report_diffs("S100MJ6R", doc_type="350")
+    others = [path for path, kind in diffs if kind == "other"]
+    assert not others, others
+    assert (f"joint_holders[0].not_applicable[{COLLATERAL_NA}]", "whitespace") in diffs
+
+
+def test_a_not_applicable_statement_the_filer_did_not_escape_must_match_exactly():
+    """The rule above is the filer's own mark, not a pass for every "...NA" value: without
+    the escape mark the same padded value is a parity failure."""
+    csv_report, xbrl_report, _diffs = report_diffs("S100MJ6R", doc_type="350")
+    unmarked = diff_reports(csv_report, xbrl_report, text_elements=frozenset())
+    assert (f"joint_holders[0].not_applicable[{COLLATERAL_NA}]", "other") in unmarked
+
+
+def test_s100mzz3_an_empty_holder_code_is_no_typed_difference_between_the_sources():
+    """The holder's EDINET code is filed empty; the CSV prints 「－」. Both sources read None
+    in the typed field. (The raw facts still differ, empty against 「－」: that is the CSV's
+    rendering of an empty fact, which this module's rules do not name.)"""
+    csv_report, xbrl_report, diffs = report_diffs("S100MZZ3", doc_type="350")
+    assert csv_report.filer_edinet_code is None and xbrl_report.filer_edinet_code is None
+    assert "filer_edinet_code" not in [path for path, _kind in diffs]
 
 
 def test_the_comparison_catches_a_real_difference():
