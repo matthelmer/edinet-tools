@@ -11,6 +11,7 @@ PROCESSING PHILOSOPHY: Store raw XBRL values faithfully. No interpretation.
 """
 from dataclasses import dataclass, field
 from decimal import Decimal
+from fractions import Fraction
 from datetime import date
 
 
@@ -222,10 +223,36 @@ ELEMENT_MAP = {
 }
 
 
+# Bound coefficient/exponent expansion before Fraction(Decimal) creates
+# integers. Use the native reader's 10,000-digit order of magnitude;
+# an unevaluable identity skips without changing any filed operand.
+_MAX_IDENTITY_NUMERIC_DIGITS = 10_000
+
+
+def _identity_fractions(*values):
+    result = []
+    for value in values:
+        if not value.is_finite():
+            return None
+        if value.is_zero():
+            result.append(Fraction(0))
+            continue
+        digits = value.as_tuple()
+        if (abs(digits.exponent) > _MAX_IDENTITY_NUMERIC_DIGITS
+                or len(digits.digits) + max(0, digits.exponent) > _MAX_IDENTITY_NUMERIC_DIGITS):
+            return None
+        result.append(Fraction(value))
+    return result
+
+
 def _equity_ratio_reconciles(er, na, ta):
+    values = _identity_fractions(er, na, ta)
+    if values is None:
+        return None
+    er, na, ta = values
     if ta == 0:
         return None
-    return abs(er - na / ta) <= IDENTITY_TOLERANCE
+    return abs(er - na / ta) <= Fraction(IDENTITY_TOLERANCE)
 
 
 def _equity_ratio_reconciles_jgaap(er, se, vta, ta):
@@ -236,9 +263,13 @@ def _equity_ratio_reconciles_jgaap(er, se, vta, ta):
     If either component is None, apply_identities' any-None-skips loop over
     identity.operands already skips the whole identity before this function
     is ever called -- no special-casing needed here."""
+    values = _identity_fractions(er, se, vta, ta)
+    if values is None:
+        return None
+    er, se, vta, ta = values
     if ta == 0:
         return None
-    return abs(er - (se + vta) / ta) <= IDENTITY_TOLERANCE
+    return abs(er - (se + vta) / ta) <= Fraction(IDENTITY_TOLERANCE)
 
 
 def _net_assets_le_total_assets(na, ta):

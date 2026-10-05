@@ -33,6 +33,7 @@ from .extraction import (
     extract_value,
     categorize_elements,
     parse_percentage,
+    parse_decimal,
     parse_date,
 )
 
@@ -342,10 +343,7 @@ class QuarterlyReport(ParsedReport):
 
 
 def _decimal_or_none(value):
-    try:
-        return Decimal(value)
-    except ArithmeticError:
-        return None
+    return parse_decimal(value)
 
 
 def _derive_quarter_number(filing_date: date, fiscal_year_end: date) -> Optional[int]:

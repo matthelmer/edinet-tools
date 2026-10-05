@@ -248,9 +248,18 @@ class LargeHoldingReport(ParsedReport):
 
     @property
     def ownership_percentage(self) -> float | None:
-        """Ownership as a percentage (e.g., 9.67 for 9.67%)."""
+        """Ownership as an approximate display float (e.g., 9.67 for 9.67%).
+
+        Shift the decimal point before the float conversion without inheriting
+        caller precision or traps. Exact filed ratios stay on ownership_pct.
+        """
         if self.ownership_pct is not None:
-            return float(self.ownership_pct * 100)
+            context = Context(
+                prec=max(1, len(self.ownership_pct.as_tuple().digits)),
+                Emax=MAX_EMAX, Emin=MIN_EMIN, rounding=ROUND_HALF_EVEN,
+                clamp=0, flags=[], traps=[],
+            )
+            return float(self.ownership_pct.scaleb(2, context=context))
         return None
 
     def __repr__(self) -> str:
@@ -261,7 +270,7 @@ class LargeHoldingReport(ParsedReport):
         if len(target) > 20:
             target = target[:17] + '...'
         if self.ownership_pct is not None:
-            pct = f'{float(self.ownership_pct * 100):.2f}%'
+            pct = f'{self.ownership_percentage:.2f}%'
         else:
             pct = '?%'
         return f"LargeHoldingReport(filer='{filer}', target='{target}', ownership={pct})"
