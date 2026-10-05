@@ -196,7 +196,8 @@ def test_nonfraction_numunitdecimal_reads_yen_and_sen():
 
 @pytest.mark.parametrize(
     "shown, value",
-    [("1,234円50銭", "1234.50"), ("0円75銭", "0.75"), ("12 円 5 銭", "12.5")],
+    [("1,234円50銭", "1234.50"), ("0円75銭", "0.75"), ("12 円 5 銭", "12.05"),
+     ("１２７円００銭", "127.00")],
 )
 def test_numunitdecimal_forms(shown, value):
     f = one(
@@ -209,7 +210,7 @@ def test_numunitdecimal_forms(shown, value):
     assert f.value == value
 
 
-@pytest.mark.parametrize("shown", ["円50銭", "１２７円００銭", "127.5円", "12円34円56銭", "127", "5円"])
+@pytest.mark.parametrize("shown", ["円50銭", "127.5円", "12円34円56銭", "127", "5円"])
 def test_numunitdecimal_that_does_not_fit_fails_loudly(shown):
     with pytest.raises(UnsupportedInlineXBRL, match="numunitdecimal"):
         facts_of(

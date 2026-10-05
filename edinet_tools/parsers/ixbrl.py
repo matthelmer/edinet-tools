@@ -89,11 +89,13 @@ _DIGITS = str.maketrans("０１２３４５６７８９", "0123456789")
 # TR 2011-07-31 numdotdecimal: groups of three separated by comma, space or no-break space,
 # optional decimal fraction after a dot.
 _NUMDOTDECIMAL_RE = re.compile(r"^[0-9]{1,3}(?:[,  ]?[0-9]{3})*(?:\.[0-9]+)?$")
-# TR 2011-07-31 numunitdecimal: the unit word is the decimal separator ("127円00銭" = 127.00).
-# Integer part as numdotdecimal's, then unit text, then the fraction digits, then optional
-# unit text. ASCII digits only, as for numdotdecimal.
+# TR 2011-07-31 numunitdecimal: one or two fractional digits denote hundredths
+# ("127円5銭" = 127.05). Its integer grammar differs from numdotdecimal:
+# no leading zeros or space grouping; dot/comma/fullwidth comma may group thousands.
+# Fullwidth digits are folded before matching; a fullwidth dot is not a separator.
 _NUMUNITDECIMAL_RE = re.compile(
-    r"^([0-9]{1,3}(?:[,.  ]?[0-9]{3})*)\s*[^0-9\s.,]+\s*([0-9]+)\s*[^0-9\s.,]*$"
+    r"(0|[1-9][0-9]{0,2}(?:[.,，]?[0-9]{3})*)"
+    r"[^0-9,.，．]+([0-9]{1,2})[^0-9,.，．]*"
 )
 _PLAIN_DECIMAL_RE = re.compile(r"^[0-9]+(?:\.[0-9]+)?$")
 _SCALE_RE = re.compile(r"^[+-]?[0-9]+$")
@@ -132,10 +134,10 @@ def _t_numdotdecimal(shown: str) -> str:
 
 
 def _t_numunitdecimal(shown: str) -> str:
-    m = _NUMUNITDECIMAL_RE.match(shown.strip())
+    m = _NUMUNITDECIMAL_RE.fullmatch(shown.strip().translate(_DIGITS))
     if not m:
         raise UnsupportedInlineXBRL(f"ixt:numunitdecimal: {shown!r} does not fit the format")
-    return re.sub(r"[,.  ]", "", m.group(1)) + "." + m.group(2)
+    return re.sub(r"[.,，]", "", m.group(1)) + "." + m.group(2).zfill(2)
 
 
 def _t_dateyearmonthdaycjk(shown: str) -> str:
