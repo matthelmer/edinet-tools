@@ -148,7 +148,8 @@ def parse_percentage(value: Any) -> Optional[Decimal]:
     Parse percentage/ratio value to Decimal.
 
     EDINET Doc 350 stores ratios as decimals (0.0967 = 9.67%).
-    Returns as-is without dividing by 100.
+    Returns finite values as-is without dividing by 100. Nonfinite values
+    return None, as they do in parse_decimal.
     """
     if value is None:
         return None
@@ -158,11 +159,13 @@ def parse_percentage(value: Any) -> Optional[Decimal]:
             return None
         try:
             cleaned = value.replace('%', '').strip()
-            return Decimal(cleaned)
+            number = Decimal(cleaned)
+            return number if number.is_finite() else None
         except Exception:
             return None
     try:
-        return Decimal(str(value))
+        number = Decimal(str(value))
+        return number if number.is_finite() else None
     except Exception:
         return None
 
@@ -185,11 +188,20 @@ def parse_decimal(value: Any) -> Decimal | None:
     return d if d.is_finite() else None
 
 
+# Match the native reader's order of magnitude for bounded numeric output.
+# Check the expanded digit count before int(Decimal): a short string such as
+# "1e999999999" must not allocate a billion-digit Python integer.
+_MAX_INTEGER_DIGITS = 10_000
+
+
 def parse_int(value: Any) -> Optional[int]:
     """
     Parse integer, handling Japanese formatting.
 
-    Removes commas and converts to int.
+    Removes commas and converts to int without rounding through binary float.
+    Fractional values retain the existing truncation-toward-zero behavior.
+    Nonfinite values and conversions requiring more than 10,000 integer
+    digits return None. Already constructed Python integers pass through.
     """
     if value is None:
         return None
@@ -200,8 +212,15 @@ def parse_int(value: Any) -> Optional[int]:
         if not value or value in ('－', '―', '-', '—'):
             return None
         try:
-            return int(float(value))
+            value = Decimal(value)
         except Exception:
+            return None
+    if isinstance(value, Decimal):
+        if not value.is_finite():
+            return None
+        if value.is_zero():
+            return 0
+        if value.adjusted() >= _MAX_INTEGER_DIGITS:
             return None
     try:
         return int(value)

@@ -11,7 +11,10 @@ PROCESSING PHILOSOPHY: Store raw XBRL values faithfully. No interpretation.
 """
 import re
 from dataclasses import dataclass, field
-from decimal import Decimal, InvalidOperation
+from decimal import (
+    Context, Decimal, Inexact, InvalidOperation, MAX_EMAX, MIN_EMIN,
+    Overflow, ROUND_HALF_EVEN, Rounded,
+)
 from datetime import date
 
 
@@ -491,15 +494,41 @@ _HOLDER_ELEMENTS = frozenset(
 _NULL_VALUES = {'－', '-', '', 'ー', 'なし', '―', '該当なし'}
 
 
+def _exact_ownership_change(current: Decimal, prior: Decimal) -> Decimal | None:
+    """Subtract filed ratios without inheriting application Decimal settings.
+
+    The output needs at most the aligned coefficient span plus a carry digit.
+    Refuse spans over 10,000 digits (None, with filed inputs retained) before
+    arithmetic, to bound allocation for adversarial scientific exponents.
+    An unrepresentable Decimal result also returns None. These are resource
+    bounds, not rounding policies.
+    """
+    if not current.is_finite() or not prior.is_finite():
+        return None
+    exponent = min(current.as_tuple().exponent, prior.as_tuple().exponent)
+    if current == prior:
+        return Decimal((0, (0,), exponent))
+    highest = max(value.adjusted() for value in (current, prior) if value)
+    precision = highest - exponent + 2
+    if precision > 10_000:
+        return None
+    context = Context(
+        prec=max(1, precision), Emax=MAX_EMAX, Emin=MIN_EMIN,
+        rounding=ROUND_HALF_EVEN, clamp=0, flags=[],
+        traps=[Inexact, Rounded, Overflow, InvalidOperation],
+    )
+    try:
+        return context.subtract(current, prior)
+    except ArithmeticError:
+        return None
+
+
 def _normalize_holder_value(raw: str, typ: type):
     """Normalize a raw XBRL value to typed Python or None."""
     if raw is None or str(raw).strip() in _NULL_VALUES:
         return None
     if typ is int:
-        try:
-            return int(float(str(raw).replace(',', '').strip()))
-        except (ValueError, TypeError):
-            return None
+        return parse_int(str(raw))
     # EDINET emits raw HTML entity references in some filer names (&amp; etc.).
     return unescape_entities(str(raw).strip())
 
@@ -680,7 +709,7 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
     # Calculate ownership change
     ownership_change = None
     if ownership_pct is not None and prior_ownership_pct is not None:
-        ownership_change = ownership_pct - prior_ownership_pct
+        ownership_change = _exact_ownership_change(ownership_pct, prior_ownership_pct)
 
     # Dates
     filing_date = parse_date(get('filing_date'))

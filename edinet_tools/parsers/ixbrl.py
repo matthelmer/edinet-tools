@@ -96,6 +96,10 @@ _NUMUNITDECIMAL_RE = re.compile(
     r"^([0-9]{1,3}(?:[,.  ]?[0-9]{3})*)\s*[^0-9\s.,]+\s*([0-9]+)\s*[^0-9\s.,]*$"
 )
 _PLAIN_DECIMAL_RE = re.compile(r"^[0-9]+(?:\.[0-9]+)?$")
+_SCALE_RE = re.compile(r"^[+-]?[0-9]+$")
+# A numeric fact may not expand into an unbounded string through its scale. This is well
+# beyond a financial quantity's precision; check before constructing or formatting it.
+MAX_NUMERIC_CHARS = 10_000
 _DATE_CJK_RE = re.compile(r"^([0-9]{4})\s*年\s*([0-9]{1,2})\s*月\s*([0-9]{1,2})\s*日$")
 _DATE_ERA_RE = re.compile(
     r"^(明治|大正|昭和|平成|令和)\s*([0-9]{1,2}|元)\s*年\s*([0-9]{1,2})\s*月\s*([0-9]{1,2})\s*日$"
@@ -339,16 +343,33 @@ class _Reader:
                         f"{doc.name}: ix:nonFraction {name} {shown!r} has no format and is not "
                         "a plain decimal"
                     )
+            if len(digits) > MAX_NUMERIC_CHARS:
+                raise UnsupportedInlineXBRL(f"{doc.name}: numeric value on {name} is too large")
             try:
+                if scale is not None and not _SCALE_RE.fullmatch(scale.strip()):
+                    raise ValueError
+                shift = int(scale) if scale is not None else 0
+                if abs(shift) > MAX_NUMERIC_CHARS:
+                    raise ValueError
                 number = Decimal(digits)
-                if scale:
-                    number = number.scaleb(int(scale))
+                coefficient = number.as_tuple()
+                exponent = coefficient.exponent + shift
+                # Decimal.scaleb() rounds using the caller's decimal context. Constructing
+                # the exact coefficient and exponent instead preserves every filed digit,
+                # including trailing zeros, regardless of precision, rounding or traps.
+                if exponent >= 0:
+                    length = 1 if number.is_zero() else len(coefficient.digits) + exponent
+                else:
+                    length = max(len(coefficient.digits), 1 - exponent) + 1
+                if length + (sign == "-") > MAX_NUMERIC_CHARS:
+                    raise ValueError
+                number = Decimal((int(sign == "-"), coefficient.digits, exponent))
             except (InvalidOperation, ValueError):
-                raise UnsupportedInlineXBRL(f"{doc.name}: scale {scale!r} on {name}") from None
+                raise UnsupportedInlineXBRL(
+                    f"{doc.name}: scale {scale!r} or numeric size on {name} is unsupported"
+                ) from None
+            # A zero shown with sign="-" keeps that sign, as EDINET's instance and CSV do.
             value = format(number, "f")
-            if sign == "-":
-                # a zero shown with sign="-" reads "-0", as EDINET's instance and CSV write it
-                value = "-" + value
             return XbrlFact(value=value, **common)
 
         # nonNumeric

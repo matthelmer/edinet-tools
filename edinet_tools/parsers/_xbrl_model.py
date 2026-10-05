@@ -361,7 +361,13 @@ def read_package_members(zip_bytes: bytes, wanted) -> tuple:
     with zf:
         infos = [i for i in zf.infolist() if "__MACOSX" not in i.filename and wanted(i.filename)]
         total = 0
+        seen = set()
         for info in infos:
+            if info.filename in seen:
+                raise UnsupportedInlineXBRL(
+                    f"{info.filename}: duplicate member path in the package"
+                )
+            seen.add(info.filename)
             if info.file_size > MAX_MEMBER_BYTES:
                 raise UnsupportedInlineXBRL(
                     f"{info.filename}: too large ({info.file_size} bytes uncompressed; "

@@ -47,14 +47,21 @@ def read_instance(data: bytes, name: str = "") -> XbrlFacts:
     """Facts, contexts and units of one XBRL instance document."""
     data = guard_dtd(data, name or "instance")
     prefixes: dict = {}
+    namespaces: dict = {}
     events = ET.iterparse(io.BytesIO(data), events=("start-ns",))
     try:
         for _event, (prefix, uri) in events:
+            if prefix in namespaces and namespaces[prefix] != uri:
+                raise UnsupportedInlineXBRL(
+                    f"{name}: prefix {prefix!r} is bound to two namespaces; element IDs "
+                    "are ambiguous"
+                )
             if prefixes.get(uri, prefix) != prefix:
                 raise UnsupportedInlineXBRL(
                     f"{name}: namespace {uri} is bound to two prefixes; element IDs are ambiguous"
                 )
             prefixes[uri] = prefix
+            namespaces[prefix] = uri
     except ET.ParseError as e:
         raise UnsupportedInlineXBRL(f"{name or 'instance'}: not well-formed XML ({e})") from e
     root = events.root
