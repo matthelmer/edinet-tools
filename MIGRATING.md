@@ -29,6 +29,10 @@ path; installing 0.9.0 does not leave previously parsed values unchanged.
   through a binary float. Re-parsing a value above floating point's exact
   integer range can correct a stored rounded number. Fractional inputs
   still truncate toward zero. Nonfinite percentages now read as `None`.
+- **Quarterly EPS follows the finite-decimal rule.** NaN and Infinity now
+  read as `None`; comma-formatted values such as `1,234.56` are retained.
+  Equity-ratio annotations use exact tolerance comparisons and no longer
+  change when an application changes its Decimal context.
 - **Replace two-name `TierHit` unpacking.** `value, element = hit` no longer
   works because the result also holds context and unit. Use `hit.value`
   and `hit.element_id`; `hit[0]` and `hit[1]` retain their meanings.

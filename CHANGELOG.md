@@ -95,8 +95,16 @@ re-parsing stored reports.
   inherit the caller's Decimal precision or rounding settings. Source
   digits, signed zero and trailing decimal zeros are preserved by the
   native reader. Nonfinite percentages read as `None`.
+- Equity-ratio reconciliation uses exact arithmetic at the tolerance
+  boundary and no longer inherits the caller's Decimal traps or precision.
+  Ownership's float display helper also uses its own decimal settings;
+  the filed ratio remains a Decimal. Quarterly EPS now accepts comma-formatted
+  values and rejects NaN and Infinity, as annual per-share fields do.
 - The native readers refuse duplicate selected archive paths and ambiguous
   namespace bindings instead of silently discarding or conflating facts.
+- Bundled EDINET and fund registries are refreshed to October 5, 2026:
+  11,404 entities and 6,374 fund records. The compatibility lookup cache is
+  rebuilt from the same files, retaining the existing translation fallbacks.
 
 ### Reader boundaries and known limits
 

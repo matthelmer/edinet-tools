@@ -117,7 +117,7 @@ mufg = edinet_tools.search("三菱UFJ銀行")  # matches the catalog's ＵＦＪ
 banks = edinet_tools.search("bank", limit=5)
 ```
 
-Entity data comes from FSA registry snapshots bundled with the package, so lookup and search work offline. Snapshots are refreshed each release.  Loading one older than a year raises `StaleDataWarning`, and `EntityClassifier` accepts paths to newer CSVs if you download your own.
+Entity data comes from FSA registry snapshots bundled with the package, so lookup and search work offline. This release includes the October 5, 2026 snapshots. Loading one older than a year raises `StaleDataWarning`, and `EntityClassifier` accepts paths to newer CSVs if you download your own.
 
 ### Fetching Documents
 
