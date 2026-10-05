@@ -130,3 +130,21 @@ def test_group_and_individual_holder_counts_retain_filed_digits():
     assert report.shares_held == 9007199254740993
     assert len(report.joint_holders) == 1
     assert report.joint_holders[0].shares_held == 9007199254740993
+
+
+@pytest.mark.parametrize('raw', [
+    '1_', '_1', '1__0', '+_1', '-_1', '1_.0', '1._0', '1_e2', '1e_2',
+    '1e+_2', '1e2_', '1_ 0', '_', '__',
+])
+def test_malformed_underscores_do_not_create_an_integer(raw):
+    assert parse_int(raw) is None
+    assert _normalize_holder_value(raw, int) is None
+
+
+@pytest.mark.parametrize('raw,expected', [
+    ('1_000', 1000), ('+1_000', 1000), ('-1_000', -1000),
+    ('1_2.3_4', 12), ('1e1_0', 10000000000), ('1_0e-1', 1),
+    ('９_０', 90), ('9_007_199_254_740_993', 9007199254740993),
+])
+def test_underscores_between_digits_keep_existing_numeric_grammar(raw, expected):
+    assert parse_int(raw) == expected

@@ -158,7 +158,7 @@ report.net_assets_owners    # None for J-GAAP filers (never filed as one element
 report.source_elements   # field -> XBRL element read
 report.source_contexts   # field -> context read
 report.units             # monetary / per-share field -> unit id, e.g. "JPY",
-                         # "JPYPerShares"; yen is read first when both are filed
+                         # "JPYPerShares"; yen wins for the same element/context
 ```
 
 **Large shareholding (5%) report** (doc type 350):

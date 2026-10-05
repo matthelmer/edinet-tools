@@ -68,9 +68,11 @@ re-parsing stored reports.
   annual-style financial tables, correct the IFRS current-liabilities
   element and withhold US GAAP total profit where its basis is not established.
 - **Yen takes precedence when the same element and context are filed in
-  yen and another currency.** A foreign-currency-only figure stays in its
-  filed currency; `units` identifies it. This applies to per-share values
-  too: MODEC's annual EPS reads ¥826.25 instead of the US$5.28 filed beside it.
+  yen and another currency.** This preference does not cross element tiers.
+  A selected foreign-currency fact stays in its filed currency even when
+  another concept in the filing provides a yen figure; `units` identifies it.
+  Different fields and report types can select different currencies. This
+  applies to per-share values too: MODEC's annual EPS reads ¥826.25 instead of the US$5.28 filed beside it.
 - **`JointHolder.shares_held` is the holder's filed 総数**, rather than its
   main-clause stock line. Dalton's figure in S100YRDM is 6,190,300; the group
   total remains 10,709,600. A member total can be zero or negative, and
@@ -87,10 +89,15 @@ re-parsing stored reports.
 
 ### Fixed
 
+- Semi-annual `filing_date` reads the cover page's stated submission date,
+  not the financial period end. Canon's S100YUDN now reads August 6, 2026,
+  rather than June 30. A valid legacy submission-date DEI fact is still
+  accepted; absent, invalid or conflicting dates return `None`.
 - Integer fields no longer pass through binary floating point. A filed
   `9007199254740993` stays that integer rather than becoming
   `9007199254740992`. Fractional input retains the existing truncation
-  toward zero. Holder counts use the same conversion.
+  toward zero. Holder counts use the same conversion. Malformed underscores
+  are rejected; valid digit separators such as `1_000` remain accepted.
 - Native numeric scaling and the calculated change in ownership no longer
   inherit the caller's Decimal precision or rounding settings. Source
   digits, signed zero and trailing decimal zeros are preserved by the

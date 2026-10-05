@@ -41,6 +41,8 @@ ELEMENT_MAP = {
     'fund_name': 'jpdei_cor:FundNameInJapaneseDEI',
     'period_start': 'jpdei_cor:CurrentFiscalYearStartDateDEI',
     'period_end': 'jpdei_cor:CurrentPeriodEndDateDEI',
+    'filing_date': 'jpcrp_cor:FilingDateCoverPage',
+    'fund_filing_date': 'jpsps_cor:FilingDateCoverPage',
     'submission_date': 'jpdei_cor:DateOfSubmissionDEI',
     'accounting_standard': 'jpdei_cor:AccountingStandardsDEI',
     'is_consolidated': 'jpdei_cor:WhetherConsolidatedFinancialStatementsArePreparedDEI',
@@ -148,6 +150,26 @@ class SemiAnnualReport(ParsedReport):
             filer = filer[:22] + '...'
         period = self.period_end.strftime('%Y-%m') if self.period_end else '?'
         return f"SemiAnnualReport(filer='{filer}', period_end={period})"
+
+
+def _filing_date(csv_files: list) -> date | None:
+    """Read a stated submission date; the financial period is not evidence.
+
+    Cover pages carry the date in real EDINET filings. Retain support for
+    the legacy DEI field when supplied, but do not choose between conflicting
+    valid dates, including duplicates spread across files in a fund package.
+    """
+    elements = {ELEMENT_MAP[key] for key in
+                ('filing_date', 'fund_filing_date', 'submission_date')}
+    dates = {
+        parsed
+        for csv_file in csv_files
+        for row in csv_file.get('data', [])
+        if row.get('要素ID') in elements
+        and row.get('コンテキストID') == 'FilingDateInstant'
+        if (parsed := parse_date(row.get('値'))) is not None
+    }
+    return next(iter(dates)) if len(dates) == 1 else None
 
 
 def _chain(key: str):
@@ -376,7 +398,7 @@ def parse_semi_annual_report(document=None, *, csv_files=None, doc_id=None, doc_
     # Extract period
     period_start = parse_date(get_dei(csv_files, ELEMENT_MAP, 'period_start'))
     period_end = parse_date(get_dei(csv_files, ELEMENT_MAP, 'period_end'))
-    filing_date = parse_date(get_dei(csv_files, ELEMENT_MAP, 'submission_date')) or period_end
+    filing_date = _filing_date(csv_files)
 
     # Financial data from the tier tables — context-aware (v0.8.0 stage-5
     # Task 9): per-document period-token regime + strict bare-context-only

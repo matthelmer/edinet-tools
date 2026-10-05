@@ -8,10 +8,19 @@ path; installing 0.9.0 does not leave previously parsed values unchanged.
 - **Re-check stored financial values before replacing them.** IFRS and
   US GAAP fields now prefer the filing's own-standard fact. Missing facts
   follow the field's listed fallback. Compare value, `source_elements`,
-  `source_contexts` and `units` together. A foreign-currency-only value is
-  not converted to yen. Quarterly `ordinary_profit_ytd` and
+  `source_contexts` and `units` together. Yen preference applies only to
+  currency variants of the same element and context, not across element
+  tiers. A selected foreign-currency value is not converted to yen even
+  when another concept supplies a yen figure. Check each field's unit;
+  different fields and report types can select different currencies.
+  Quarterly `ordinary_profit_ytd` and
   `prior_ordinary_profit_ytd` are `None` on IFRS and US GAAP; use
   `profit_before_tax` for the current profit-before-tax figure.
+- **Re-check stored semi-annual filing dates.** `filing_date` now reads the
+  cover page's stated submission date instead of falling back to `period_end`.
+  Missing, invalid or conflicting dates return `None`; write that unknown
+  over an old substituted period end when re-parsing. The valid legacy
+  submission-date DEI field remains supported. `period_end` is unchanged.
 - **Keep both share-count bases.** `JointHolder.shares_held` changes from
   the main-clause stock line to the member's filed 総数. It can be zero or
   negative, and member totals need not sum to the group's figure.

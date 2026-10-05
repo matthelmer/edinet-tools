@@ -211,6 +211,11 @@ def parse_int(value: Any) -> Optional[int]:
         value = value.strip().replace(',', '').replace('，', '')
         if not value or value in ('－', '―', '-', '—'):
             return None
+        # Decimal silently deletes underscores anywhere; the former float
+        # parser accepted them only between digits. Keep that input grammar
+        # without rounding valid values through binary floating point.
+        if '_' in value and re.search(r'(?<!\d)_|_(?!\d)', value):
+            return None
         try:
             value = Decimal(value)
         except Exception:

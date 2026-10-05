@@ -885,8 +885,8 @@ class TestSemiAnnualExtraction:
         assert isinstance(r, SemiAnnualReport)
         assert r.total_assets is None
 
-    def test_filing_date_fallback_to_period_end(self):
-        """When submission_date missing, filing_date should fall back to period_end."""
+    def test_missing_filing_date_does_not_borrow_period_end(self):
+        """A financial period is not a stated submission date."""
         rows = [
             make_csv_row('jpdei_cor:EDINETCodeDEI', 'FilingDateInstant', 'E05123'),
             make_csv_row('jpdei_cor:FilerNameInJapaneseDEI', 'FilingDateInstant', 'テスト'),
@@ -895,7 +895,8 @@ class TestSemiAnnualExtraction:
         ]
         doc = make_mock_doc('S100FB', '160', rows)
         r = parse_semi_annual_report(doc)
-        assert r.filing_date == date(2024, 9, 30)
+        assert r.filing_date is None
+        assert r.period_end == date(2024, 9, 30)
 
 
 # =====================================================================
