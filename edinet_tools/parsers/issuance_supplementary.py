@@ -4,8 +4,8 @@ Parser for Issuance Supplementary filings (Doc Type 100).
 Extracts shelf registration supplement details from 発行登録追補書類 filings.
 These are filed to supplement a shelf registration with the specific terms
 of each actual issuance under the shelf. Key data includes the supplement
-number, parent shelf registration number, planned amounts, and remaining
-balance available under the shelf.
+number, parent shelf registration number and separately named cover amounts.
+Amount fields retain the filed text, units and qualifiers; they are not numeric totals.
 
 Doc 100: Issuance supplementary document
 """
@@ -46,6 +46,8 @@ ELEMENT_MAP = {
     'end_of_issue_period': 'jpcrp_cor:EndOfPeriodOfIssueContentsOfShelfRegistrationStatementCoverPage',
     'planned_amount': 'jpcrp_cor:PlannedAmountOfIssueOrLimitOnOutstandingBalanceContentsOfShelfRegistrationStatementCoverPage',
     'remaining_balance': 'jpcrp_cor:RemainingBalanceCoverPage',
+    'offering_amount_text': 'jpcrp_cor:AmountOfOfferingOrDistributionByThisRegistrationCoverPageTextBlock',
+    'remaining_amount_text': 'jpcrp_cor:RemainingAmountCoverPageTextBlock',
     'security_types': 'jpcrp_cor:TypesOfSecuritiesToShelfRegisterForOfferingOrDistributionCoverPage',
 
     # === Filer / representative details ===
@@ -71,8 +73,10 @@ class IssuanceSupplementaryReport(ParsedReport):
         filing_date: Date this supplement was filed
         supplement_number: Sequential number of this supplement under the shelf
         parent_shelf_reg_number: Registration number of the parent shelf filing
-        planned_amount: Amount planned for issuance under this supplement
-        remaining_balance: Remaining balance available under the shelf registration
+        planned_amount: Parent shelf planned amount or outstanding-balance ceiling
+        remaining_balance: Cover 【残高】 as filed; not available capacity 【残額】
+        offering_amount_text: This supplement's 【今回の募集金額】 cover section
+        remaining_amount_text: Cover 【残額】 section, retaining units and qualifiers
         security_types: Types of securities being issued
         is_amendment: Whether this is an amendment
     """
@@ -97,6 +101,8 @@ class IssuanceSupplementaryReport(ParsedReport):
     end_of_issue_period: str | None = None
     planned_amount: str | None = None
     remaining_balance: str | None = None
+    offering_amount_text: str | None = None
+    remaining_amount_text: str | None = None
     security_types: str | None = None
 
     # Filer / representative details
@@ -210,6 +216,8 @@ def parse_issuance_supplementary(document=None, *, csv_files=None, doc_id=None, 
         end_of_issue_period=end_of_issue_period,
         planned_amount=planned_amount,
         remaining_balance=remaining_balance,
+        offering_amount_text=get('offering_amount_text', ['FilingDateInstant']),
+        remaining_amount_text=get('remaining_amount_text', ['FilingDateInstant']),
         security_types=security_types,
 
         # Filer / representative details
