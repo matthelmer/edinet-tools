@@ -44,3 +44,6 @@ S100YUQZ  Doc 160 semi-annual report, half year to June 2026, IFRS: the statemen
 S100XQ87  Doc 350 joint report, three holders (two SPCs and an adviser): 16 of the holders'
           text sections are filed as xsi:nil, and each SPC states its collateral agreements
           as a plain "...NA" element (該当なし。). Type=1 only.
+S100MZZ3  Doc 350 change report filed 2021 by a venture-capital manager for a partnership:
+          the holder's jplvh_cor:EDINETCodeDEI fact is filed empty, which EDINET's CSV
+          prints as 「－」. Type=1 from the archive, type=5 fetched 2026-10-05.

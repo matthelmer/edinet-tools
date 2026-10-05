@@ -283,3 +283,14 @@ def test_holder_purpose_is_left_out_of_equality_and_hashing():
         assert not by_name[name].compare and not by_name[name].hash
     h = parsed("S100Y8GB", "csv").joint_holders[0]
     assert replace(h, purpose="x", important_proposal="y") == h
+
+
+@pytest.mark.parametrize("source", SOURCES)
+def test_s100mzz3_a_holder_edinet_code_filed_empty_reads_as_none(source):
+    """The holder's `jplvh_cor:EDINETCodeDEI` fact is filed empty. EDINET's CSV prints 「－」
+    for it; a dash is not a code, so the report's `filer_edinet_code` is None on every
+    source, as the holder's own `edinet_code` already was."""
+    r = parsed("S100MZZ3", source)
+    assert r.filer_edinet_code is None
+    assert r.joint_holders[0].edinet_code is None
+

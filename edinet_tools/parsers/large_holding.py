@@ -713,7 +713,10 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
         # Filer
         filer_name=filer_name,
         filer_name_en=get('filer_name_en'),
-        filer_edinet_code=get('filer_edinet_code') or getattr(document, 'filer_edinet_code', None),
+        # A code filed empty comes back from EDINET's CSV as 「－」; a dash is not a code
+        # (S100MZZ3). The holder's own edinet_code already read None for it.
+        filer_edinet_code=(_normalize_holder_value(get('filer_edinet_code'), str)
+                           or getattr(document, 'filer_edinet_code', None)),
         filer_address=get('filer_address'),
         filer_type=get('filer_type'),
         filer_business=get('filer_business'),
