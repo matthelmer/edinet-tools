@@ -1,0 +1,11 @@
+Complete saved original EDINET packages and CSV rows; no filtering.
+Read independently from original instance facts and context explicitMember identities:
+S100MJGI: business belongs to holder 2; holder 1 individual has no business fact.
+S100MJJC: funding belongs to holder 3; holder 1 and holder 2 have no funding facts.
+S100MKVJ: purpose belongs to holder 2; holder 1 has no purpose fact.
+S100MJGI.zip SHA-256 0f2200bd8c86ae93e5cccd691a2a51b6871c40cb312dd43ee79e82a2bec03bdc
+S100MJGI.json.gz SHA-256 623fd2aa18fbe7ec0c5d8dc24296c6d55bbd0ba66d736bf7ac8c99466e73ee91
+S100MJJC.zip SHA-256 6dff0360151091ce00f518f81933106961357a2b3390658645be217630c80a56
+S100MJJC.json.gz SHA-256 3b074eca769b0b41571a824d6a8af8d001ea65fcc9d3b8192244df5b4601c14b
+S100MKVJ.zip SHA-256 0a126a71f253ae1e6d6af06bcdd9a5385c7cbf3ffe2dbed7cde974c3aa39a59a
+S100MKVJ.json.gz SHA-256 17132e9268648c61d30802be34e01476e0b5d5cd898ccb9a0312fd9b294e748a
