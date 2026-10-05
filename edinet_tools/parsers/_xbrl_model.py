@@ -163,7 +163,12 @@ class _TextCollector(HTMLParser):
             self._boundary(tag)
 
     def handle_startendtag(self, tag, attrs):
-        if tag in _BLOCK_TAGS:
+        if tag in _CELL_TAGS:
+            # XML instances serialize empty cells as <td/> or <th/>. They
+            # occupy the same column as an explicit start/end pair.
+            self.handle_starttag(tag, attrs)
+            self.handle_endtag(tag)
+        elif tag in _BLOCK_TAGS:
             self._boundary(tag)
 
     def handle_endtag(self, tag):

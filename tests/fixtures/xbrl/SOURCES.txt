@@ -63,3 +63,7 @@ SHA-256: 57d3cae134156bf93e4e55377ead218c190e689f3ad40e1228d7c2d83fc256e6
 Cover fact 2024-08-09, period end 2024-06-30, amendment title 2026-09-30.
 Original type-1 instance independently confirms these facts and a
 FilingDateInstant context of 2026-09-30. The cover date belongs to the original.
+
+S100YXGK.zip: original EDINET type-1 package, saved corpus 2026-10-02c.
+SHA256 e12497304751fcc6eda67d3ea9f71117b6f2d15f02ef1c2d05d9fc6e7d4a1a41
+Regression: holder 1 borrowing table has six cells, including an empty representative-name cell.
