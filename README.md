@@ -129,7 +129,7 @@ earnings = toyota.documents(doc_type="120", days=365)
 
 ### Parsing
 
-Each block below runs as written (with `EDINET_API_KEY` set) and fetches one real filing.
+The annual-report block continues from the fetching example above (`earnings`). The 5% and tender-offer blocks each fetch one real filing by its document id. All need `EDINET_API_KEY`.
 
 **Annual securities report** (doc type 120):
 
