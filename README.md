@@ -32,9 +32,11 @@ Requires Python 3.10+. Standard library only.
 
 > **Upgrading to 0.9.0?** Values change for IFRS and US GAAP filers: a field now reads
 > the filing's own standard first, where 0.8.x could return a J-GAAP figure the filing
-> also tags. A few fields still fall back to the J-GAAP figure when the filing tags none
-> of its own, and `source_elements` shows when. J-GAAP and fund filings read as before. See the [CHANGELOG](CHANGELOG.md) for every changed value
-> and key.
+> also tags. Listed fallbacks remain where the filing has no own-standard fact;
+> `source_elements` names what was read. Currency selection and per-holder share
+> totals also change, including on the default CSV path. See
+> [MIGRATING.md](MIGRATING.md) before re-parsing stored reports and the
+> [CHANGELOG](CHANGELOG.md) for the changes and known limits.
 >
 > Versions before 0.8.1 call EDINET's retired API host and cannot fetch anything.
 >
@@ -46,11 +48,11 @@ edinet-tools has three layers:
 
 1. **API client** — fetch document listings and download filings in any format (XBRL, PDF, HTML)
 2. **Typed parsers** — every EDINET document type routes to a named Python dataclass with structured fields
-3. **Full capture** — elements not yet mapped to typed fields are preserved in `raw_fields`, `unmapped_fields`, `text_blocks`, and `raw_facts` (the full XBRL fact set), so you can explore what's available and nothing is silently dropped
+3. **Source facts** — elements not yet mapped to typed fields remain available in `raw_fields`, `unmapped_fields`, `text_blocks`, and `raw_facts`. The native reader also exposes rows with the filed context, unit and period; see the source-reading example below.
 
 Each parser maps known XBRL elements to typed Python fields (dates, decimals, strings). As EDINET evolves or new elements become useful, adding a field is one line in the element map and one line on the dataclass.
 
-If a filing doesn't state a figure, the field is `None`: never a guess, and never a number borrowed from the parent company. A financial field reads the filing's declared standard first. Where a filing tags no fact on its own standard, a field may fall back to another standard's element that the parser lists for it. On securities, quarterly and semi-annual reports, `source_elements` names the element actually read. Every mapping is tested against real filings and cross-checked against issuers' own earnings releases.
+If no eligible fact is found, the field is `None`. A financial field reads the filing's declared standard first. Where a filing tags no fact on its own standard, a field may fall back to another standard's element that the parser lists for it. On securities, quarterly and semi-annual reports, `source_elements` names the element actually read. Tests cover competing standards, contexts and currencies using real filings as well as constructed cases. The known limits below matter when comparing or storing the results.
 
 ## EDINET Document Types
 
@@ -82,7 +84,7 @@ EDINET defines 42 document types spanning corporate disclosure, capital markets 
 | 100 | Issuance Supplementary | Supplementary shelf registration drawdown documents |
 | 110 | Issuance Withdrawal | Withdrawal of issuance registration |
 
-Amendments (even-numbered codes like 130, 150, 190) route to the same parser as their base type and set `is_amendment = True`.
+Amendments (codes such as 130, 150 and 190) route to the same parser as their base type and set `is_amendment = True`.
 
 ```python
 from edinet_tools import supported_doc_types, doc_type
@@ -169,8 +171,14 @@ report.filer_name
 report.target_company
 report.ownership_pct        # joint filing → the co-filers' GROUP total, not
 report.is_joint_filing      #   the named filer's own stake (~half are joint)
-report.joint_holders        # each holder's own name, code and share count
+report.joint_holders        # each holder's name, code and reported total
 ```
+
+`JointHolder.shares_held` is the holder's filed 総数, including the filing's
+deductions. It can be zero or negative, and the member totals need not sum to
+the group's total. `stock_lines_held` gives the stock lines before deductions;
+it excludes depositary receipts, trust beneficiary certificates, warrants and
+convertibles. Keep those two bases separate.
 
 **Tender offer registration** (doc type 240):
 
@@ -226,7 +234,7 @@ for row in files[0]["data"]:
     row["instant"]                           # a fact at a point in time
 ```
 
-On the filings tested, typed fields match across sources apart from the documented differences (the 30,000-character cut, whitespace, and text the CSV drops around angle brackets). The reader uses only the standard library. It refuses what it does not implement with a named error (`UnsupportedInlineXBRL`) rather than guessing.
+Source comparisons cover long-text cuts, whitespace, text the CSV drops around angle brackets and other documented differences. Multi-series fund file ordering can also change typed numeric values; see [Limitations](#limitations) before switching sources. The reader uses only the standard library. It refuses what it does not implement with a named error (`UnsupportedInlineXBRL`) rather than guessing.
 
 ### Download Formats
 
@@ -254,6 +262,8 @@ Or set it in code with `edinet_tools.configure(api_key="...")`. Entity lookup an
 - EDINET stops serving a filing once its public-inspection period ends, so an expired document can no longer be downloaded. Keep the packages you need.
 - Some filers' inline files are HTML 4 rather than XHTML. The inline reader refuses them, and `source="instance"` reads them.
 - Where a filing's highlights table and its statements disagree, the parser follows a documented order and does not judge which figure is right. `source_elements` shows which was read.
+- A package containing several sub-funds can produce different typed values on CSV and XBRL because their file orders differ. A report-wide identity does not establish the sub-fund of every field; inspect the source rows before using these values together.
+- The instance reader cannot distinguish an escaped non-TextBlock string from plain text. Such a value can contain HTML that the inline reader renders as text.
 
 The full list is under "Known limits" in the [CHANGELOG](CHANGELOG.md).
 

@@ -6,9 +6,11 @@ include pyproject.toml
 # Include data files needed by the package
 recursive-include edinet_tools/data *.csv
 
-# Exclude all other .md files
+# Ship the upgrade information alongside the source distribution.
 exclude *.md
 include README.md
+include CHANGELOG.md
+include MIGRATING.md
 
 # Exclude development and test files
 exclude test_runner.py

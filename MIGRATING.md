@@ -1,4 +1,49 @@
-# Migrating to 0.8.0
+# Migrating edinet-tools
+
+## 0.9.0 — values, provenance and native XBRL
+
+The default source is still EDINET's CSV. These changes also affect that
+path; installing 0.9.0 does not leave previously parsed values unchanged.
+
+- **Re-check stored financial values before replacing them.** IFRS and
+  US GAAP fields now prefer the filing's own-standard fact. Missing facts
+  follow the field's listed fallback. Compare value, `source_elements`,
+  `source_contexts` and `units` together. A foreign-currency-only value is
+  not converted to yen. Quarterly `ordinary_profit_ytd` and
+  `prior_ordinary_profit_ytd` are `None` on IFRS and US GAAP; use
+  `profit_before_tax` for the current profit-before-tax figure.
+- **Keep both share-count bases.** `JointHolder.shares_held` changes from
+  the main-clause stock line to the member's filed 総数. It can be zero or
+  negative, and member totals need not sum to the group's figure.
+  `stock_lines_held` sums stock lines before deductions and excludes other
+  security classes. `LargeHoldingReport.shares_held` retains its group-total
+  meaning. Re-parse stored member rows if you need the new basis; do not
+  relabel the old values. An empty holder EDINET code now reads `None` on
+  CSV instead of a dash.
+- **Allow new serialized keys.** Every report's `to_dict()` includes
+  `source_elements`, `source_contexts` and `units`; securities, quarterly
+  and semi-annual reports populate them. Empty maps or absent field entries
+  mean provenance was not recorded. New typed fields are listed in the
+  [CHANGELOG](CHANGELOG.md).
+- **Large integers retain their digits.** Integer parsing no longer passes
+  through a binary float. Re-parsing a value above floating point's exact
+  integer range can correct a stored rounded number. Fractional inputs
+  still truncate toward zero. Nonfinite percentages now read as `None`.
+- **Replace two-name `TierHit` unpacking.** `value, element = hit` no longer
+  works because the result also holds context and unit. Use `hit.value`
+  and `hit.element_id`; `hit[0]` and `hit[1]` retain their meanings.
+- **Opt into native reading explicitly.** Use `doc.parse(source="xbrl")`
+  or `parse_xbrl(package_bytes, doc_type_code)`. Pass a type-1 package,
+  not a type-5 CSV ZIP. `source="instance"` selects the package's XBRL
+  instance; it is a useful explicit alternative for non-XHTML inline files.
+  Catch `UnsupportedInlineXBRL` from `edinet_tools.parsers.ixbrl` for a
+  named refusal. No automatic fallback changes the source you requested.
+- **Compare sources before switching stored data.** Native text can be
+  longer and retain content CSV dropped. Multi-series fund file ordering
+  can change which sub-fund supplies a typed value; inspect the source
+  rows rather than assuming every field belongs to one series.
+
+## Upgrading from before 0.8.0
 
 0.8.0 removes several fields and a few long-deprecated shims. Every removal
 raises immediately and by name — an `AttributeError` naming the replacement,
