@@ -13,12 +13,12 @@ FIELDS = ('filer_business', 'purpose', 'acquisition_fund_own',
           'acquisition_fund_borrowing', 'acquisition_fund_other', 'acquisition_fund_total')
 
 
-def saved(doc, source):
+def saved(doc, source, doc_type='350'):
     if source == 'csv':
         with gzip.open(FIXTURES / (doc + '.json.gz'), 'rt') as handle:
             files = json.load(handle)
-        return parse_large_holding(csv_files=files, doc_id=doc, doc_type_code='350')
-    return parse_xbrl((FIXTURES / (doc + '.zip')).read_bytes(), '350', source=source)
+        return parse_large_holding(csv_files=files, doc_id=doc, doc_type_code=doc_type)
+    return parse_xbrl((FIXTURES / (doc + '.zip')).read_bytes(), doc_type, source=source)
 
 
 @pytest.mark.parametrize('source', ['csv', 'xbrl', 'instance'])

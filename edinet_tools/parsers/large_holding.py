@@ -389,6 +389,20 @@ def _group_value(csv_files: list, key: str, element_id: str | None = None) -> st
     return extract_value(csv_files, element_id)
 
 
+def _group_metadata_value(csv_files: list, key: str) -> str | None:
+    """Denominator/date for the group holding, or the sole holder's own fact.
+
+    A joint filing with no group metadata is unknown. Unlike a holding
+    amount, a missing denominator or date cannot be inferred from zero exits.
+    """
+    value = _first_value(csv_files, ELEMENT_MAP[key], _is_total_context)
+    if value is not _ABSENT:
+        return value
+    if len(_holder_keys(csv_files)) > 1:
+        return None
+    return _primary_holder_value(csv_files, key)
+
+
 def _sum_or_none(values) -> int | None:
     present = [v for v in values if v is not None]
     return sum(present) if present else None
@@ -765,7 +779,7 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
         ownership_pct=ownership_pct,
         prior_ownership_pct=prior_ownership_pct,
         ownership_change=ownership_change,
-        shares_outstanding=parse_int(get('shares_outstanding')),
+        shares_outstanding=parse_int(_group_metadata_value(csv_files, 'shares_outstanding')),
 
         # Purpose & Intent. `purpose` is per-holder with no group row; the
         # PRIMARY filer's is reported here, selected by its axis context rather
@@ -779,7 +793,7 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
         # Dates
         filing_date=filing_date,
         trigger_date=parse_date(get('trigger_date')),
-        base_date=parse_date(get('base_date')),
+        base_date=parse_date(_group_metadata_value(csv_files, 'base_date')),
 
         # Funding
         acquisition_fund_own=parse_int(_primary_holder_value(csv_files, 'acquisition_fund_own')),
