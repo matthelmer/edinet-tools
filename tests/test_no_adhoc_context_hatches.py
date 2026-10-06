@@ -21,7 +21,9 @@ guard. New hatches belong in tier tables: Tier(..., suffix_match=True).
 import ast
 from pathlib import Path
 
-PACKAGE_ROOT = Path(__file__).parent.parent / 'edinet_tools'
+import edinet_tools
+
+PACKAGE_ROOT = Path(edinet_tools.__file__).resolve().parent
 ALLOWED = {PACKAGE_ROOT / 'parsers' / 'extraction.py'}
 
 CTX_LITERAL = 'コンテキストID'
@@ -89,14 +91,43 @@ def _violations_in(path: Path) -> list:
 
 
 def test_no_adhoc_context_hatches_outside_extraction():
+    paths = sorted(PACKAGE_ROOT.rglob('*.py'))
+    assert PACKAGE_ROOT / 'parsers' / 'extraction.py' in paths, (
+        f'Cannot scan the imported edinet_tools package at {PACKAGE_ROOT}')
     violations = []
-    for path in sorted(PACKAGE_ROOT.rglob('*.py')):
+    for path in paths:
         if path in ALLOWED:
             continue
         violations.extend(_violations_in(path))
     assert violations == [], (
         'Ad-hoc context hatch(es) found — the baseline is ZERO after the '
         'tier migration:\n' + '\n'.join(violations))
+
+
+def test_guard_refuses_a_missing_package(monkeypatch, tmp_path):
+    """A copied test tree must never turn a missing package into a pass."""
+    import sys
+    import pytest
+
+    monkeypatch.setattr(sys.modules[__name__], 'PACKAGE_ROOT', tmp_path)
+    with pytest.raises(AssertionError, match='Cannot scan the imported'):
+        test_no_adhoc_context_hatches_outside_extraction()
+
+
+def test_guard_rejects_a_hatch_in_the_scanned_package(monkeypatch, tmp_path):
+    """Exercise the full scan, including the exempt extraction module."""
+    import sys
+    import pytest
+
+    extraction = tmp_path / 'parsers' / 'extraction.py'
+    extraction.parent.mkdir()
+    extraction.write_text('match_element_by_suffix([], "Allowed")\n')
+    (tmp_path / 'forbidden.py').write_text(
+        'match_element_by_suffix([], "Forbidden")\n')
+    monkeypatch.setattr(sys.modules[__name__], 'PACKAGE_ROOT', tmp_path)
+    monkeypatch.setattr(sys.modules[__name__], 'ALLOWED', {extraction})
+    with pytest.raises(AssertionError, match='forbidden.py:1'):
+        test_no_adhoc_context_hatches_outside_extraction()
 
 
 def test_guard_catches_the_house_idiom():

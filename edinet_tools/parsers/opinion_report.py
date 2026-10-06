@@ -50,6 +50,22 @@ ELEMENT_MAP = {
 }
 
 
+# Preserve the established opinion element when both taxonomy versions occur.
+# For optional sections, a filed content block takes precedence over the NA
+# alternative. A literal dash is still filed text, not a missing value.
+TEXT_ELEMENT_ALIASES = {
+    'opinion_text': (
+        ELEMENT_MAP['opinion_text'],
+        'jptoo-pst_cor:OpinionRegardingSaidTenderOfferAndBasisAndReasonsEtcTextBlock',
+    ),
+    **{
+        field: (ELEMENT_MAP[field][:-2] + 'TextBlock', ELEMENT_MAP[field])
+        for field in ('extension_request_text', 'inquiries_text',
+                      'profit_provision_text', 'defense_policy_text')
+    },
+}
+
+
 @dataclass
 class OpinionReport(ParsedReport):
     """
@@ -137,7 +153,12 @@ def parse_opinion_report(document=None, *, csv_files=None, doc_id=None, doc_type
     source_files = [f['filename'] for f in csv_files]
 
     def get(key: str, context: list[str] | None = None) -> str | None:
-        return extract_value(csv_files, ELEMENT_MAP.get(key, ''), context_patterns=context)
+        elements = TEXT_ELEMENT_ALIASES.get(key, (ELEMENT_MAP.get(key, ''),))
+        for element in elements:
+            value = extract_value(csv_files, element, context_patterns=context)
+            if value is not None:
+                return value
+        return None
 
     # DEI elements
     filer_edinet_code = get('filer_edinet_code', ['FilingDateInstant'])

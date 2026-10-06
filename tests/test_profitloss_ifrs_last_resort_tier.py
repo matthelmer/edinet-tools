@@ -107,28 +107,43 @@ class TestJGAAPFilingDoesNotReadTheIFRSElement:
 
 
 # =====================================================================
-# Synthetic (b): last_resort means LAST -- when an earlier tier already
-# resolves net_income_total, the new tier must never override it, even
-# though standards=('IFRS',) lets it apply to this same filing.
+# Synthetic (b): on an IFRS filing the IFRS summary total is an own-standard
+# fact, so it outranks the J-GAAP jppfs_cor:ProfitLoss (0.9.0 own-standard
+# selection); among the IFRS facts it stays last, after the FS-level
+# jpigp_cor:ProfitLossIFRS.
 # =====================================================================
 
-class TestLastResortDoesNotOverrideAnEarlierTier:
-    def test_ifrs_filing_with_both_elements_keeps_the_earlier_tiers_value(self):
+class TestIfrsSummaryTotalOutranksJgaapButFollowsIfrsFs:
+    """0.9.0 own-standard selection: on an IFRS filing the IFRS summary total
+    is the filing's own-standard fact, so it now outranks the J-GAAP
+    jppfs_cor:ProfitLoss (0.8.x returned the J-GAAP 100 here). Within the IFRS
+    facts the last-resort order stands: the FS-level
+    jpigp_cor:ProfitLossIFRS is read before the summary element."""
+
+    def test_ifrs_filing_reads_the_ifrs_total_over_the_jgaap_one(self):
         rows = _dei('IFRS') + [
-            # jppfs_cor:ProfitLoss (the existing, non-last-resort
-            # net_income_total tier) resolves first and wins.
             _row('jppfs_cor:ProfitLoss', 'CurrentYearDuration', '100'),
             _row('jpcrp_cor:ProfitLossIFRSSummaryOfBusinessResults',
                  'CurrentYearDuration', '200'),
         ]
         r = _parse(rows)
-        assert r.net_income_total == 100
+        assert r.net_income_total == 200
 
-    def test_ifrs_filing_with_both_elements_keeps_the_earlier_tiers_value_prior_year(self):
+    def test_ifrs_filing_reads_the_ifrs_total_over_the_jgaap_one_prior_year(self):
         rows = _dei('IFRS') + [
             _row('jppfs_cor:ProfitLoss', 'Prior1YearDuration', '110'),
             _row('jpcrp_cor:ProfitLossIFRSSummaryOfBusinessResults',
                  'Prior1YearDuration', '210'),
         ]
         r = _parse(rows)
-        assert r.prior_net_income_total == 110
+        assert r.prior_net_income_total == 210
+
+    def test_fs_level_ifrs_total_still_precedes_the_summary_element(self):
+        rows = _dei('IFRS') + [
+            _row('jppfs_cor:ProfitLoss', 'CurrentYearDuration', '100'),
+            _row('jpigp_cor:ProfitLossIFRS', 'CurrentYearDuration', '150'),
+            _row('jpcrp_cor:ProfitLossIFRSSummaryOfBusinessResults',
+                 'CurrentYearDuration', '200'),
+        ]
+        r = _parse(rows)
+        assert r.net_income_total == 150

@@ -1,0 +1,8 @@
+Complete original EDINET packages and saved CSV rows, copied without filtering.
+S100Z4K0: 2026 opinion, new opinion tag and four content section tags.
+S100MGAW: 2021 Shinsei opinion, substantive defense/questions/extension text.
+Verified directly against original XBRL elements and printed section labels.
+S100Z4K0.zip SHA-256 8821af2e40b919ae099075a488e4b829983ba9e8b5b9f6ff6209658fdc07f7b3
+S100Z4K0.json.gz SHA-256 877fbdc7ce9558e535c48ca5b1788c13f7973d62621116136bdc8183f2fa48c3
+S100MGAW.zip SHA-256 7817241f259815feaa4f4e54307da8a2ea853eb24682d5b762b9ea7c3b86bc2d
+S100MGAW.json.gz SHA-256 14638959134762cc5c0539a9a27f1c3029abaede53eff1f220f6c592771654b8

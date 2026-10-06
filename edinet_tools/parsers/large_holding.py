@@ -11,7 +11,10 @@ PROCESSING PHILOSOPHY: Store raw XBRL values faithfully. No interpretation.
 """
 import re
 from dataclasses import dataclass, field
-from decimal import Decimal, InvalidOperation
+from decimal import (
+    Context, Decimal, Inexact, InvalidOperation, MAX_EMAX, MIN_EMIN,
+    Overflow, ROUND_HALF_EVEN, Rounded,
+)
 from datetime import date
 
 
@@ -26,6 +29,25 @@ from .extraction import (
     unescape_entities,
 )
 
+
+# The 株券又は投資証券等 (stock or investment securities) lines of the holdings
+# table: every one the jplvh taxonomy defines under Article 27-23(3) — 本文 (main
+# clause), 第1号, 第2号 (discretionary accounts) and 第3号. stock_lines_held is
+# their sum BEFORE any deduction. The other security lines (株券預託証券,
+# 株券信託受益証券, warrants, convertibles, ...) are not included. Checked against
+# the element names the fixtures' presentation and definition linkbases reference
+# (tests pin the set).
+#
+# shares_held is not derived from these: it is the filing's own 保有株券等の数（総数）
+# (TotalNumberOfStocksEtcHeld) = the gross holding across every security line,
+# less shares sold on margin (NumberOfStocksEtcToDeductAsSoldOnMarginTrading), less
+# shares counted twice between joint holders. Neither figure bounds the other.
+STOCK_LINE_ELEMENTS = (
+    'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233MainClause',
+    'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233Item1',
+    'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233Item2',
+    'jplvh_cor:StocksOrInvestmentSecuritiesEtcArticle27233Item3',
+)
 
 # XBRL Element ID mappings for Doc 350 (Large Holding Reports)
 # Validated against jplvh_cor taxonomy
@@ -47,6 +69,8 @@ ELEMENT_MAP = {
     'target_ticker': 'jplvh_cor:SecurityCodeOfIssuer',
 
     # Ownership Data
+    # 保有株券等の数（総数）: the gross holding less margin-sale and joint-holder
+    # deductions, as filed (see STOCK_LINE_ELEMENTS above).
     'shares_held': 'jplvh_cor:TotalNumberOfStocksEtcHeld',
     'ownership_pct': 'jplvh_cor:HoldingRatioOfShareCertificatesEtc',
     'prior_ownership_pct': 'jplvh_cor:HoldingRatioOfShareCertificatesEtcPerLastReport',
@@ -103,10 +127,40 @@ class JointHolder:
     workplace_name: str | None = None
     workplace_address: str | None = None
 
-    # Ownership counts (primary clause of §27-23 Para 3)
+    # Ownership counts. shares_held is the holder's 保有株券等の数（総数）
+    # (TotalNumberOfStocksEtcHeld) in its own context, as filed: the gross holding
+    # across every security line, less shares sold on margin, less shares counted twice
+    # between joint holders (0.9.0; before, the 本文 stock line only, so a holder
+    # reporting under 第2号 — discretionary accounts — read None). Warrants and
+    # convertible bonds are their 本文 lines.
     shares_held: int | None = None
     warrants_held: int | None = None
     convertible_bonds_held: int | None = None
+
+    # The holder's 株券又は投資証券等 lines (本文, 第1号, 第2号, 第3号) summed, BEFORE the
+    # margin-sale and joint-holder deductions; other security lines (株券預託証券 etc.)
+    # are not included. None when no such line is filed (0.9.0).
+    stock_lines_held: int | None = None
+
+    # The holder's own text sections (key -> text), e.g. its 60-day trading table (0.9.0).
+    # Excluded from hashing and equality so JointHolder stays hashable.
+    text_blocks: dict = field(default_factory=dict, hash=False, compare=False)
+
+    # Keys of the holder's text sections filed as xsi:nil: no text, which the CSV shows as
+    # 「－」. Known only on the XBRL sources (the CSV cannot tell nil from a filed dash);
+    # these keys are never in text_blocks (0.9.0).
+    nil_text_blocks: tuple = field(default=(), hash=False, compare=False)
+
+    # The holder's own plain "...NA" statements (key -> text), e.g. 「該当なし。」 for its
+    # collateral agreements, where the matching text section is nil (0.9.0).
+    not_applicable: dict = field(default_factory=dict, hash=False, compare=False)
+
+    # The holder's own 保有目的 (PurposeOfHolding) and 重要提案行為等
+    # (ActOfMakingImportantProposalEtc), read in its own context as plain strings; None
+    # when the holder states none (「－」, 「該当なし」) (0.9.0). Narrative like text_blocks,
+    # so likewise excluded from hashing and equality: a holder is equal by identity and counts.
+    purpose: str | None = field(default=None, hash=False, compare=False)
+    important_proposal: str | None = field(default=None, hash=False, compare=False)
 
 
 @dataclass
@@ -130,12 +184,17 @@ class LargeHoldingReport(ParsedReport):
     target_ticker: str | None = None
     listed_or_otc: str | None = None
 
-    # Ownership
+    # Ownership. shares_held: the group's 保有株券等の数（総数） as filed
+    # (TotalNumberOfStocksEtcHeld): the gross holding less margin-sale and
+    # joint-holder deductions. stock_lines_held (0.9.0): the group's
+    # 株券又は投資証券等 lines summed before those deductions; other security lines
+    # are not included.
     shares_held: int | None = None
     ownership_pct: Decimal | None = None
     prior_ownership_pct: Decimal | None = None
     ownership_change: Decimal | None = None
     shares_outstanding: int | None = None
+    stock_lines_held: int | None = None
 
     # Intent (raw text, no interpretation)
     purpose: str | None = None
@@ -164,6 +223,11 @@ class LargeHoldingReport(ParsedReport):
     joint_holders: list[JointHolder] = field(default_factory=list)
     joint_holder_count: int = 0
 
+    # Text sections carried by a holder's context, per context ID (0.9.0):
+    # {context_id: {key: text}}. `text_blocks` keeps one value per element (the last
+    # holder's, on a joint filing); this keeps every holder's.
+    text_blocks_by_context: dict = field(default_factory=dict)
+
     @property
     def filer(self):
         """Resolve filer to Entity if possible."""
@@ -184,9 +248,18 @@ class LargeHoldingReport(ParsedReport):
 
     @property
     def ownership_percentage(self) -> float | None:
-        """Ownership as a percentage (e.g., 9.67 for 9.67%)."""
+        """Ownership as an approximate display float (e.g., 9.67 for 9.67%).
+
+        Shift the decimal point before the float conversion without inheriting
+        caller precision or traps. Exact filed ratios stay on ownership_pct.
+        """
         if self.ownership_pct is not None:
-            return float(self.ownership_pct * 100)
+            context = Context(
+                prec=max(1, len(self.ownership_pct.as_tuple().digits)),
+                Emax=MAX_EMAX, Emin=MIN_EMIN, rounding=ROUND_HALF_EVEN,
+                clamp=0, flags=[], traps=[],
+            )
+            return float(self.ownership_pct.scaleb(2, context=context))
         return None
 
     def __repr__(self) -> str:
@@ -197,7 +270,7 @@ class LargeHoldingReport(ParsedReport):
         if len(target) > 20:
             target = target[:17] + '...'
         if self.ownership_pct is not None:
-            pct = f'{float(self.ownership_pct * 100):.2f}%'
+            pct = f'{self.ownership_percentage:.2f}%'
         else:
             pct = '?%'
         return f"LargeHoldingReport(filer='{filer}', target='{target}', ownership={pct})"
@@ -282,7 +355,7 @@ def _all_holders_zero(csv_files: list, element_id: str) -> str | None:
         return None
 
 
-def _group_value(csv_files: list, key: str) -> str | None:
+def _group_value(csv_files: list, key: str, element_id: str | None = None) -> str | None:
     """A holding figure for the whole group.
 
     Tier 1: the un-dimensioned (total) row. Tier 2, single-filer filings only:
@@ -300,7 +373,7 @@ def _group_value(csv_files: list, key: str) -> str | None:
     joint filing (375 of 400 sampled filings since 2024 disagreed with the
     filed total-context prior).
     """
-    element_id = ELEMENT_MAP[key]
+    element_id = element_id or ELEMENT_MAP[key]
     v = _first_value(csv_files, element_id, _is_total_context)
     if v is not _ABSENT:
         return v
@@ -316,6 +389,42 @@ def _group_value(csv_files: list, key: str) -> str | None:
     return extract_value(csv_files, element_id)
 
 
+def _group_metadata_value(csv_files: list, key: str) -> str | None:
+    """Denominator/date for the group holding, or the sole holder's own fact.
+
+    A joint filing with no group metadata is unknown. Unlike a holding
+    amount, a missing denominator or date cannot be inferred from zero exits.
+    """
+    value = _first_value(csv_files, ELEMENT_MAP[key], _is_total_context)
+    if value is not _ABSENT:
+        return value
+    if len(_holder_keys(csv_files)) > 1:
+        return None
+    return _primary_holder_value(csv_files, key)
+
+
+def _sum_or_none(values) -> int | None:
+    present = [v for v in values if v is not None]
+    return sum(present) if present else None
+
+
+def _group_stock_lines(csv_files: list) -> int | None:
+    """The group's stock lines before deductions: each read by `_group_value`'s tiers, summed.
+    None when no stock line is filed, and None (never a partial sum) when a line
+    has a number on some row but no group figure could be read for it."""
+    parts = []
+    for element_id in STOCK_LINE_ELEMENTS:
+        v = parse_int(_group_value(csv_files, None, element_id))
+        if v is None and any(
+            parse_int(row.get('値')) is not None
+            for f in csv_files or [] for row in f.get('data', []) or []
+            if row.get('要素ID') == element_id
+        ):
+            return None
+        parts.append(v)
+    return _sum_or_none(parts)
+
+
 def _primary_holder_value(csv_files: list, key: str) -> str | None:
     """A per-holder field, taken from the primary filer — the lowest
     (axis, N) holder present, the same ordering `_extract_joint_holders`
@@ -323,19 +432,14 @@ def _primary_holder_value(csv_files: list, key: str) -> str | None:
     yields its first holder. Positional first-match only for legacy filings
     with no axis at all."""
     element_id = ELEMENT_MAP[key]
-    best = None
-    for csv_file in csv_files or []:
-        for row in csv_file.get('data', []) or []:
-            if row.get('要素ID') != element_id:
-                continue
-            m = _HOLDER_AXIS_RE.search(row.get('コンテキストID', '') or '')
-            if not m:
-                continue
-            k = (0, int(m.group(1))) if m.group(1) is not None else (1, int(m.group(2)))
-            if best is None or k < best[0]:
-                v = row.get('値')
-                best = (k, unescape_entities(v) if v is not None else None)
-    return extract_value(csv_files, element_id) if best is None else best[1]
+    holders = _holder_keys(csv_files)
+    if not holders:
+        return extract_value(csv_files, element_id)
+    # Select identity from all facts, before selecting a field. An untagged
+    # lead-holder cell must not promote the next holder who tagged a value.
+    primary = min(holders)
+    value = _first_value(csv_files, element_id, lambda ctx: _holder_key(ctx) == primary)
+    return None if value is _ABSENT else value
 
 
 def _any_holder_value(csv_files: list, key: str) -> str | None:
@@ -378,21 +482,26 @@ def _detect_joint_filing(csv_files: list) -> bool:
     return False
 
 
-# Field label (項目名) → (attribute, type)
-_HOLDER_FIELD_MAP: dict[str, tuple[str, type]] = {
-    'EDINETコード、大量保有DEI': ('edinet_code', str),
-    '氏名又は名称（日本語表記）、大量保有DEI': ('name_jp', str),
-    '氏名又は名称': ('name_jp', str),  # fallback for older filings
-    '氏名又は名称（英語表記）、大量保有DEI': ('name_en', str),
-    '住所又は本店所在地': ('address', str),
-    '代表者氏名': ('representative_name', str),
-    '代表者役職': ('representative_title', str),
-    '勤務先名称': ('workplace_name', str),
-    '勤務先住所': ('workplace_address', str),
-    '株券又は投資証券等、法第27条の23第3項本文': ('shares_held', int),
-    '新株予約権証券又は新投資口予約権証券等、法第27条の23第3項本文': ('warrants_held', int),
-    '新株予約権付社債券、法第27条の23第3項本文': ('convertible_bonds_held', int),
+# Per-holder fields by element ID (0.9.0; before, by the CSV's 項目名 label, which the
+# XBRL does not carry). attribute -> (element IDs in order of preference, type).
+_HOLDER_FIELDS: dict[str, tuple[tuple[str, ...], type]] = {
+    'edinet_code': (('jplvh_cor:EDINETCodeDEI',), str),
+    'name_jp': (('jplvh_cor:FilerNameInJapaneseDEI', 'jplvh_cor:Name'), str),
+    'name_en': (('jplvh_cor:FilerNameInEnglishDEI',), str),
+    'address': (('jplvh_cor:ResidentialAddressOrAddressOfRegisteredHeadquarter',), str),
+    'representative_name': (('jplvh_cor:NameOfRepresentative',), str),
+    'representative_title': (('jplvh_cor:JobTitleOfRepresentative',), str),
+    'workplace_name': (('jplvh_cor:NameOfEmployer',), str),
+    'workplace_address': (('jplvh_cor:AddressOfEmployer',), str),
+    'shares_held': (('jplvh_cor:TotalNumberOfStocksEtcHeld',), int),
+    'warrants_held': (('jplvh_cor:SubscriptionRightsToSharesArticle27233MainClause',), int),
+    'convertible_bonds_held': (('jplvh_cor:ConvertibleBondsArticle27233MainClause',), int),
+    'purpose': ((ELEMENT_MAP['purpose'],), str),
+    'important_proposal': ((ELEMENT_MAP['important_proposal'],), str),
 }
+_HOLDER_ELEMENTS = frozenset(
+    [e for elements, _t in _HOLDER_FIELDS.values() for e in elements] + list(STOCK_LINE_ELEMENTS)
+)
 
 # Japanese null markers used in Doc 350 holder rows.
 # Superset of extraction.py's `_NUMERIC_NULL_PLACEHOLDERS` for the dash family;
@@ -403,25 +512,101 @@ _HOLDER_FIELD_MAP: dict[str, tuple[str, type]] = {
 _NULL_VALUES = {'－', '-', '', 'ー', 'なし', '―', '該当なし'}
 
 
+def _exact_ownership_change(current: Decimal, prior: Decimal) -> Decimal | None:
+    """Subtract filed ratios without inheriting application Decimal settings.
+
+    The output needs at most the aligned coefficient span plus a carry digit.
+    Refuse spans over 10,000 digits (None, with filed inputs retained) before
+    arithmetic, to bound allocation for adversarial scientific exponents.
+    An unrepresentable Decimal result also returns None. These are resource
+    bounds, not rounding policies.
+    """
+    if not current.is_finite() or not prior.is_finite():
+        return None
+    exponent = min(current.as_tuple().exponent, prior.as_tuple().exponent)
+    if current == prior:
+        return Decimal((0, (0,), exponent))
+    highest = max(value.adjusted() for value in (current, prior) if value)
+    precision = highest - exponent + 2
+    if precision > 10_000:
+        return None
+    context = Context(
+        prec=max(1, precision), Emax=MAX_EMAX, Emin=MIN_EMIN,
+        rounding=ROUND_HALF_EVEN, clamp=0, flags=[],
+        traps=[Inexact, Rounded, Overflow, InvalidOperation],
+    )
+    try:
+        return context.subtract(current, prior)
+    except ArithmeticError:
+        return None
+
+
 def _normalize_holder_value(raw: str, typ: type):
     """Normalize a raw XBRL value to typed Python or None."""
     if raw is None or str(raw).strip() in _NULL_VALUES:
         return None
     if typ is int:
-        try:
-            return int(float(str(raw).replace(',', '').strip()))
-        except (ValueError, TypeError):
-            return None
+        return parse_int(str(raw))
     # EDINET emits raw HTML entity references in some filer names (&amp; etc.).
     return unescape_entities(str(raw).strip())
 
 
-def _extract_joint_holders(csv_files: list) -> list[JointHolder]:
+def _holder_key(ctx: str) -> tuple[int, int] | None:
+    m = _HOLDER_AXIS_RE.search(ctx or '')
+    if not m:
+        return None
+    return (0, int(m.group(1))) if m.group(1) is not None else (1, int(m.group(2)))
+
+
+def _text_block_key(elem_id: str) -> str:
+    return elem_id.split(':')[-1] if ':' in elem_id else elem_id
+
+
+def _text_blocks_by_context(csv_files: list) -> dict[str, dict[str, str]]:
+    """{holder context ID: {text-section key: text}} for sections carried by a holder's
+    context. First value per (context, key) wins; EDINET repeats some facts verbatim."""
+    out: dict[str, dict[str, str]] = {}
+    for csv_file in csv_files or []:
+        for row in csv_file.get('data', []) or []:
+            elem_id = row.get('要素ID', '') or ''
+            ctx = row.get('コンテキストID', '') or ''
+            if ('TextBlock' not in elem_id or _holder_key(ctx) is None or row.get('値') is None
+                    or row.get('nil') is True):
+                continue
+            out.setdefault(ctx, {}).setdefault(
+                _text_block_key(elem_id), unescape_entities(row.get('値')))
+    return out
+
+
+def _holder_nil_and_na(csv_files: list) -> dict[str, tuple[list[str], dict[str, str]]]:
+    """{holder context ID: (text-section keys filed as xsi:nil, {"...NA" key: statement})}.
+    A nil fact carries nil=True on the XBRL rows; CSV rows carry no such flag."""
+    out: dict[str, tuple[list[str], dict[str, str]]] = {}
+    for csv_file in csv_files or []:
+        for row in csv_file.get('data', []) or []:
+            elem_id = row.get('要素ID', '') or ''
+            ctx = row.get('コンテキストID', '') or ''
+            if _holder_key(ctx) is None:
+                continue
+            key = _text_block_key(elem_id)
+            nil = row.get('nil') is True
+            if 'TextBlock' in elem_id and nil:
+                keys = out.setdefault(ctx, ([], {}))[0]
+                if key not in keys:
+                    keys.append(key)
+            elif 'TextBlock' not in elem_id and key.endswith('NA') and not nil and row.get('値'):
+                out.setdefault(ctx, ([], {}))[1].setdefault(key, unescape_entities(row.get('値')))
+    return out
+
+
+def _extract_joint_holders(csv_files: list, by_context: dict | None = None) -> list[JointHolder]:
     """Extract per-holder rows from XBRL substrate.
 
     Buckets rows by co-reporter axis (`FilerLargeVolumeHolder<N>Member`,
-    then `JointHolder<N>Member`), extracts typed fields by `項目名` label,
-    and returns holders renumbered densely 1..K with the primary filer first.
+    then `JointHolder<N>Member`), reads typed fields by element ID in the
+    holder's context (`_HOLDER_FIELDS`), attaches the holder's own text
+    sections, and returns holders renumbered densely 1..K with the primary
+    filer first.
 
     For single-filer reports, returns a 1-element list (the primary filer
     at N=1). For joint reports (K>=2 co-reporters), returns K elements.
@@ -431,31 +616,57 @@ def _extract_joint_holders(csv_files: list) -> list[JointHolder]:
     # Bucket key: (axis, N). Axis 0 = FilerLargeVolumeHolder (primary is N=1),
     # axis 1 = JointHolder. Holders are emitted in that order and renumbered
     # 1..K so holder_number stays a dense ordering key across both axes.
-    by_holder: dict[tuple[int, int], dict] = {}
+    raw: dict[tuple[int, int], dict[str, str]] = {}
+    contexts: dict[tuple[int, int], list[str]] = {}
     for csv_file in csv_files or []:
         for row in csv_file.get('data', []) or []:
             ctx = row.get('コンテキストID', '') or ''
-            m = _HOLDER_AXIS_RE.search(ctx)
-            if not m:
+            key = _holder_key(ctx)
+            if key is None:
                 continue
-            key = (0, int(m.group(1))) if m.group(1) is not None else (1, int(m.group(2)))
-            # A holder exists as soon as its axis appears, even if no labelled
+            # A holder exists as soon as its axis appears, even if no mapped
             # field does — keeps joint_holder_count consistent with
             # is_joint_filing (both count axis members).
-            holder_dict = by_holder.setdefault(key, {})
-            field_label = row.get('項目名', '') or ''
-            if field_label not in _HOLDER_FIELD_MAP:
-                continue
-            attr, typ = _HOLDER_FIELD_MAP[field_label]
-            value = _normalize_holder_value(row.get('値', ''), typ)
-            # First-wins per (holder, attr) to avoid the fallback
-            # '氏名又は名称' label overwriting '氏名又は名称（日本語表記）、大量保有DEI'
-            # when both appear in a transitional filing. In practice these labels
-            # are mutually exclusive by filing vintage; the guard is defensive.
-            if attr not in holder_dict or holder_dict[attr] is None:
-                holder_dict[attr] = value
-    return [JointHolder(holder_number=i, **by_holder[k])
-            for i, k in enumerate(sorted(by_holder.keys()), start=1)]
+            values = raw.setdefault(key, {})
+            if ctx not in contexts.setdefault(key, []):
+                contexts[key].append(ctx)
+            elem_id = row.get('要素ID', '') or ''
+            if elem_id in _HOLDER_ELEMENTS:
+                # First value per element wins (EDINET repeats some facts verbatim).
+                value = row.get('値', '')
+                if values.get(elem_id) is None:
+                    values[elem_id] = value
+
+    if by_context is None:
+        by_context = _text_blocks_by_context(csv_files)
+    nil_and_na = _holder_nil_and_na(csv_files)
+    holders = []
+    for i, key in enumerate(sorted(raw), start=1):
+        fields: dict = {}
+        for attr, (elements, typ) in _HOLDER_FIELDS.items():
+            fields[attr] = None
+            for elem_id in elements:
+                value = _normalize_holder_value(raw[key].get(elem_id), typ)
+                if value is not None:
+                    fields[attr] = value
+                    break
+        fields['stock_lines_held'] = _sum_or_none(
+            _normalize_holder_value(raw[key].get(e), int) for e in STOCK_LINE_ELEMENTS
+        )
+        blocks: dict[str, str] = {}
+        nil_keys: list[str] = []
+        na: dict[str, str] = {}
+        for ctx in contexts[key]:
+            for k, v in by_context.get(ctx, {}).items():
+                blocks.setdefault(k, v)
+            ctx_nil, ctx_na = nil_and_na.get(ctx, ([], {}))
+            nil_keys += [k for k in ctx_nil if k not in nil_keys and k not in blocks]
+            for k, v in ctx_na.items():
+                na.setdefault(k, v)
+        holders.append(JointHolder(holder_number=i, text_blocks=blocks,
+                                   nil_text_blocks=tuple(k for k in nil_keys if k not in blocks),
+                                   not_applicable=na, **fields))
+    return holders
 
 
 def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_code=None) -> LargeHoldingReport:
@@ -500,11 +711,13 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
     # Filer name (try multiple element IDs)
     filer_name = get('filer_name_alt1') or get('filer_name_alt2') or getattr(document, 'filer_name', None)
 
-    # Target ticker (normalize to 4-digit + .T format)
+    # Target ticker (four-character code + .T). Fold filed fullwidth digits
+    # for lookup; raw_fields/raw_facts retain the original issuer code.
     target_ticker_raw = get('target_ticker')
     target_ticker = None
     if target_ticker_raw:
-        ticker_digits = target_ticker_raw.strip()[:4]
+        ticker_digits = target_ticker_raw.translate(
+            str.maketrans('０１２３４５６７８９', '0123456789')).strip()[:4]
         target_ticker = f"{ticker_digits}.T"
 
     # Holding figures for the whole group: explicit total-context selection (0.8.4).
@@ -516,7 +729,7 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
     # Calculate ownership change
     ownership_change = None
     if ownership_pct is not None and prior_ownership_pct is not None:
-        ownership_change = ownership_pct - prior_ownership_pct
+        ownership_change = _exact_ownership_change(ownership_pct, prior_ownership_pct)
 
     # Dates
     filing_date = parse_date(get('filing_date'))
@@ -530,7 +743,8 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
     # Detect joint filing via co-reporter axis presence in context_ids
     # (FilerLargeVolumeHolder<N>Member N >= 2, or JointHolder<N>Member).
     is_joint_filing = _detect_joint_filing(csv_files)
-    joint_holders_list = _extract_joint_holders(csv_files)
+    text_blocks_by_context = _text_blocks_by_context(csv_files)
+    joint_holders_list = _extract_joint_holders(csv_files, text_blocks_by_context)
 
     return LargeHoldingReport(
         doc_id=doc_id,
@@ -548,10 +762,13 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
         # Filer
         filer_name=filer_name,
         filer_name_en=get('filer_name_en'),
-        filer_edinet_code=get('filer_edinet_code') or getattr(document, 'filer_edinet_code', None),
+        # A code filed empty comes back from EDINET's CSV as 「－」; a dash is not a code
+        # (S100MZZ3). The holder's own edinet_code already read None for it.
+        filer_edinet_code=(_normalize_holder_value(get('filer_edinet_code'), str)
+                           or getattr(document, 'filer_edinet_code', None)),
         filer_address=get('filer_address'),
         filer_type=get('filer_type'),
-        filer_business=get('filer_business'),
+        filer_business=_primary_holder_value(csv_files, 'filer_business'),
 
         # Target
         target_company=get('target_company'),
@@ -560,10 +777,11 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
 
         # Ownership
         shares_held=parse_int(_group_value(csv_files, 'shares_held')),
+        stock_lines_held=_group_stock_lines(csv_files),
         ownership_pct=ownership_pct,
         prior_ownership_pct=prior_ownership_pct,
         ownership_change=ownership_change,
-        shares_outstanding=parse_int(get('shares_outstanding')),
+        shares_outstanding=parse_int(_group_metadata_value(csv_files, 'shares_outstanding')),
 
         # Purpose & Intent. `purpose` is per-holder with no group row; the
         # PRIMARY filer's is reported here, selected by its axis context rather
@@ -577,16 +795,17 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
         # Dates
         filing_date=filing_date,
         trigger_date=parse_date(get('trigger_date')),
-        base_date=parse_date(get('base_date')),
+        base_date=parse_date(_group_metadata_value(csv_files, 'base_date')),
 
         # Funding
-        acquisition_fund_own=parse_int(get('acquisition_fund_own')),
-        acquisition_fund_borrowing=parse_int(get('acquisition_fund_borrowing')),
-        acquisition_fund_other=parse_int(get('acquisition_fund_other')),
-        acquisition_fund_total=parse_int(get('acquisition_fund_total')),
+        acquisition_fund_own=parse_int(_primary_holder_value(csv_files, 'acquisition_fund_own')),
+        acquisition_fund_borrowing=parse_int(_primary_holder_value(csv_files, 'acquisition_fund_borrowing')),
+        acquisition_fund_other=parse_int(_primary_holder_value(csv_files, 'acquisition_fund_other')),
+        acquisition_fund_total=parse_int(_primary_holder_value(csv_files, 'acquisition_fund_total')),
 
         # Joint-filing flag (FilerLargeVolumeHolder<N>Member axis presence, N >= 2)
         is_joint_filing=is_joint_filing,
         joint_holders=joint_holders_list,
         joint_holder_count=len(joint_holders_list),
+        text_blocks_by_context=text_blocks_by_context,
     )

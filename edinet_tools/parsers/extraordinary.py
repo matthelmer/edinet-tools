@@ -63,10 +63,13 @@ ELEMENT_MAP = {
     'place_of_filing_corp': 'jpcrp-esr_cor:PlaceOfFilingCoverPage',
     'contact_person_fund': 'jpsps-esr_cor:NameOfContactPersonCoverPage',
     'contact_person_corp': 'jpcrp-esr_cor:NameOfContactPersonCoverPage',
+    'contact_person_corp_nearest': 'jpcrp-esr_cor:NameOfContactPersonNearestPlaceOfContactCoverPage',
     'contact_address_fund': 'jpsps-esr_cor:PlaceOfContactCoverPage',
     'contact_address_corp': 'jpcrp-esr_cor:PlaceOfContactCoverPage',
+    'contact_address_corp_nearest': 'jpcrp-esr_cor:NearestPlaceOfContactCoverPage',
     'contact_phone_fund': 'jpsps-esr_cor:TelephoneNumberCoverPage',
     'contact_phone_corp': 'jpcrp-esr_cor:TelephoneNumberCoverPage',
+    'contact_phone_corp_nearest': 'jpcrp-esr_cor:TelephoneNumberNearestPlaceOfContactCoverPage',
 }
 
 # Event type detection keywords
@@ -109,7 +112,7 @@ class ExtraordinaryReport(ParsedReport):
 
     # Content
     reason_for_filing: str | None = None
-    event_type: str | None = None  # Derived from reason text
+    event_type: str | None = None  # Keyword heuristic; not a filed event or entity attribution
 
     @property
     def filer(self):
@@ -149,6 +152,27 @@ def _classify_event_type(reason_text: Optional[str]) -> str:
                 return event_type
 
     return 'other'
+
+
+def _contact_block(get):
+    """Address, person and phone from one filed cover-page office block.
+
+    Preserve address precedence: fund, corporate legacy, corporate nearest.
+    An absent field in the selected block stays absent, even when another
+    office supplies it. A report without a contact address can still state
+    its original fund/corporate person and phone together.
+    """
+    for block in ('fund', 'corp', 'corp_nearest'):
+        address = get(f'contact_address_{block}')
+        if address:
+            return (address, get(f'contact_person_{block}') or None,
+                    get(f'contact_phone_{block}') or None)
+    for block in ('fund', 'corp'):
+        person = get(f'contact_person_{block}') or None
+        phone = get(f'contact_phone_{block}') or None
+        if person or phone:
+            return None, person, phone
+    return None, None, None
 
 
 def parse_extraordinary_report(document=None, *, csv_files=None, doc_id=None, doc_type_code=None) -> ExtraordinaryReport:
@@ -222,9 +246,7 @@ def parse_extraordinary_report(document=None, *, csv_files=None, doc_id=None, do
 
     # Contact info - try both namespaces
     place_of_filing = get('place_of_filing_fund') or get('place_of_filing_corp')
-    contact_person = get('contact_person_fund') or get('contact_person_corp')
-    contact_address = get('contact_address_fund') or get('contact_address_corp')
-    contact_phone = get('contact_phone_fund') or get('contact_phone_corp')
+    contact_address, contact_person, contact_phone = _contact_block(get)
 
     # Extract reason for filing - try both namespaces
     reason_for_filing = get('reason_fund') or get('reason_corp')

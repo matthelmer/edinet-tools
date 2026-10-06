@@ -57,7 +57,7 @@ _CONSOLIDATION_MEMBERS = {'NonConsolidated', 'Consolidated'}
 # whose cleaned name ends with one of these is unambiguously an operating /
 # reportable segment, regardless of accounting standard or industry. Validated
 # against 24 diverse filers (insurers, banks, trading houses, IFRS, J-GAAP):
-# every individual operating segment ends in one of these.
+# these are useful anchors, but some filers use other member names.
 _SEGMENT_NAME_SUFFIXES = (
     'ReportableSegments', 'ReportableSegment',
     'OperatingSegments', 'OperatingSegment',
@@ -70,6 +70,7 @@ _SEGMENT_NAME_SUFFIXES = (
 # anchors them to the actual segment table and keeps same-named members from
 # other axes (a geographic "Other", an equity "Total") out.
 _AGGREGATION_MEMBERS = {
+    'OtherReportableSegments',
     'ReconcilingItems',
     'ReportableSegments',
     'TotalOfReportableSegmentsAndOthers',
@@ -90,6 +91,7 @@ _AGGREGATION_MEMBERS = {
 # in equity / geographic / employee tables, so seeding from them would pull in noise.
 _SEGMENT_AGGREGATION_SEEDS = {
     'ReconcilingItems',
+    'ReportableSegments',
     'TotalOfReportableSegmentsAndOthers',
     'OperatingSegmentsNotIncludedInReportableSegmentsAndOtherRevenueGeneratingBusinessActivities',
     'TotalOfCustomerBusinessUnit',
@@ -212,7 +214,7 @@ def parse_segments_from_csv(csv_files: list) -> tuple:
     directors (`SatoruKomiya`), equity components (`RetainedEarnings`), generic
     enumeration rows (`Row1`). Selecting "any non-consolidation member" sweeps
     all of these in. So we identify the operating-segment members via an
-    **anchored union** (validated against 24 diverse filers, 0 noise / 0 missing):
+    **anchored union** (a heuristic over CSV context names, not axis definitions):
 
       1. **Anchors** — members whose cleaned name ends in a segment-axis suffix
          (`_SEGMENT_NAME_SUFFIXES`). Unambiguous individual segments.
@@ -221,9 +223,10 @@ def parse_segments_from_csv(csv_files: list) -> tuple:
       3. **Aggregation rows** — `_AGGREGATION_MEMBERS` admitted only when they
          carry a segment-exclusive element (anchors them to the segment table).
 
-    The segment set is anchors ∪ qualifying-aggregation. This is filer-agnostic
-    (no hardcoded financial-element list; J-GAAP/IFRS/bank/insurer all work) and
-    excludes the non-segment axes by construction.
+    The segment set is anchors ∪ qualifying-aggregation. Unknown members sharing
+    its metrics raise extraction_incomplete instead of being guessed as segments.
+    The flag is conservative: a different axis can share the same metrics. A False
+    flag does not certify completeness, especially without recognizable anchors.
 
     Returns:
         (segments: list[SegmentRow], segments_text_only: bool, extraction_incomplete: bool)
@@ -331,12 +334,22 @@ def parse_segments_from_csv(csv_files: list) -> tuple:
     if not segments and _is_usgaap_textblock_filer(csv_files):
         return [], True, False
 
-    # Honesty signal: segment-specific aggregation rows are present (a segment table
-    # exists) but no individual segments were extracted — a residual silent miss
-    # (e.g. a no-anchor table we could not reconstruct, like a lone reconciliation
-    # artifact). Flag it rather than returning an empty list indistinguishable from
-    # a genuine single-segment company.
-    extraction_incomplete = (not segments) and any(
-        m in _SEGMENT_AGGREGATION_SEEDS for m in member_elems
+    # CSV context names omit axis definitions. An unfamiliar member carrying the
+    # same metrics as the identified segment table may belong to that table, or
+    # to another dimensional table. Do not silently call extraction complete and
+    # do not guess the member's axis. The caller can inspect the source context.
+    # In particular a standard total is not evidence that individual segments
+    # were found (single-segment filings can tag a custom name as well).
+    seed_elems = set().union(*(
+        member_elems[m] for m in member_elems if m in _SEGMENT_AGGREGATION_SEEDS
+    ))
+    table_elems = anchor_elems | seed_elems
+    unresolved_members = {
+        m for m in member_elems
+        if m not in segment_members_set and m not in _AGGREGATION_MEMBERS
+        and member_elems[m] & table_elems
+    }
+    extraction_incomplete = bool(unresolved_members) or (
+        not (anchors - _AGGREGATION_MEMBERS) and bool(seed_elems)
     )
     return segments, False, extraction_incomplete

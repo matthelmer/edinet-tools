@@ -93,9 +93,13 @@ class Document:
         """End of reporting period."""
         return self._data.get('periodEnd')
 
-    def fetch(self) -> bytes:
+    def fetch(self, type: int = 5) -> bytes:
         """
         Fetch document content.
+
+        Args:
+            type: EDINET download type: 5 the CSV conversion (default), 1 the filing
+                itself (inline XBRL and the XBRL instance).
 
         Returns:
             Document content as bytes (typically a ZIP file)
@@ -103,17 +107,26 @@ class Document:
         from ._client import _get_client
 
         client = self._client if self._client is not None else _get_client()
-        return client.download_filing_raw(self.doc_id)
+        if type == 5:
+            return client.download_filing_raw(self.doc_id)
+        return client.download_filing_raw(self.doc_id, type=type)
 
-    def parse(self):
+    def parse(self, source: str = 'csv'):
         """
         Parse this document and return a typed report.
+
+        Args:
+            source: 'csv' (default) reads EDINET's CSV conversion (type=5), as before.
+                'xbrl' (alias 'ixbrl') reads the filing's own inline XBRL (type=1): text
+                sections in full,
+                a tab between table cells, per-holder sections, real period dates.
+                'instance' reads the XBRL instance EDINET generates beside it (type=1).
 
         Returns:
             ParsedReport subclass based on document type
         """
         from .parsers import parse
-        return parse(self)
+        return parse(self, source=source)
 
     def save_extracted_csvs(self, output_dir) -> list:
         """

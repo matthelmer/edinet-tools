@@ -1,5 +1,213 @@
 # Changelog
 
+## v0.9.0 — 2026-10-06
+
+Read a filing from its own XBRL as well as EDINET's CSV conversion. The new
+reader keeps long text sections in full. Financial parsers now give the
+filing's declared accounting standard precedence and record which element,
+context and currency supplied a value.
+
+Existing CSV users also see changes to financial values, currency selection
+and per-holder share totals. Read [MIGRATING.md](MIGRATING.md) before
+re-parsing stored reports.
+
+### Added
+
+- **Native XBRL reading, without additional runtime dependencies.**
+  `Document.parse(source="xbrl")` reads inline XBRL from the type-1 package;
+  `source="instance"` reads its `.xbrl` instance. `"ixbrl"` is an alias of
+  `"xbrl"`. The default remains `source="csv"`. For saved bytes, use
+  `edinet_tools.parse_xbrl(zip_bytes, doc_type_code, source="xbrl")`.
+  `Document.fetch(type=5)` and `download_filing_raw(..., type=5)` accept a
+  download type; their default is unchanged.
+- **Text beyond the CSV's 30,000-character cut.** Kaga Electronics' tender
+  offer for Shinko Shoji (S100Y4NW) has a purpose section of 75,894 characters;
+  the native reader keeps it all. Text tables retain tabs between cells and
+  newlines between rows.
+- `edinet_tools.parsers.xbrl_rows.extract_rows_from_package()` returns
+  CSV-shaped rows with the text block's HTML, decimals, scale, sign, nil
+  status and period dates. It is also available from `edinet_tools.parsers`.
+  `parse_raw()` accepts `csv_files`, `doc_id` and `doc_type_code`.
+- **Per-holder text on 5% reports, on both sources.**
+  `JointHolder.text_blocks` and `LargeHoldingReport.text_blocks_by_context`
+  preserve each holder's sections. Native XBRL distinguishes a nil section
+  (`nil_text_blocks`) from a filed statement that a section does not apply
+  (`not_applicable`). CSV cannot make that distinction in every case.
+- `LargeHoldingReport.stock_lines_held` and `JointHolder.stock_lines_held`
+  sum the stock lines before deductions. They exclude depositary receipts,
+  trust beneficiary certificates, warrants and convertibles.
+- `source_elements`, `source_contexts` and `units` are available on every
+  report and add three keys to `to_dict()`. Securities, quarterly and
+  semi-annual reports populate them; other report types leave them empty.
+  An absent entry means the source was not recorded. Ratios have no unit entry.
+- Annual reports gain `profit_before_tax`. Quarterly reports gain
+  `accounting_standard`, `profit_before_tax` and `net_assets_owners`.
+  Semi-annual reports gain `net_sales`,
+  `profit_before_tax`, `profit_attributable_to_owners`, the three cash-flow
+  fields and `earnings_per_share`.
+- `UnsupportedInlineXBRL` names a native-reader refusal. Unsupported
+  constructs, formats, missing definitions and broken continuation chains
+  raise it instead of yielding a partial report. Japanese-era dates and
+  `ixt:numunitdecimal` amounts such as `127円00銭` are supported.
+
+### Changed
+
+- **Financial fields read the filing's own accounting standard first.**
+  Air Water's first IFRS annual report (S100J7LZ) now yields owners' profit
+  of ¥30,430 million and EPS of 147.43, rather than the J-GAAP figures
+  ¥16,729 million and 81.05 tagged in the same filing. Listed fallbacks
+  remain where no own-standard fact is filed; `source_elements` identifies
+  the element used.
+- Annual `ordinary_income` on IFRS and US GAAP retains the library's
+  profit-before-tax analogue. Quarterly `ordinary_profit_ytd` and
+  `prior_ordinary_profit_ytd` on those standards are `None`; use
+  `profit_before_tax` for the current profit-before-tax figure.
+  IFRS annual total profit gives the IFRS summary precedence over J-GAAP.
+- Quarterly IFRS and US GAAP reports recover previously empty financial
+  fields from their own-standard elements. Semi-annual reports read the
+  annual-style financial tables, correct the IFRS current-liabilities
+  element and withhold US GAAP total profit where its basis is not established.
+- **Yen takes precedence when the same element and context are filed in
+  yen and another currency.** This preference does not cross element tiers.
+  A selected foreign-currency fact stays in its filed currency even when
+  another concept in the filing provides a yen figure; `units` identifies it.
+  Different fields and report types can select different currencies. This
+  applies to per-share values too: MODEC's annual EPS reads ¥826.25 instead of the US$5.28 filed beside it.
+- **`JointHolder.shares_held` is the holder's filed 総数**, rather than its
+  main-clause stock line. Dalton's figure in S100YRDM is 6,190,300; the group
+  total remains 10,709,600. A member total can be zero or negative, and
+  member totals need not add up to the group. This is a different basis
+  from `stock_lines_held`. The change applies to CSV and native XBRL.
+- Holder names and values are selected by element in the holder's own
+  context. Name precedence is `FilerNameInJapaneseDEI`, then `Name`.
+  A holder's EDINET code filed empty reads as `None` on CSV too, rather
+  than the CSV's dash.
+- **`TierHit` has four fields**, adding `context_id` and `unit_id`.
+  Two-name unpacking now raises `ValueError`. Use `.value` and `.element_id`;
+  the first two positional indices retain their meanings.
+- Package development status is Beta.
+
+### Fixed
+
+- Missing lead-holder business, purpose and funding facts no longer read a
+  co-holder's value. Group denominator and base date use the group facts;
+  joint filings without those facts return `None`.
+- Parent-only annual reports no longer borrow historical consolidated
+  owners' profit. IFRS and US GAAP revenue no longer falls back to the
+  J-GAAP bank/insurer ordinary-revenue summary. A missing own-standard
+  revenue remains `None`.
+- Recover the J-GAAP half-year `OperatingRevenue2` summary alias and annual
+  `CommercialPapersLiabilities`, respecting period and consolidation scope.
+  Existing commercial-paper alias precedence is unchanged.
+- Tender opinions and periods recognize the newer filed element names.
+  The four optional opinion sections prefer their filed content over the
+  corresponding not-applicable element, while preserving literal dashes.
+- Instance-reader tables preserve empty self-closing cells, keeping later
+  values in their original columns.
+- Segment extraction flags unfamiliar members sharing segment metrics and
+  tables whose individual members cannot be established. The flag reports
+  incomplete or uncertain extraction; it does not recover missing rows.
+  `OtherReportableSegments` is classified as a reconciling row.
+- Semi-annual `filing_date` reads the cover page's stated submission date,
+  not the financial period end. Canon's S100YUDN now reads August 6, 2026,
+  rather than June 30. A valid legacy submission-date DEI fact is still
+  accepted; absent, invalid or conflicting dates return `None`.
+  On amendments this may be the original report's cover date; use
+  `Document`/EDINET list metadata for the actual document submission date.
+- Integer fields no longer pass through binary floating point. A filed
+  `9007199254740993` stays that integer rather than becoming
+  `9007199254740992`. Fractional input retains the existing truncation
+  toward zero. Holder counts use the same conversion. Malformed underscores
+  are rejected; valid digit separators such as `1_000` remain accepted.
+- Native numeric scaling and the calculated change in ownership no longer
+  inherit the caller's Decimal precision or rounding settings. Source
+  digits, signed zero and trailing decimal zeros are preserved by the
+  native reader. Nonfinite percentages read as `None`.
+- Equity-ratio reconciliation uses exact arithmetic at the tolerance
+  boundary and no longer inherits the caller's Decimal traps or precision.
+  Ownership's float display helper also uses its own decimal settings;
+  the filed ratio remains a Decimal. Quarterly EPS now accepts comma-formatted
+  values and rejects NaN and Infinity, as annual per-share fields do.
+- The native readers refuse duplicate selected archive paths and ambiguous
+  namespace bindings instead of silently discarding or conflating facts.
+- Bundled EDINET and fund registries are refreshed to October 5, 2026:
+  11,404 entities and 6,374 fund records. The compatibility lookup cache is
+  rebuilt from the same files, retaining the existing translation fallbacks.
+
+### Cover-field corrections from source review
+
+- Large-holding target tickers fold fullwidth digits for lookup (`６１４６`
+  becomes `6146.T`); raw issuer-code facts retain the filed characters.
+- The Doc 310/320 parser documentation now identifies the offeror as the
+  respondent to the target company's questions.
+- Shelf supplements expose `offering_amount_text` and `remaining_amount_text`
+  separately. Existing `planned_amount` (parent shelf ceiling) and
+  `remaining_balance` (the cover's 【残高】) retain their values; their descriptions
+  no longer call them this offering's amount or its available capacity.
+- Corporate extraordinary reports also read contact addresses from
+  `NearestPlaceOfContactCoverPage`, with the person and phone from that same
+  cover-page office block. A missing field stays unknown rather than borrowing
+  another office's details. The older and fund-form elements remain supported.
+- Amendment cover dates and reasons can belong to the original report. Use
+  document-list submission metadata for chronology. Extraordinary reports expose
+  two raw amendment flags, not the previously advertised `is_amendment` attribute;
+  their `event_type` remains a keyword heuristic, not a filed classification.
+
+### Reader boundaries and known limits
+
+- The readers refuse entity declarations and DOCTYPE internal subsets,
+  including in UTF-16 input. Archive reads enforce limits while streaming:
+  200 MB per member and 1 GB per package. They do not fetch external resources.
+- Native numeric expansion is limited to 10,000 output characters and a
+  scale magnitude of 10,000; larger inputs raise `UnsupportedInlineXBRL`.
+  Typed integer conversions requiring more than 10,000 digits return
+  `None`. Ownership changes requiring an excessive aligned coefficient
+  also return `None`, retaining the two filed ratios. These limits refuse
+  excessive allocation; they do not round values to fit.
+- Some inline files are HTML rather than well-formed XHTML and are refused.
+  Examples include Beat Holdings, fund semi-annual headers and 56 fund
+  registration packages in the 2021–2022 validation population. Their
+  instances can be read with `source="instance"`.
+- Inline continuation chains have synthetic tests; none of the real
+  EDINET packages tested use them.
+- Where highlights and statements disagree, the parser follows its
+  documented element order rather than adjudicating. Shionogi S100SS79
+  reads statement revenue of ¥311,812 million, while its highlights show
+  ¥336,821 million. `source_elements` makes the choice visible.
+- The instance reader cannot identify an escaped non-TextBlock string.
+  It may retain HTML where the inline reader returns text, including some
+  holders' statements that no collateral agreement applies. TextBlock
+  elements are treated as HTML, including a literal angle bracket in text.
+- CSV and XBRL also differ where CSV cuts long values or drops angle-bracket
+  text. Native rows leave taxonomy labels blank and derive periods from
+  contexts; they do not recreate all CSV display columns.
+- Multi-series fund packages can yield different typed values across
+  sources because CSV and native XBRL order their files differently.
+  A report's identity does not establish the sub-fund of every field.
+  Inspect source rows before combining figures from these reports.
+
+- Form coverage remains incomplete for issuer self-tenders (`jptoi_cor`),
+  investment-corporation buybacks (`jpsps-sbr_cor`), investment-corporation
+  shelf forms (080/100), and company-form registrations (030/040). Source
+  facts remain available even where their typed cover fields are missing.
+- Segment rows do not reconstruct a presentation hierarchy. Subtotals can
+  appear beside their children, and rows can contain only head count or
+  other non-revenue metrics. Do not sum mixed periods/scopes or assume rows
+  partition revenue. The incomplete flag includes uncertain total-only
+  extraction; a false flag does not prove all members were found.
+- `text_blocks` keeps the last value for a repeated element name, irrespective
+  of context. Use `raw_facts` to retain the distinct contexts. Legacy string
+  fields/top-level blocks can render nil as a dash; native fact `nil` metadata
+  distinguishes it from a filed dash. No blanket dash normalization is applied.
+- Holder counts describe parsed sections, not necessarily active membership.
+  Joint-report denominator/date values need group evidence; agreeing member
+  rows alone do not fill a missing group fact in this release.
+- Revenue coverage is incomplete for custom insurer elements, REIT
+  `OperatingRevenueINV` and fund `OperatingRevenueFND`. A returned sales figure
+  may differ from a separately tagged broader operating-revenue headline.
+  Source provenance identifies the chosen fact; it is not a claim that every
+  filing's economic top line is supported.
+
 ## v0.8.4 — 2026-09-10
 
 ### Fixed

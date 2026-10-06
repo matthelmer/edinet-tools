@@ -1,0 +1,81 @@
+Real EDINET packages (public documents), downloaded 2026-09-30 from
+https://api.edinet-fsa.go.jp/api/v2/documents/<docID>?type=1 (the filing: inline XBRL + instance)
+and ?type=5 (EDINET's CSV conversion). Stored unmodified.
+
+S100Y4NW  Doc 240 tender offer registration (purpose section longer than the CSV's 30,000-character cut)
+S100Y8GB  Doc 350 joint 5% report, two holders, a trading table per holder
+S100YRDM  Doc 350 joint 5% report, three holders, holder 3 reports under Item 2 (discretionary accounts)
+S100YD3H  Doc 350 joint 5% report
+S100Z4AV  Doc 350 joint 5% change report, five holders (downloaded 2026-10-05): holder 1 reports
+          on the 本文 line and under Item 2, holder 2 under Item 2 only with 0 on the 本文 line
+S100YWE2  Doc 160 semi-annual report (with AuditDoc)
+
+S100YO5B  Doc 040 amended securities registration of an investment trust: three filings (fund
+          G14704-000 and series -001, -002) in one PublicDoc directory, each with its own
+          inline set and instance, defining the same context IDs with different entities.
+          type=1 TRIMMED to its XBRL/*_ixbrl.htm and *.xbrl members (the readers' inputs; the
+          original also holds HTML, images, schemas and linkbases, 1.4 MB). Members unmodified.
+          type=5 unmodified.
+S100YOXP  Doc 120 annual report of an investment trust: literal "<参考情報：...>" text the
+          CSV mangles, and a CSV value cut at 30,000 characters counted before entity
+          decoding (29,908 characters read). type=1 TRIMMED to its XBRL/*_ixbrl.htm and *.xbrl
+          members (original 890 KB). Members unmodified. type=5 unmodified.
+S100YRSR  Doc 120 annual report, year to April 2026, IFRS, parent-only (no consolidated
+          statements): tags the J-GAAP highlights table beside the IFRS one at the
+          _NonConsolidatedMember contexts. type=1 TRIMMED to its XBRL/*_ixbrl.htm and *.xbrl
+          members (original 727 KB). Members unmodified. type=5 unmodified.
+
+Quarterly and semi-annual, type=1 only (downloaded 2026-09-30, unmodified, full packages); the
+matching CSVs are tests/fixtures/quarterly and tests/fixtures/semi_annual (EDINET's type=5
+conversion, full, unfiltered):
+S100MHAZ  Doc 140 quarterly report, Q2 to August 2021, IFRS, parent-only: tags the J-GAAP
+          statements beside the IFRS ones at the _NonConsolidatedMember contexts.
+S100M4N0  Doc 140 quarterly report, Q1 to June 2021, IFRS, consolidated.
+S100X2FP  Doc 160 semi-annual report, half year to September 2025, US GAAP.
+S100YV2R  Doc 160 semi-annual report, half year to June 2026, IFRS.
+
+Foreign-currency filers, type=1 only (downloaded 2026-09-30, unmodified, full packages); the
+matching CSVs are tests/fixtures/semi_annual (EDINET's type=5 conversion, full, unfiltered):
+S100YW89  Doc 160 semi-annual report, half year to June 2026, J-GAAP: every statement fact
+          tagged twice at the same context, USD then JPY. Its inline header carries a DOCTYPE
+          declaration, which the inline reader refuses; the instance reads.
+S100YUQZ  Doc 160 semi-annual report, half year to June 2026, IFRS: the statements in USD only,
+          the highlights table in USD and JPY.
+S100XQ87  Doc 350 joint report, three holders (two SPCs and an adviser): 16 of the holders'
+          text sections are filed as xsi:nil, and each SPC states its collateral agreements
+          as a plain "...NA" element (該当なし。). Type=1 only.
+S100MZZ3  Doc 350 change report filed 2021 by a venture-capital manager for a partnership:
+          the holder's jplvh_cor:EDINETCodeDEI fact is filed empty, which EDINET's CSV
+          prints as 「－」. Type=1 from the archive, type=5 fetched 2026-10-05.
+S100MJ6R  Doc 350 report filed 2021: the holder's "...CollateralAgreementsNA" statement is
+          filed as an escaped HTML fragment (heading and 該当事項なし), which the CSV pads
+          with spaces. Type=1 from the archive, type=5 fetched 2026-10-05.
+
+S100YUDN_type5.zip — Canon Inc., Doc 160, filed 2026-08-06.
+Complete EDINET CSV package captured by the independent release review on
+2026-10-05. SHA-256: 47a836c16f38f16c1089e87e49c53512f7216edd4848a4893e0b8a831bc2f766
+FilingDateCoverPage at FilingDateInstant is 2026-08-06; CurrentPeriodEndDateDEI
+is 2026-06-30. Both checked against the original type-1 XBRL instance.
+
+../semi_annual/S100Z4CE.json.gz — Nabtesco, Doc 170, submitted 2026-09-30.
+Complete saved EDINET CSV rows from the 2026-10-02c corpus (gzip JSON).
+SHA-256: 57d3cae134156bf93e4e55377ead218c190e689f3ad40e1228d7c2d83fc256e6
+Cover fact 2024-08-09, period end 2024-06-30, amendment title 2026-09-30.
+Original type-1 instance independently confirms these facts and a
+FilingDateInstant context of 2026-09-30. The cover date belongs to the original.
+
+S100YXGK.zip: original EDINET type-1 package, saved corpus 2026-10-02c.
+SHA256 e12497304751fcc6eda67d3ea9f71117b6f2d15f02ef1c2d05d9fc6e7d4a1a41
+Regression: holder 1 borrowing table has six cells, including an empty representative-name cell.
+
+S100TZNV.zip: unchanged saved EDINET packages original, corpus 2026-10-02c.
+SHA256 aeacf864dc36d8ceeb812b1239c68638d142aafbecb0ced0dbf1212836faf076
+
+S100TZNV.json.gz: unchanged saved EDINET csv source, corpus 2026-10-02c.
+SHA256 4f892471574d898760a96de493ecb95866e6ad7d8d77e5b0a162d7fd69f8ebcf
+
+S100UXDQ.zip: unchanged saved EDINET packages source, corpus 2026-10-02c.
+SHA256 02b0053afee31038089527878dd54ca9cfab2ce3a3b36fce5ffdcaac1b1c2646
+
+S100UXDQ.json.gz: unchanged saved EDINET csv source, corpus 2026-10-02c.
+SHA256 9cbed99c95d0a32a4f5a61bb10f6e79c7be9119d8b46a1cff9a73052fd89b35f

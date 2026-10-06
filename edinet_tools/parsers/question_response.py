@@ -2,8 +2,8 @@
 Parser for Response to Questions Report filings (Doc Type 310/320).
 
 Extracts data from 質問状に対する回答書 filings. These are filed by the
-target company in response to questions raised during a tender offer
-process — typically from a hostile bidder or concerned shareholders.
+offeror in response to questions from the target company during a tender
+offer process.
 
 Doc 310: Original response to questions report
 Doc 320: Amendment to response to questions report
@@ -36,9 +36,8 @@ class QuestionResponseReport(ParsedReport):
     """
     Parsed Response to Questions Report (Doc 310/320).
 
-    Filed by the target company in response to questions raised during
-    a tender offer process. Rare filing type — only one confirmed filing
-    in the database as of 2026-03.
+    Filed by the offeror in response to the target company's questions
+    during a tender offer process.
 
     Key fields:
         filer_name: Name of the company filing the response

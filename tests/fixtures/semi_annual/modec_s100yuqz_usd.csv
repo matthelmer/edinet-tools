@@ -1,0 +1,677 @@
+要素ID	項目名	コンテキストID	相対年度	連結・個別	期間・時点	ユニットID	単位	値
+jpdei_cor:NumberOfSubmissionDEI	提出回数、DEI	FilingDateInstant	提出日時点	その他	時点	pure		1
+jpcrp_cor:RevenueIFRSSummaryOfBusinessResults	売上収益（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	USD		2074296000
+jpcrp_cor:RevenueIFRSSummaryOfBusinessResults	売上収益（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	USD		2447050000
+jpcrp_cor:RevenueIFRSSummaryOfBusinessResults	売上収益（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	USD		4581232000
+jpcrp040300-ssr_E01725-000:OperatingProfitLossIFRSKeyFinancialData		Prior1InterimDuration	前中間期	その他	期間	USD		172196000
+jpcrp040300-ssr_E01725-000:OperatingProfitLossIFRSKeyFinancialData		InterimDuration	当中間期	その他	期間	USD		293022000
+jpcrp040300-ssr_E01725-000:OperatingProfitLossIFRSKeyFinancialData		Prior1YearDuration	前期	その他	期間	USD		437607000
+jpcrp_cor:ProfitLossBeforeTaxIFRSSummaryOfBusinessResults	税引前利益又は税引前損失（△）（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	USD		196532000
+jpcrp_cor:ProfitLossBeforeTaxIFRSSummaryOfBusinessResults	税引前利益又は税引前損失（△）（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	USD		307947000
+jpcrp_cor:ProfitLossBeforeTaxIFRSSummaryOfBusinessResults	税引前利益又は税引前損失（△）（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	USD		508317000
+jpcrp_cor:ProfitLossAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	当期利益又は当期損失（△）：親会社の所有者に帰属（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	USD		145076000
+jpcrp_cor:ProfitLossAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	当期利益又は当期損失（△）：親会社の所有者に帰属（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	USD		224046000
+jpcrp_cor:ProfitLossAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	当期利益又は当期損失（△）：親会社の所有者に帰属（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	USD		360677000
+jpcrp_cor:ComprehensiveIncomeAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	当期包括利益：親会社の所有者に帰属（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	USD		123850000
+jpcrp_cor:ComprehensiveIncomeAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	当期包括利益：親会社の所有者に帰属（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	USD		229423000
+jpcrp_cor:ComprehensiveIncomeAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	当期包括利益：親会社の所有者に帰属（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	USD		322628000
+jpcrp_cor:EquityAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	親会社の所有者に帰属する持分（IFRS）、経営指標等	Prior1InterimInstant	前中間期末	その他	時点	USD		1281946000
+jpcrp_cor:EquityAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	親会社の所有者に帰属する持分（IFRS）、経営指標等	InterimInstant	当中間期末	その他	時点	USD		1646899000
+jpcrp_cor:EquityAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	親会社の所有者に帰属する持分（IFRS）、経営指標等	Prior1YearInstant	前期末	その他	時点	USD		1452809000
+jpcrp_cor:TotalAssetsIFRSSummaryOfBusinessResults	総資産額（IFRS）、経営指標等	Prior1InterimInstant	前中間期末	その他	時点	USD		4497328000
+jpcrp_cor:TotalAssetsIFRSSummaryOfBusinessResults	総資産額（IFRS）、経営指標等	InterimInstant	当中間期末	その他	時点	USD		5077087000
+jpcrp_cor:TotalAssetsIFRSSummaryOfBusinessResults	総資産額（IFRS）、経営指標等	Prior1YearInstant	前期末	その他	時点	USD		4762572000
+jpcrp_cor:BasicEarningsLossPerShareIFRSSummaryOfBusinessResults	基本的１株当たり利益又は損失（△）（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	USDPerShares		2.12
+jpcrp_cor:BasicEarningsLossPerShareIFRSSummaryOfBusinessResults	基本的１株当たり利益又は損失（△）（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	USDPerShares		3.28
+jpcrp_cor:BasicEarningsLossPerShareIFRSSummaryOfBusinessResults	基本的１株当たり利益又は損失（△）（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	USDPerShares		5.28
+jpcrp_cor:DilutedEarningsLossPerShareIFRSSummaryOfBusinessResults	希薄化後１株当たり利益又は損失（△）（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	USDPerShares		2.12
+jpcrp_cor:DilutedEarningsLossPerShareIFRSSummaryOfBusinessResults	希薄化後１株当たり利益又は損失（△）（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	USDPerShares		3.28
+jpcrp_cor:DilutedEarningsLossPerShareIFRSSummaryOfBusinessResults	希薄化後１株当たり利益又は損失（△）（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	USDPerShares		5.28
+jpcrp_cor:RatioOfOwnersEquityToGrossAssetsIFRSSummaryOfBusinessResults	親会社所有者帰属持分比率（IFRS）、経営指標等	Prior1InterimInstant	前中間期末	その他	時点	pure		0.285
+jpcrp_cor:RatioOfOwnersEquityToGrossAssetsIFRSSummaryOfBusinessResults	親会社所有者帰属持分比率（IFRS）、経営指標等	InterimInstant	当中間期末	その他	時点	pure		0.324
+jpcrp_cor:RatioOfOwnersEquityToGrossAssetsIFRSSummaryOfBusinessResults	親会社所有者帰属持分比率（IFRS）、経営指標等	Prior1YearInstant	前期末	その他	時点	pure		0.305
+jpcrp_cor:CashFlowsFromUsedInOperatingActivitiesIFRSSummaryOfBusinessResults	営業活動によるキャッシュ・フロー（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	USD		336829000
+jpcrp_cor:CashFlowsFromUsedInOperatingActivitiesIFRSSummaryOfBusinessResults	営業活動によるキャッシュ・フロー（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	USD		645196000
+jpcrp_cor:CashFlowsFromUsedInOperatingActivitiesIFRSSummaryOfBusinessResults	営業活動によるキャッシュ・フロー（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	USD		244035000
+jpcrp_cor:CashFlowsFromUsedInInvestingActivitiesIFRSSummaryOfBusinessResults	投資活動によるキャッシュ・フロー（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	USD		5183000
+jpcrp_cor:CashFlowsFromUsedInInvestingActivitiesIFRSSummaryOfBusinessResults	投資活動によるキャッシュ・フロー（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	USD		3919000
+jpcrp_cor:CashFlowsFromUsedInInvestingActivitiesIFRSSummaryOfBusinessResults	投資活動によるキャッシュ・フロー（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	USD		5535000
+jpcrp_cor:CashFlowsFromUsedInFinancingActivitiesIFRSSummaryOfBusinessResults	財務活動によるキャッシュ・フロー（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	USD		-122446000
+jpcrp_cor:CashFlowsFromUsedInFinancingActivitiesIFRSSummaryOfBusinessResults	財務活動によるキャッシュ・フロー（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	USD		-58910000
+jpcrp_cor:CashFlowsFromUsedInFinancingActivitiesIFRSSummaryOfBusinessResults	財務活動によるキャッシュ・フロー（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	USD		-194243000
+jpcrp_cor:CashAndCashEquivalentsIFRSSummaryOfBusinessResults	現金及び現金同等物（IFRS）、経営指標等	Prior1InterimInstant	前中間期末	その他	時点	USD		1491872000
+jpcrp_cor:CashAndCashEquivalentsIFRSSummaryOfBusinessResults	現金及び現金同等物（IFRS）、経営指標等	InterimInstant	当中間期末	その他	時点	USD		1914443000
+jpcrp_cor:CashAndCashEquivalentsIFRSSummaryOfBusinessResults	現金及び現金同等物（IFRS）、経営指標等	Prior1YearInstant	前期末	その他	時点	USD		1326950000
+jpcrp_cor:RevenueIFRSSummaryOfBusinessResults	売上収益（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	JPY	円	300378000000
+jpcrp_cor:RevenueIFRSSummaryOfBusinessResults	売上収益（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	JPY	円	397376000000
+jpcrp_cor:RevenueIFRSSummaryOfBusinessResults	売上収益（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	JPY	円	717100000000
+jpcrp040300-ssr_E01725-000:OperatingProfitLossIFRSKeyFinancialData		Prior1InterimDuration	前中間期	その他	期間	JPY	円	24935000000
+jpcrp040300-ssr_E01725-000:OperatingProfitLossIFRSKeyFinancialData		InterimDuration	当中間期	その他	期間	JPY	円	47583000000
+jpcrp040300-ssr_E01725-000:OperatingProfitLossIFRSKeyFinancialData		Prior1YearDuration	前期	その他	期間	JPY	円	68498000000
+jpcrp_cor:ProfitLossBeforeTaxIFRSSummaryOfBusinessResults	税引前利益又は税引前損失（△）（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	JPY	円	28459000000
+jpcrp_cor:ProfitLossBeforeTaxIFRSSummaryOfBusinessResults	税引前利益又は税引前損失（△）（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	JPY	円	50007000000
+jpcrp_cor:ProfitLossBeforeTaxIFRSSummaryOfBusinessResults	税引前利益又は税引前損失（△）（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	JPY	円	79566000000
+jpcrp_cor:ProfitLossAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	当期利益又は当期損失（△）：親会社の所有者に帰属（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	JPY	円	21008000000
+jpcrp_cor:ProfitLossAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	当期利益又は当期損失（△）：親会社の所有者に帰属（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	JPY	円	36382000000
+jpcrp_cor:ProfitLossAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	当期利益又は当期損失（△）：親会社の所有者に帰属（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	JPY	円	56456000000
+jpcrp_cor:ComprehensiveIncomeAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	当期包括利益：親会社の所有者に帰属（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	JPY	円	17934000000
+jpcrp_cor:ComprehensiveIncomeAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	当期包括利益：親会社の所有者に帰属（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	JPY	円	37256000000
+jpcrp_cor:ComprehensiveIncomeAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	当期包括利益：親会社の所有者に帰属（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	JPY	円	50501000000
+jpcrp_cor:EquityAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	親会社の所有者に帰属する持分（IFRS）、経営指標等	Prior1InterimInstant	前中間期末	その他	時点	JPY	円	185638000000
+jpcrp_cor:EquityAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	親会社の所有者に帰属する持分（IFRS）、経営指標等	InterimInstant	当中間期末	その他	時点	JPY	円	267439000000
+jpcrp_cor:EquityAttributableToOwnersOfParentIFRSSummaryOfBusinessResults	親会社の所有者に帰属する持分（IFRS）、経営指標等	Prior1YearInstant	前期末	その他	時点	JPY	円	227408000000
+jpcrp_cor:TotalAssetsIFRSSummaryOfBusinessResults	総資産額（IFRS）、経営指標等	Prior1InterimInstant	前中間期末	その他	時点	JPY	円	651258000000
+jpcrp_cor:TotalAssetsIFRSSummaryOfBusinessResults	総資産額（IFRS）、経営指標等	InterimInstant	当中間期末	その他	時点	JPY	円	824468000000
+jpcrp_cor:TotalAssetsIFRSSummaryOfBusinessResults	総資産額（IFRS）、経営指標等	Prior1YearInstant	前期末	その他	時点	JPY	円	745485000000
+jpcrp_cor:BasicEarningsLossPerShareIFRSSummaryOfBusinessResults	基本的１株当たり利益又は損失（△）（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	JPYPerShares		307.51
+jpcrp_cor:BasicEarningsLossPerShareIFRSSummaryOfBusinessResults	基本的１株当たり利益又は損失（△）（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	JPYPerShares		532.37
+jpcrp_cor:BasicEarningsLossPerShareIFRSSummaryOfBusinessResults	基本的１株当たり利益又は損失（△）（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	JPYPerShares		826.25
+jpcrp_cor:DilutedEarningsLossPerShareIFRSSummaryOfBusinessResults	希薄化後１株当たり利益又は損失（△）（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	JPYPerShares		307.39
+jpcrp_cor:DilutedEarningsLossPerShareIFRSSummaryOfBusinessResults	希薄化後１株当たり利益又は損失（△）（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	JPYPerShares		532.37
+jpcrp_cor:DilutedEarningsLossPerShareIFRSSummaryOfBusinessResults	希薄化後１株当たり利益又は損失（△）（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	JPYPerShares		826.25
+jpcrp_cor:CashFlowsFromUsedInOperatingActivitiesIFRSSummaryOfBusinessResults	営業活動によるキャッシュ・フロー（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	JPY	円	48776000000
+jpcrp_cor:CashFlowsFromUsedInOperatingActivitiesIFRSSummaryOfBusinessResults	営業活動によるキャッシュ・フロー（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	JPY	円	104773000000
+jpcrp_cor:CashFlowsFromUsedInOperatingActivitiesIFRSSummaryOfBusinessResults	営業活動によるキャッシュ・フロー（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	JPY	円	38198000000
+jpcrp_cor:CashFlowsFromUsedInInvestingActivitiesIFRSSummaryOfBusinessResults	投資活動によるキャッシュ・フロー（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	JPY	円	750000000
+jpcrp_cor:CashFlowsFromUsedInInvestingActivitiesIFRSSummaryOfBusinessResults	投資活動によるキャッシュ・フロー（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	JPY	円	636000000
+jpcrp_cor:CashFlowsFromUsedInInvestingActivitiesIFRSSummaryOfBusinessResults	投資活動によるキャッシュ・フロー（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	JPY	円	866000000
+jpcrp_cor:CashFlowsFromUsedInFinancingActivitiesIFRSSummaryOfBusinessResults	財務活動によるキャッシュ・フロー（IFRS）、経営指標等	Prior1InterimDuration	前中間期	その他	期間	JPY	円	-17731000000
+jpcrp_cor:CashFlowsFromUsedInFinancingActivitiesIFRSSummaryOfBusinessResults	財務活動によるキャッシュ・フロー（IFRS）、経営指標等	InterimDuration	当中間期	その他	期間	JPY	円	-9566000000
+jpcrp_cor:CashFlowsFromUsedInFinancingActivitiesIFRSSummaryOfBusinessResults	財務活動によるキャッシュ・フロー（IFRS）、経営指標等	Prior1YearDuration	前期	その他	期間	JPY	円	-30404000000
+jpcrp_cor:CashAndCashEquivalentsIFRSSummaryOfBusinessResults	現金及び現金同等物（IFRS）、経営指標等	Prior1InterimInstant	前中間期末	その他	時点	JPY	円	216038000000
+jpcrp_cor:CashAndCashEquivalentsIFRSSummaryOfBusinessResults	現金及び現金同等物（IFRS）、経営指標等	InterimInstant	当中間期末	その他	時点	JPY	円	310886000000
+jpcrp_cor:CashAndCashEquivalentsIFRSSummaryOfBusinessResults	現金及び現金同等物（IFRS）、経営指標等	Prior1YearInstant	前期末	その他	時点	JPY	円	207707000000
+jpcrp_cor:NumberOfIssuedSharesAsOfFiscalYearEndIssuedSharesTotalNumberOfSharesEtc	事業年度末現在発行数（株）、発行済株式、株式の総数等	FilingDateInstant_OrdinaryShareMember	提出日時点	その他	時点	shares		68345300
+jpcrp_cor:NumberOfIssuedSharesAsOfFilingDateIssuedSharesTotalNumberOfSharesEtc	提出日現在発行数（株）、発行済株式、株式の総数等	FilingDateInstant_OrdinaryShareMember	提出日時点	その他	時点	shares		68345300
+jpcrp_cor:NumberOfIssuedSharesAsOfFiscalYearEndIssuedSharesTotalNumberOfSharesEtc	事業年度末現在発行数（株）、発行済株式、株式の総数等	FilingDateInstant	提出日時点	その他	時点	shares		68345300
+jpcrp_cor:NumberOfIssuedSharesAsOfFilingDateIssuedSharesTotalNumberOfSharesEtc	提出日現在発行数（株）、発行済株式、株式の総数等	FilingDateInstant	提出日時点	その他	時点	shares		68345300
+jpcrp_cor:NumberOfSharesHeld	所有株式数	InterimInstant_No1MajorShareholdersMember	当中間期末	その他	時点	shares		10251000
+jpcrp_cor:ShareholdingRatio	発行済株式（自己株式を除く。）の総数に対する所有株式数の割合	InterimInstant_No1MajorShareholdersMember	当中間期末	その他	時点	pure		0.1500
+jpcrp_cor:NumberOfSharesHeld	所有株式数	InterimInstant_No2MajorShareholdersMember	当中間期末	その他	時点	shares		10162000
+jpcrp_cor:ShareholdingRatio	発行済株式（自己株式を除く。）の総数に対する所有株式数の割合	InterimInstant_No2MajorShareholdersMember	当中間期末	その他	時点	pure		0.1486
+jpcrp_cor:NumberOfSharesHeld	所有株式数	InterimInstant_No3MajorShareholdersMember	当中間期末	その他	時点	shares		7938000
+jpcrp_cor:ShareholdingRatio	発行済株式（自己株式を除く。）の総数に対する所有株式数の割合	InterimInstant_No3MajorShareholdersMember	当中間期末	その他	時点	pure		0.1161
+jpcrp_cor:NumberOfSharesHeld	所有株式数	InterimInstant_No4MajorShareholdersMember	当中間期末	その他	時点	shares		5362000
+jpcrp_cor:ShareholdingRatio	発行済株式（自己株式を除く。）の総数に対する所有株式数の割合	InterimInstant_No4MajorShareholdersMember	当中間期末	その他	時点	pure		0.0784
+jpcrp_cor:NumberOfSharesHeld	所有株式数	InterimInstant_No5MajorShareholdersMember	当中間期末	その他	時点	shares		2502000
+jpcrp_cor:ShareholdingRatio	発行済株式（自己株式を除く。）の総数に対する所有株式数の割合	InterimInstant_No5MajorShareholdersMember	当中間期末	その他	時点	pure		0.0366
+jpcrp_cor:NumberOfSharesHeld	所有株式数	InterimInstant_No6MajorShareholdersMember	当中間期末	その他	時点	shares		1410000
+jpcrp_cor:ShareholdingRatio	発行済株式（自己株式を除く。）の総数に対する所有株式数の割合	InterimInstant_No6MajorShareholdersMember	当中間期末	その他	時点	pure		0.0206
+jpcrp_cor:NumberOfSharesHeld	所有株式数	InterimInstant_No7MajorShareholdersMember	当中間期末	その他	時点	shares		1139000
+jpcrp_cor:ShareholdingRatio	発行済株式（自己株式を除く。）の総数に対する所有株式数の割合	InterimInstant_No7MajorShareholdersMember	当中間期末	その他	時点	pure		0.0166
+jpcrp_cor:NumberOfSharesHeld	所有株式数	InterimInstant_No8MajorShareholdersMember	当中間期末	その他	時点	shares		912000
+jpcrp_cor:ShareholdingRatio	発行済株式（自己株式を除く。）の総数に対する所有株式数の割合	InterimInstant_No8MajorShareholdersMember	当中間期末	その他	時点	pure		0.0133
+jpcrp_cor:NumberOfSharesHeld	所有株式数	InterimInstant_No9MajorShareholdersMember	当中間期末	その他	時点	shares		901000
+jpcrp_cor:ShareholdingRatio	発行済株式（自己株式を除く。）の総数に対する所有株式数の割合	InterimInstant_No9MajorShareholdersMember	当中間期末	その他	時点	pure		0.0131
+jpcrp_cor:NumberOfSharesHeld	所有株式数	InterimInstant_No10MajorShareholdersMember	当中間期末	その他	時点	shares		691000
+jpcrp_cor:ShareholdingRatio	発行済株式（自己株式を除く。）の総数に対する所有株式数の割合	InterimInstant_No10MajorShareholdersMember	当中間期末	その他	時点	pure		0.0101
+jpcrp_cor:NumberOfSharesHeld	所有株式数	InterimInstant	当中間期末	その他	時点	shares		41273000
+jpcrp_cor:ShareholdingRatio	発行済株式（自己株式を除く。）の総数に対する所有株式数の割合	InterimInstant	当中間期末	その他	時点	pure		0.6038
+jpcrp_cor:NumberOfSharesIssuedSharesVotingRights	株式数（株）、発行済株式、議決権の状況	InterimInstant_SharesWithNoVotingRightsMember	当中間期末	その他	時点	shares		－
+jpcrp_cor:NumberOfSharesIssuedSharesVotingRights	株式数（株）、発行済株式、議決権の状況	InterimInstant_SharesWithRestrictedVotingRightsTreasurySharesEtcMember	当中間期末	その他	時点	shares		－
+jpcrp_cor:NumberOfSharesIssuedSharesVotingRights	株式数（株）、発行済株式、議決権の状況	InterimInstant_SharesWithRestrictedVotingRightsOtherMember	当中間期末	その他	時点	shares		－
+jpcrp_cor:NumberOfVotingRightsIssuedSharesVotingRights	議決権の数（個）、発行済株式、議決権の状況	InterimInstant_SharesWithRestrictedVotingRightsOtherMember	当中間期末	その他	時点	pure		－
+jpcrp_cor:NumberOfSharesIssuedSharesVotingRights	株式数（株）、発行済株式、議決権の状況	InterimInstant_OrdinarySharesTreasurySharesSharesWithFullVotingRightsTreasurySharesEtcMember	当中間期末	その他	時点	shares		1000
+jpcrp_cor:NumberOfSharesIssuedSharesVotingRights	株式数（株）、発行済株式、議決権の状況	InterimInstant_OrdinarySharesSharesWithFullVotingRightsOtherMember	当中間期末	その他	時点	shares		68068800
+jpcrp_cor:NumberOfVotingRightsIssuedSharesVotingRights	議決権の数（個）、発行済株式、議決権の状況	InterimInstant_OrdinarySharesSharesWithFullVotingRightsOtherMember	当中間期末	その他	時点	pure		680688
+jpcrp_cor:NumberOfSharesIssuedSharesVotingRights	株式数（株）、発行済株式、議決権の状況	InterimInstant_OrdinarySharesSharesLessThanOneUnitMember	当中間期末	その他	時点	shares		275500
+jpcrp_cor:NumberOfSharesIssuedSharesVotingRights	株式数（株）、発行済株式、議決権の状況	InterimInstant	当中間期末	その他	時点	shares		68345300
+jpcrp_cor:NumberOfVotingRightsIssuedSharesVotingRights	議決権の数（個）、発行済株式、議決権の状況	InterimInstant	当中間期末	その他	時点	pure		680688
+jpcrp_cor:NumberOfSharesHeldInOwnNameTreasurySharesEtc	自己名義所有株式数（株）、自己株式等	InterimInstant_Row1Member	当中間期末	その他	時点	shares		1000
+jpcrp_cor:NumberOfSharesHeldInOthersNamesTreasurySharesEtc	他人名義所有株式数（株）、自己株式等	InterimInstant_Row1Member	当中間期末	その他	時点	shares		－
+jpcrp_cor:TotalNumberOfSharesHeldTreasurySharesEtc	所有株式数の合計（株）、自己株式等	InterimInstant_Row1Member	当中間期末	その他	時点	shares		1000
+jpcrp_cor:ShareholdingRatioTreasurySharesEtc	発行済株式総数に対する所有株式数の割合（％）、自己株式等	InterimInstant_Row1Member	当中間期末	その他	時点	pure		0.0000
+jpcrp_cor:NumberOfSharesHeldInOwnNameTreasurySharesEtc	自己名義所有株式数（株）、自己株式等	InterimInstant	当中間期末	その他	時点	shares		1000
+jpcrp_cor:NumberOfSharesHeldInOthersNamesTreasurySharesEtc	他人名義所有株式数（株）、自己株式等	InterimInstant	当中間期末	その他	時点	shares		－
+jpcrp_cor:TotalNumberOfSharesHeldTreasurySharesEtc	所有株式数の合計（株）、自己株式等	InterimInstant	当中間期末	その他	時点	shares		1000
+jpcrp_cor:ShareholdingRatioTreasurySharesEtc	発行済株式総数に対する所有株式数の割合（％）、自己株式等	InterimInstant	当中間期末	その他	時点	pure		0.0000
+jpigp_cor:CashAndCashEquivalentsIFRS	現金及び現金同等物（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		1326950000
+jpigp_cor:CashAndCashEquivalentsIFRS	現金及び現金同等物（IFRS）	InterimInstant	当中間期末	その他	時点	USD		1914443000
+jpigp_cor:TradeAndOtherReceivablesCAIFRS	営業債権及びその他の債権、流動資産（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		977796000
+jpigp_cor:TradeAndOtherReceivablesCAIFRS	営業債権及びその他の債権、流動資産（IFRS）	InterimInstant	当中間期末	その他	時点	USD		649958000
+jpigp_cor:ContractAssetsCAIFRS	契約資産、流動資産（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		70703000
+jpigp_cor:ContractAssetsCAIFRS	契約資産、流動資産（IFRS）	InterimInstant	当中間期末	その他	時点	USD		75821000
+jpcrp040300-ssr_E01725-000:LoansCAIFRS		Prior1YearInstant	前期末	その他	時点	USD		120866000
+jpcrp040300-ssr_E01725-000:LoansCAIFRS		InterimInstant	当中間期末	その他	時点	USD		108547000
+jpigp_cor:OtherFinancialAssetsCAIFRS	その他の金融資産、流動資産（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		60194000
+jpigp_cor:OtherFinancialAssetsCAIFRS	その他の金融資産、流動資産（IFRS）	InterimInstant	当中間期末	その他	時点	USD		69360000
+jpigp_cor:OtherCurrentAssetsCAIFRS	その他の流動資産（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		223100000
+jpigp_cor:OtherCurrentAssetsCAIFRS	その他の流動資産（IFRS）	InterimInstant	当中間期末	その他	時点	USD		234065000
+jpigp_cor:CurrentAssetsIFRS	流動資産（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		2779612000
+jpigp_cor:CurrentAssetsIFRS	流動資産（IFRS）	InterimInstant	当中間期末	その他	時点	USD		3052197000
+jpigp_cor:PropertyPlantAndEquipmentIFRS	有形固定資産（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		92291000
+jpigp_cor:PropertyPlantAndEquipmentIFRS	有形固定資産（IFRS）	InterimInstant	当中間期末	その他	時点	USD		82200000
+jpigp_cor:IntangibleAssetsIFRS	無形資産（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		28527000
+jpigp_cor:IntangibleAssetsIFRS	無形資産（IFRS）	InterimInstant	当中間期末	その他	時点	USD		23933000
+jpigp_cor:InvestmentsAccountedForUsingEquityMethodIFRS	持分法で会計処理されている投資（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		1576538000
+jpigp_cor:InvestmentsAccountedForUsingEquityMethodIFRS	持分法で会計処理されている投資（IFRS）	InterimInstant	当中間期末	その他	時点	USD		1638304000
+jpcrp040300-ssr_E01725-000:LoansNCAIFRS		Prior1YearInstant	前期末	その他	時点	USD		222105000
+jpcrp040300-ssr_E01725-000:LoansNCAIFRS		InterimInstant	当中間期末	その他	時点	USD		222105000
+jpigp_cor:OtherFinancialAssetsNCAIFRS	その他の金融資産、非流動資産（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		15426000
+jpigp_cor:OtherFinancialAssetsNCAIFRS	その他の金融資産、非流動資産（IFRS）	InterimInstant	当中間期末	その他	時点	USD		15728000
+jpigp_cor:DeferredTaxAssetsIFRS	繰延税金資産（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		44599000
+jpigp_cor:DeferredTaxAssetsIFRS	繰延税金資産（IFRS）	InterimInstant	当中間期末	その他	時点	USD		39014000
+jpigp_cor:OtherNonCurrentAssetsNCAIFRS	その他の非流動資産（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		3471000
+jpigp_cor:OtherNonCurrentAssetsNCAIFRS	その他の非流動資産（IFRS）	InterimInstant	当中間期末	その他	時点	USD		3603000
+jpigp_cor:NonCurrentAssetsIFRS	非流動資産（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		1982960000
+jpigp_cor:NonCurrentAssetsIFRS	非流動資産（IFRS）	InterimInstant	当中間期末	その他	時点	USD		2024890000
+jpigp_cor:AssetsIFRS	資産（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		4762572000
+jpigp_cor:AssetsIFRS	資産（IFRS）	InterimInstant	当中間期末	その他	時点	USD		5077087000
+jpigp_cor:TradeAndOtherPayablesCLIFRS	営業債務及びその他の債務、流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		1121319000
+jpigp_cor:TradeAndOtherPayablesCLIFRS	営業債務及びその他の債務、流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		1291184000
+jpigp_cor:ContractLiabilitiesCLIFRS	契約負債、流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		1061755000
+jpigp_cor:ContractLiabilitiesCLIFRS	契約負債、流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		1046594000
+jpigp_cor:BondsPayableCLIFRS	社債、流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		237679000
+jpigp_cor:BondsPayableCLIFRS	社債、流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		238226000
+jpigp_cor:IncomeTaxesPayableCLIFRS	未払法人所得税、流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		105849000
+jpigp_cor:IncomeTaxesPayableCLIFRS	未払法人所得税、流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		105353000
+jpigp_cor:ProvisionsCLIFRS	引当金、流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		137834000
+jpigp_cor:ProvisionsCLIFRS	引当金、流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		138260000
+jpigp_cor:OtherFinancialLiabilitiesCLIFRS	その他の金融負債、流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		217939000
+jpigp_cor:OtherFinancialLiabilitiesCLIFRS	その他の金融負債、流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		187021000
+jpigp_cor:OtherCurrentLiabilitiesCLIFRS	その他の流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		82372000
+jpigp_cor:OtherCurrentLiabilitiesCLIFRS	その他の流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		74091000
+jpigp_cor:TotalCurrentLiabilitiesIFRS	流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		2964750000
+jpigp_cor:TotalCurrentLiabilitiesIFRS	流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		3080732000
+jpigp_cor:BondsPayableNCLIFRS	社債、非流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		182604000
+jpigp_cor:BondsPayableNCLIFRS	社債、非流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		182789000
+jpigp_cor:DeferredTaxLiabilitiesIFRS	繰延税金負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		3521000
+jpigp_cor:DeferredTaxLiabilitiesIFRS	繰延税金負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		5247000
+jpigp_cor:DefinedBenefitLiabilityNCLIFRS	確定給付負債、非流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		51530000
+jpigp_cor:DefinedBenefitLiabilityNCLIFRS	確定給付負債、非流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		50517000
+jpigp_cor:ProvisionsNCLIFRS	引当金、非流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		22295000
+jpigp_cor:ProvisionsNCLIFRS	引当金、非流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		22993000
+jpigp_cor:OtherFinancialLiabilitiesNCLIFRS	その他の金融負債、非流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		63100000
+jpigp_cor:OtherFinancialLiabilitiesNCLIFRS	その他の金融負債、非流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		55399000
+jpigp_cor:OtherNonCurrentLiabilitiesNCLIFRS	その他の非流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		727000
+jpigp_cor:OtherNonCurrentLiabilitiesNCLIFRS	その他の非流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		536000
+jpigp_cor:NonCurrentLabilitiesIFRS	非流動負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		323779000
+jpigp_cor:NonCurrentLabilitiesIFRS	非流動負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		317482000
+jpigp_cor:LiabilitiesIFRS	負債（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		3288529000
+jpigp_cor:LiabilitiesIFRS	負債（IFRS）	InterimInstant	当中間期末	その他	時点	USD		3398215000
+jpigp_cor:ShareCapitalIFRS	資本金（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		190495000
+jpigp_cor:ShareCapitalIFRS	資本金（IFRS）	InterimInstant	当中間期末	その他	時点	USD		190495000
+jpigp_cor:CapitalSurplusIFRS	資本剰余金（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		168496000
+jpigp_cor:CapitalSurplusIFRS	資本剰余金（IFRS）	InterimInstant	当中間期末	その他	時点	USD		168160000
+jpigp_cor:RetainedEarningsIFRS	利益剰余金（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		1027407000
+jpigp_cor:RetainedEarningsIFRS	利益剰余金（IFRS）	InterimInstant	当中間期末	その他	時点	USD		1216116000
+jpigp_cor:TreasurySharesIFRS	自己株式（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		-127000
+jpigp_cor:TreasurySharesIFRS	自己株式（IFRS）	InterimInstant	当中間期末	その他	時点	USD		-25000
+jpigp_cor:OtherComponentsOfEquityIFRS	その他の資本の構成要素（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		66537000
+jpigp_cor:OtherComponentsOfEquityIFRS	その他の資本の構成要素（IFRS）	InterimInstant	当中間期末	その他	時点	USD		72152000
+jpigp_cor:EquityAttributableToOwnersOfParentIFRS	親会社の所有者に帰属する持分（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		1452809000
+jpigp_cor:EquityAttributableToOwnersOfParentIFRS	親会社の所有者に帰属する持分（IFRS）	InterimInstant	当中間期末	その他	時点	USD		1646899000
+jpigp_cor:NonControllingInterestsIFRS	非支配持分（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		21233000
+jpigp_cor:NonControllingInterestsIFRS	非支配持分（IFRS）	InterimInstant	当中間期末	その他	時点	USD		31973000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		1474043000
+jpigp_cor:EquityIFRS	資本（IFRS）	InterimInstant	当中間期末	その他	時点	USD		1678872000
+jpigp_cor:LiabilitiesAndEquityIFRS	負債及び資本（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		4762572000
+jpigp_cor:LiabilitiesAndEquityIFRS	負債及び資本（IFRS）	InterimInstant	当中間期末	その他	時点	USD		5077087000
+jpigp_cor:RevenueIFRS	売上収益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		2074296000
+jpigp_cor:RevenueIFRS	売上収益（IFRS）	InterimDuration	当中間期	その他	期間	USD		2447050000
+jpigp_cor:CostOfSalesIFRS	売上原価（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		1879633000
+jpigp_cor:CostOfSalesIFRS	売上原価（IFRS）	InterimDuration	当中間期	その他	期間	USD		2109478000
+jpigp_cor:GrossProfitIFRS	売上総利益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		194662000
+jpigp_cor:GrossProfitIFRS	売上総利益（IFRS）	InterimDuration	当中間期	その他	期間	USD		337571000
+jpigp_cor:SellingGeneralAndAdministrativeExpensesIFRS	販売費及び一般管理費（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		108775000
+jpigp_cor:SellingGeneralAndAdministrativeExpensesIFRS	販売費及び一般管理費（IFRS）	InterimDuration	当中間期	その他	期間	USD		130618000
+jpigp_cor:ShareOfProfitLossOfInvestmentsAccountedForUsingEquityMethodIFRS	持分法による投資損益（△は損失）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		86212000
+jpigp_cor:ShareOfProfitLossOfInvestmentsAccountedForUsingEquityMethodIFRS	持分法による投資損益（△は損失）（IFRS）	InterimDuration	当中間期	その他	期間	USD		86101000
+jpigp_cor:OtherIncomeIFRS	その他の収益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		155000
+jpigp_cor:OtherIncomeIFRS	その他の収益（IFRS）	InterimDuration	当中間期	その他	期間	USD		18000
+jpigp_cor:OtherExpensesIFRS	その他の費用（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		58000
+jpigp_cor:OtherExpensesIFRS	その他の費用（IFRS）	InterimDuration	当中間期	その他	期間	USD		51000
+jpigp_cor:OperatingProfitLossIFRS	営業利益（△損失）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		172196000
+jpigp_cor:OperatingProfitLossIFRS	営業利益（△損失）（IFRS）	InterimDuration	当中間期	その他	期間	USD		293022000
+jpigp_cor:FinanceIncomeIFRS	金融収益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		48986000
+jpigp_cor:FinanceIncomeIFRS	金融収益（IFRS）	InterimDuration	当中間期	その他	期間	USD		44653000
+jpigp_cor:FinanceCostsIFRS	金融費用（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		24650000
+jpigp_cor:FinanceCostsIFRS	金融費用（IFRS）	InterimDuration	当中間期	その他	期間	USD		29728000
+jpigp_cor:ProfitLossBeforeTaxIFRS	継続事業からの税引前利益（△損失）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		196532000
+jpigp_cor:ProfitLossBeforeTaxIFRS	継続事業からの税引前利益（△損失）（IFRS）	InterimDuration	当中間期	その他	期間	USD		307947000
+jpigp_cor:IncomeTaxExpenseIFRS	法人所得税費用（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		31638000
+jpigp_cor:IncomeTaxExpenseIFRS	法人所得税費用（IFRS）	InterimDuration	当中間期	その他	期間	USD		59264000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		164894000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration	当中間期	その他	期間	USD		248682000
+jpigp_cor:ProfitLossAttributableToOwnersOfParentIFRS	親会社の所有者、当期利益（△損失）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		145076000
+jpigp_cor:ProfitLossAttributableToOwnersOfParentIFRS	親会社の所有者、当期利益（△損失）（IFRS）	InterimDuration	当中間期	その他	期間	USD		224046000
+jpigp_cor:ProfitLossAttributableToNonControllingInterestsIFRS	非支配持分、当期利益（△損失）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		19818000
+jpigp_cor:ProfitLossAttributableToNonControllingInterestsIFRS	非支配持分、当期利益（△損失）（IFRS）	InterimDuration	当中間期	その他	期間	USD		24635000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		164894000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration	当中間期	その他	期間	USD		248682000
+jpigp_cor:BasicEarningsLossPerShareIFRS	基本的１株当たり当期利益（△損失）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USDPerShares		2.12
+jpigp_cor:BasicEarningsLossPerShareIFRS	基本的１株当たり当期利益（△損失）（IFRS）	InterimDuration	当中間期	その他	期間	USDPerShares		3.28
+jpigp_cor:DilutedEarningsLossPerShareIFRS	希薄化後１株当たり当期利益（△損失）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USDPerShares		2.12
+jpigp_cor:DilutedEarningsLossPerShareIFRS	希薄化後１株当たり当期利益（△損失）（IFRS）	InterimDuration	当中間期	その他	期間	USDPerShares		3.28
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		164894000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration	当中間期	その他	期間	USD		248682000
+jpcrp040300-ssr_E01725-000:RemeasurementsOfDefinedBenefitLiabilityItemsThatWillNotBeReclassifiedToProfitOrLossIFRS		Prior1InterimDuration	前中間期	その他	期間	USD		-1681000
+jpcrp040300-ssr_E01725-000:RemeasurementsOfDefinedBenefitLiabilityItemsThatWillNotBeReclassifiedToProfitOrLossIFRS		InterimDuration	当中間期	その他	期間	USD		-238000
+jpigp_cor:TotalOfItemsThatWillNotBeReclassifiedToProfitOrLossOCIIFRS	純損益に振り替えられることのない項目合計（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-1681000
+jpigp_cor:TotalOfItemsThatWillNotBeReclassifiedToProfitOrLossOCIIFRS	純損益に振り替えられることのない項目合計（IFRS）	InterimDuration	当中間期	その他	期間	USD		-238000
+jpigp_cor:EffectivePortionOfCashFlowHedgesNetOfTaxItemsThatMayBeReclassifiedToProfitOrLossOCIIFRS	キャッシュ・フロー・ヘッジの有効部分（税引後）、純損益に振り替えられる可能性のあるその他の包括利益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		17557000
+jpigp_cor:EffectivePortionOfCashFlowHedgesNetOfTaxItemsThatMayBeReclassifiedToProfitOrLossOCIIFRS	キャッシュ・フロー・ヘッジの有効部分（税引後）、純損益に振り替えられる可能性のあるその他の包括利益（IFRS）	InterimDuration	当中間期	その他	期間	USD		-349000
+jpigp_cor:ExchangeDifferencesOnTranslationOfForeignOperationsNetOfTaxItemsThatMayBeReclassifiedToProfitOrLossOCIIFRS	在外営業活動体の外貨換算差額（税引後）、純損益に振り替えられる可能性のあるその他の包括利益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		7659000
+jpigp_cor:ExchangeDifferencesOnTranslationOfForeignOperationsNetOfTaxItemsThatMayBeReclassifiedToProfitOrLossOCIIFRS	在外営業活動体の外貨換算差額（税引後）、純損益に振り替えられる可能性のあるその他の包括利益（IFRS）	InterimDuration	当中間期	その他	期間	USD		-4701000
+jpigp_cor:ShareOfOtherComprehensiveIncomeOfInvestmentsAccountedForUsingEquityMethodNetOfTaxItemsThatMayBeReclassifiedToProfitOrLossOCIIFRS	持分法によるその他の包括利益（税引後）、純損益に振り替えられる可能性のあるその他の包括利益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-40724000
+jpigp_cor:ShareOfOtherComprehensiveIncomeOfInvestmentsAccountedForUsingEquityMethodNetOfTaxItemsThatMayBeReclassifiedToProfitOrLossOCIIFRS	持分法によるその他の包括利益（税引後）、純損益に振り替えられる可能性のあるその他の包括利益（IFRS）	InterimDuration	当中間期	その他	期間	USD		11030000
+jpigp_cor:TotalOfItemsThatMayBeReclassifiedToProfitOrLossOCIIFRS	純損益に振り替えられる可能性のある項目合計（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-15507000
+jpigp_cor:TotalOfItemsThatMayBeReclassifiedToProfitOrLossOCIIFRS	純損益に振り替えられる可能性のある項目合計（IFRS）	InterimDuration	当中間期	その他	期間	USD		5979000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-17189000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	InterimDuration	当中間期	その他	期間	USD		5740000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		147705000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration	当中間期	その他	期間	USD		254423000
+jpigp_cor:ComprehensiveIncomeAttributableToOwnersOfParentIFRS	親会社の所有者、当期包括利益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		123850000
+jpigp_cor:ComprehensiveIncomeAttributableToOwnersOfParentIFRS	親会社の所有者、当期包括利益（IFRS）	InterimDuration	当中間期	その他	期間	USD		229423000
+jpigp_cor:ComprehensiveIncomeAttributableToNonControllingInterestsIFRS	非支配持分、当期包括利益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		23854000
+jpigp_cor:ComprehensiveIncomeAttributableToNonControllingInterestsIFRS	非支配持分、当期包括利益（IFRS）	InterimDuration	当中間期	その他	期間	USD		24999000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		147705000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration	当中間期	その他	期間	USD		254423000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior2YearInstant_ShareCapitalIFRSMember	前々期末	その他	時点	USD		190495000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior2YearInstant_CapitalSurplusIFRSMember	前々期末	その他	時点	USD		168963000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior2YearInstant_RetainedEarningsIFRSMember	前々期末	その他	時点	USD		722724000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior2YearInstant_TreasurySharesIFRSMember	前々期末	その他	時点	USD		-1093000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior2YearInstant_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	前々期末	その他	時点	USD		－
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior2YearInstant_EffectivePortionOfCashFlowHedgesIFRSMember	前々期末	その他	時点	USD		127419000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration_ShareCapitalIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration_CapitalSurplusIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration_RetainedEarningsIFRSMember	前中間期	その他	期間	USD		145076000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration_TreasurySharesIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	Prior1InterimDuration_ShareCapitalIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	Prior1InterimDuration_CapitalSurplusIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	Prior1InterimDuration_RetainedEarningsIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	Prior1InterimDuration_TreasurySharesIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	Prior1InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	前中間期	その他	期間	USD		-1645000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	Prior1InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	前中間期	その他	期間	USD		-27453000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration_ShareCapitalIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration_CapitalSurplusIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration_RetainedEarningsIFRSMember	前中間期	その他	期間	USD		145076000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration_TreasurySharesIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	前中間期	その他	期間	USD		-1645000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	前中間期	その他	期間	USD		-27453000
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_ShareCapitalIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_CapitalSurplusIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_RetainedEarningsIFRSMember	前中間期	その他	期間	USD		-22837000
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_TreasurySharesIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_ShareCapitalIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_CapitalSurplusIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_RetainedEarningsIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_TreasurySharesIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	Prior1InterimDuration_ShareCapitalIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	Prior1InterimDuration_CapitalSurplusIFRSMember	前中間期	その他	期間	USD		-467000
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	Prior1InterimDuration_RetainedEarningsIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	Prior1InterimDuration_TreasurySharesIFRSMember	前中間期	その他	期間	USD		965000
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	Prior1InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	Prior1InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	Prior1InterimDuration_ShareCapitalIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	Prior1InterimDuration_CapitalSurplusIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	Prior1InterimDuration_RetainedEarningsIFRSMember	前中間期	その他	期間	USD		-1645000
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	Prior1InterimDuration_TreasurySharesIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	Prior1InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	前中間期	その他	期間	USD		1645000
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	Prior1InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	Prior1InterimDuration_ShareCapitalIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	Prior1InterimDuration_CapitalSurplusIFRSMember	前中間期	その他	期間	USD		-467000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	Prior1InterimDuration_RetainedEarningsIFRSMember	前中間期	その他	期間	USD		-24483000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	Prior1InterimDuration_TreasurySharesIFRSMember	前中間期	その他	期間	USD		965000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	Prior1InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	前中間期	その他	期間	USD		1645000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	Prior1InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1InterimInstant_ShareCapitalIFRSMember	前中間期末	その他	時点	USD		190495000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1InterimInstant_CapitalSurplusIFRSMember	前中間期末	その他	時点	USD		168496000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1InterimInstant_RetainedEarningsIFRSMember	前中間期末	その他	時点	USD		843317000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1InterimInstant_TreasurySharesIFRSMember	前中間期末	その他	時点	USD		-127000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1InterimInstant_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	前中間期末	その他	時点	USD		－
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1InterimInstant_EffectivePortionOfCashFlowHedgesIFRSMember	前中間期末	その他	時点	USD		99966000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior2YearInstant_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	前々期末	その他	時点	USD		-28075000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior2YearInstant_OtherComponentsOfEquityIFRSMember	前々期末	その他	時点	USD		99344000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior2YearInstant_EquityAttributableToOwnersOfParentIFRSMember	前々期末	その他	時点	USD		1180435000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior2YearInstant_NonControllingInterestsIFRSMember	前々期末	その他	時点	USD		18033000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior2YearInstant	前々期末	その他	時点	USD		1198468000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration_OtherComponentsOfEquityIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	前中間期	その他	期間	USD		145076000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration_NonControllingInterestsIFRSMember	前中間期	その他	期間	USD		19818000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		164894000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	Prior1InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	前中間期	その他	期間	USD		7872000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	Prior1InterimDuration_OtherComponentsOfEquityIFRSMember	前中間期	その他	期間	USD		-21226000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	Prior1InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	前中間期	その他	期間	USD		-21226000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	Prior1InterimDuration_NonControllingInterestsIFRSMember	前中間期	その他	期間	USD		4036000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-17189000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	前中間期	その他	期間	USD		7872000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration_OtherComponentsOfEquityIFRSMember	前中間期	その他	期間	USD		-21226000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	前中間期	その他	期間	USD		123850000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration_NonControllingInterestsIFRSMember	前中間期	その他	期間	USD		23854000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		147705000
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_OtherComponentsOfEquityIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	前中間期	その他	期間	USD		-22837000
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_NonControllingInterestsIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-22837000
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_OtherComponentsOfEquityIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration_NonControllingInterestsIFRSMember	前中間期	その他	期間	USD		-14000000
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-14000000
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	Prior1InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	Prior1InterimDuration_OtherComponentsOfEquityIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	Prior1InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	前中間期	その他	期間	USD		498000
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	Prior1InterimDuration_NonControllingInterestsIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		498000
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	Prior1InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	Prior1InterimDuration_OtherComponentsOfEquityIFRSMember	前中間期	その他	期間	USD		1645000
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	Prior1InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	Prior1InterimDuration_NonControllingInterestsIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		－
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	Prior1InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	前中間期	その他	期間	USD		－
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	Prior1InterimDuration_OtherComponentsOfEquityIFRSMember	前中間期	その他	期間	USD		1645000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	Prior1InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	前中間期	その他	期間	USD		-22339000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	Prior1InterimDuration_NonControllingInterestsIFRSMember	前中間期	その他	期間	USD		-14000000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-36339000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1InterimInstant_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	前中間期末	その他	時点	USD		-20202000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1InterimInstant_OtherComponentsOfEquityIFRSMember	前中間期末	その他	時点	USD		79764000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1InterimInstant_EquityAttributableToOwnersOfParentIFRSMember	前中間期末	その他	時点	USD		1281946000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1InterimInstant_NonControllingInterestsIFRSMember	前中間期末	その他	時点	USD		27888000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1InterimInstant	前中間期末	その他	時点	USD		1309834000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1YearInstant_ShareCapitalIFRSMember	前期末	その他	時点	USD		190495000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1YearInstant_CapitalSurplusIFRSMember	前期末	その他	時点	USD		168496000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1YearInstant_RetainedEarningsIFRSMember	前期末	その他	時点	USD		1027407000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1YearInstant_TreasurySharesIFRSMember	前期末	その他	時点	USD		-127000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1YearInstant_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	前期末	その他	時点	USD		－
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1YearInstant_EffectivePortionOfCashFlowHedgesIFRSMember	前期末	その他	時点	USD		86543000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration_ShareCapitalIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration_CapitalSurplusIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration_RetainedEarningsIFRSMember	当中間期	その他	期間	USD		224046000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration_TreasurySharesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	InterimDuration_ShareCapitalIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	InterimDuration_CapitalSurplusIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	InterimDuration_RetainedEarningsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	InterimDuration_TreasurySharesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	当中間期	その他	期間	USD		-238000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	当中間期	その他	期間	USD		10202000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration_ShareCapitalIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration_CapitalSurplusIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration_RetainedEarningsIFRSMember	当中間期	その他	期間	USD		224046000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration_TreasurySharesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	当中間期	その他	期間	USD		-238000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	当中間期	その他	期間	USD		10202000
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	InterimDuration_ShareCapitalIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	InterimDuration_CapitalSurplusIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	InterimDuration_RetainedEarningsIFRSMember	当中間期	その他	期間	USD		-35099000
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	InterimDuration_TreasurySharesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	InterimDuration_ShareCapitalIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	InterimDuration_CapitalSurplusIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	InterimDuration_RetainedEarningsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	InterimDuration_TreasurySharesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:PurchaseOfTreasurySharesSSIFRS	自己株式の取得、持分変動計算書（IFRS）	InterimDuration_ShareCapitalIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:PurchaseOfTreasurySharesSSIFRS	自己株式の取得、持分変動計算書（IFRS）	InterimDuration_CapitalSurplusIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:PurchaseOfTreasurySharesSSIFRS	自己株式の取得、持分変動計算書（IFRS）	InterimDuration_RetainedEarningsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:PurchaseOfTreasurySharesSSIFRS	自己株式の取得、持分変動計算書（IFRS）	InterimDuration_TreasurySharesIFRSMember	当中間期	その他	期間	USD		-1000
+jpigp_cor:PurchaseOfTreasurySharesSSIFRS	自己株式の取得、持分変動計算書（IFRS）	InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:PurchaseOfTreasurySharesSSIFRS	自己株式の取得、持分変動計算書（IFRS）	InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	InterimDuration_ShareCapitalIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	InterimDuration_CapitalSurplusIFRSMember	当中間期	その他	期間	USD		-336000
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	InterimDuration_RetainedEarningsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	InterimDuration_TreasurySharesIFRSMember	当中間期	その他	期間	USD		103000
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	InterimDuration_ShareCapitalIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	InterimDuration_CapitalSurplusIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	InterimDuration_RetainedEarningsIFRSMember	当中間期	その他	期間	USD		-238000
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	InterimDuration_TreasurySharesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	当中間期	その他	期間	USD		238000
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	InterimDuration_ShareCapitalIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	InterimDuration_CapitalSurplusIFRSMember	当中間期	その他	期間	USD		-336000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	InterimDuration_RetainedEarningsIFRSMember	当中間期	その他	期間	USD		-35338000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	InterimDuration_TreasurySharesIFRSMember	当中間期	その他	期間	USD		102000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	InterimDuration_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	当中間期	その他	期間	USD		238000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	InterimDuration_EffectivePortionOfCashFlowHedgesIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:EquityIFRS	資本（IFRS）	InterimInstant_ShareCapitalIFRSMember	当中間期末	その他	時点	USD		190495000
+jpigp_cor:EquityIFRS	資本（IFRS）	InterimInstant_CapitalSurplusIFRSMember	当中間期末	その他	時点	USD		168160000
+jpigp_cor:EquityIFRS	資本（IFRS）	InterimInstant_RetainedEarningsIFRSMember	当中間期末	その他	時点	USD		1216116000
+jpigp_cor:EquityIFRS	資本（IFRS）	InterimInstant_TreasurySharesIFRSMember	当中間期末	その他	時点	USD		-25000
+jpigp_cor:EquityIFRS	資本（IFRS）	InterimInstant_jpcrp040300-ssr_E01725-000RemeasurementsOfDefinedBenefitLiabilityIFRSMember	当中間期末	その他	時点	USD		－
+jpigp_cor:EquityIFRS	資本（IFRS）	InterimInstant_EffectivePortionOfCashFlowHedgesIFRSMember	当中間期末	その他	時点	USD		96745000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1YearInstant_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	前期末	その他	時点	USD		-20005000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1YearInstant_OtherComponentsOfEquityIFRSMember	前期末	その他	時点	USD		66537000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1YearInstant_EquityAttributableToOwnersOfParentIFRSMember	前期末	その他	時点	USD		1452809000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1YearInstant_NonControllingInterestsIFRSMember	前期末	その他	時点	USD		21233000
+jpigp_cor:EquityIFRS	資本（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		1474043000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration_OtherComponentsOfEquityIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	当中間期	その他	期間	USD		224046000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration_NonControllingInterestsIFRSMember	当中間期	その他	期間	USD		24635000
+jpigp_cor:ProfitLossIFRS	当期利益（△損失）（IFRS）	InterimDuration	当中間期	その他	期間	USD		248682000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	当中間期	その他	期間	USD		-4587000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	InterimDuration_OtherComponentsOfEquityIFRSMember	当中間期	その他	期間	USD		5376000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	当中間期	その他	期間	USD		5376000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	InterimDuration_NonControllingInterestsIFRSMember	当中間期	その他	期間	USD		364000
+jpigp_cor:OtherComprehensiveIncomeIFRS	その他の包括利益（IFRS）	InterimDuration	当中間期	その他	期間	USD		5740000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	当中間期	その他	期間	USD		-4587000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration_OtherComponentsOfEquityIFRSMember	当中間期	その他	期間	USD		5376000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	当中間期	その他	期間	USD		229423000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration_NonControllingInterestsIFRSMember	当中間期	その他	期間	USD		24999000
+jpigp_cor:ComprehensiveIncomeIFRS	当期包括利益（IFRS）	InterimDuration	当中間期	その他	期間	USD		254423000
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	InterimDuration_OtherComponentsOfEquityIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	当中間期	その他	期間	USD		-35099000
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	InterimDuration_NonControllingInterestsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToOwnersOfParentSSIFRS	親会社の所有者に対する配当金、持分変動計算書（IFRS）	InterimDuration	当中間期	その他	期間	USD		-35099000
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	InterimDuration_OtherComponentsOfEquityIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	InterimDuration_NonControllingInterestsIFRSMember	当中間期	その他	期間	USD		-14259000
+jpigp_cor:DividendsToNonControllingInterestsSSIFRS	非支配持分に対する配当金、持分変動計算書（IFRS）	InterimDuration	当中間期	その他	期間	USD		-14259000
+jpigp_cor:PurchaseOfTreasurySharesSSIFRS	自己株式の取得、持分変動計算書（IFRS）	InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:PurchaseOfTreasurySharesSSIFRS	自己株式の取得、持分変動計算書（IFRS）	InterimDuration_OtherComponentsOfEquityIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:PurchaseOfTreasurySharesSSIFRS	自己株式の取得、持分変動計算書（IFRS）	InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	当中間期	その他	期間	USD		-1000
+jpigp_cor:PurchaseOfTreasurySharesSSIFRS	自己株式の取得、持分変動計算書（IFRS）	InterimDuration_NonControllingInterestsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:PurchaseOfTreasurySharesSSIFRS	自己株式の取得、持分変動計算書（IFRS）	InterimDuration	当中間期	その他	期間	USD		-1000
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	InterimDuration_OtherComponentsOfEquityIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	当中間期	その他	期間	USD		-232000
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	InterimDuration_NonControllingInterestsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:ShareBasedPaymentTransactionsSSIFRS	株式報酬取引、持分変動計算書（IFRS）	InterimDuration	当中間期	その他	期間	USD		-232000
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	InterimDuration_OtherComponentsOfEquityIFRSMember	当中間期	その他	期間	USD		238000
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	InterimDuration_NonControllingInterestsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:TransferFromOtherComponentsOfEquityToRetainedEarningsSSIFRS	その他の資本の構成要素から利益剰余金への振替、持分変動計算書（IFRS）	InterimDuration	当中間期	その他	期間	USD		－
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	InterimDuration_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	当中間期	その他	期間	USD		－
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	InterimDuration_OtherComponentsOfEquityIFRSMember	当中間期	その他	期間	USD		238000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	InterimDuration_EquityAttributableToOwnersOfParentIFRSMember	当中間期	その他	期間	USD		-35334000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	InterimDuration_NonControllingInterestsIFRSMember	当中間期	その他	期間	USD		-14259000
+jpigp_cor:TotalTransactionsWithOwnersIFRS	所有者との取引額（IFRS）	InterimDuration	当中間期	その他	期間	USD		-49593000
+jpigp_cor:EquityIFRS	資本（IFRS）	InterimInstant_ExchangeDifferencesOnTranslationOfForeignOperationsIFRSMember	当中間期末	その他	時点	USD		-24593000
+jpigp_cor:EquityIFRS	資本（IFRS）	InterimInstant_OtherComponentsOfEquityIFRSMember	当中間期末	その他	時点	USD		72152000
+jpigp_cor:EquityIFRS	資本（IFRS）	InterimInstant_EquityAttributableToOwnersOfParentIFRSMember	当中間期末	その他	時点	USD		1646899000
+jpigp_cor:EquityIFRS	資本（IFRS）	InterimInstant_NonControllingInterestsIFRSMember	当中間期末	その他	時点	USD		31973000
+jpigp_cor:EquityIFRS	資本（IFRS）	InterimInstant	当中間期末	その他	時点	USD		1678872000
+jpigp_cor:ProfitLossBeforeTaxIFRS	継続事業からの税引前利益（△損失）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		196532000
+jpigp_cor:ProfitLossBeforeTaxIFRS	継続事業からの税引前利益（△損失）（IFRS）	InterimDuration	当中間期	その他	期間	USD		307947000
+jpigp_cor:DepreciationAndAmortizationOpeCFIFRS	減価償却費及び償却費、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		20399000
+jpigp_cor:DepreciationAndAmortizationOpeCFIFRS	減価償却費及び償却費、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		19642000
+jpigp_cor:IncreaseDecreaseInProvisionsOpeCFIFRS	引当金の増減額（△は減少）、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-1646000
+jpigp_cor:IncreaseDecreaseInProvisionsOpeCFIFRS	引当金の増減額（△は減少）、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		852000
+jpcrp040300-ssr_E01725-000:IncreaseDecreaseInDefinedBenefitLiabilitiesOpeCFIFRS		Prior1InterimDuration	前中間期	その他	期間	USD		2377000
+jpcrp040300-ssr_E01725-000:IncreaseDecreaseInDefinedBenefitLiabilitiesOpeCFIFRS		InterimDuration	当中間期	その他	期間	USD		-1005000
+jpigp_cor:ShareOfLossProfitOfInvestmentsAccountedForUsingEquityMethodOpeCFIFRS	持分法による投資損益（△は益）、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-86212000
+jpigp_cor:ShareOfLossProfitOfInvestmentsAccountedForUsingEquityMethodOpeCFIFRS	持分法による投資損益（△は益）、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		-86101000
+jpigp_cor:FinanceIncomeAndFinanceCostsOpeCFIFRS	金融収益及び金融費用、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-24335000
+jpigp_cor:FinanceIncomeAndFinanceCostsOpeCFIFRS	金融収益及び金融費用、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		-14924000
+jpigp_cor:DecreaseIncreaseInTradeAndOtherReceivablesOpeCFIFRS	営業債権及びその他の債権の増減額（△は増加）、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		241977000
+jpigp_cor:DecreaseIncreaseInTradeAndOtherReceivablesOpeCFIFRS	営業債権及びその他の債権の増減額（△は増加）、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		324427000
+jpigp_cor:DecreaseIncreaseInContractAssetsOpeCFIFRS	契約資産の増減額（△は増加）、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		93553000
+jpigp_cor:DecreaseIncreaseInContractAssetsOpeCFIFRS	契約資産の増減額（△は増加）、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		-4999000
+jpcrp040300-ssr_E01725-000:DecreaseIncreaseInOtherCurrentAssetsOpeCFIFRS		Prior1InterimDuration	前中間期	その他	期間	USD		-44555000
+jpcrp040300-ssr_E01725-000:DecreaseIncreaseInOtherCurrentAssetsOpeCFIFRS		InterimDuration	当中間期	その他	期間	USD		-6913000
+jpigp_cor:IncreaseDecreaseInTradeAndOtherPayablesOpeCFIFRS	営業債務及びその他の債務の増減額（△は減少）、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-35966000
+jpigp_cor:IncreaseDecreaseInTradeAndOtherPayablesOpeCFIFRS	営業債務及びその他の債務の増減額（△は減少）、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		164108000
+jpigp_cor:IncreaseDecreaseInContractLiabilitiesOpeCFIFRS	契約負債の増減額（△は減少）、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-23516000
+jpigp_cor:IncreaseDecreaseInContractLiabilitiesOpeCFIFRS	契約負債の増減額（△は減少）、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		-12154000
+jpcrp040300-ssr_E01725-000:IncreaseDecreaseInOtherCurrentLiabilitiesOpeCFIFRS		Prior1InterimDuration	前中間期	その他	期間	USD		43928000
+jpcrp040300-ssr_E01725-000:IncreaseDecreaseInOtherCurrentLiabilitiesOpeCFIFRS		InterimDuration	当中間期	その他	期間	USD		-11775000
+jpigp_cor:OtherChangesInWorkingCapitalOpeCFIFRS	その他、運転資本の増減、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-38832000
+jpigp_cor:OtherChangesInWorkingCapitalOpeCFIFRS	その他、運転資本の増減、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		-39344000
+jpigp_cor:SubtotalOpeCFIFRS	小計、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		343704000
+jpigp_cor:SubtotalOpeCFIFRS	小計、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		639758000
+jpigp_cor:InterestReceivedOpeCFIFRS	利息の受取額、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		34437000
+jpigp_cor:InterestReceivedOpeCFIFRS	利息の受取額、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		35189000
+jpigp_cor:DividendsReceivedOpeCFIFRS	配当金の受取額、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		30675000
+jpigp_cor:DividendsReceivedOpeCFIFRS	配当金の受取額、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		37189000
+jpigp_cor:InterestPaidOpeCFIFRS	利息の支払額、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-17119000
+jpigp_cor:InterestPaidOpeCFIFRS	利息の支払額、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		-14790000
+jpigp_cor:IncomeTaxesPaidOpeCFIFRS	法人所得税の支払額、営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-54869000
+jpigp_cor:IncomeTaxesPaidOpeCFIFRS	法人所得税の支払額、営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		-52150000
+jpigp_cor:NetCashProvidedByUsedInOperatingActivitiesIFRS	営業活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		336829000
+jpigp_cor:NetCashProvidedByUsedInOperatingActivitiesIFRS	営業活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		645196000
+jpigp_cor:NetDecreaseIncreaseInShortTermLoansReceivableInvCFIFRS	短期貸付金の純増減額（△は増加）、投資活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		－
+jpigp_cor:NetDecreaseIncreaseInShortTermLoansReceivableInvCFIFRS	短期貸付金の純増減額（△は増加）、投資活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		8075000
+jpcrp040300-ssr_E01725-000:ProceedsFromCollectionOfLongTermLoansReceivableInvCFIFRS		Prior1InterimDuration	前中間期	その他	期間	USD		6842000
+jpcrp040300-ssr_E01725-000:ProceedsFromCollectionOfLongTermLoansReceivableInvCFIFRS		InterimDuration	当中間期	その他	期間	USD		－
+jpigp_cor:PurchaseOfPropertyPlantAndEquipmentAndIntangibleAssetsInvCFIFRS	有形固定資産及び無形資産の取得による支出、投資活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-1658000
+jpigp_cor:PurchaseOfPropertyPlantAndEquipmentAndIntangibleAssetsInvCFIFRS	有形固定資産及び無形資産の取得による支出、投資活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		-4156000
+jpigp_cor:NetCashProvidedByUsedInInvestingActivitiesIFRS	投資活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		5183000
+jpigp_cor:NetCashProvidedByUsedInInvestingActivitiesIFRS	投資活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		3919000
+jpigp_cor:RepaymentsOfLongTermBorrowingsFinCFIFRS	長期借入金の返済による支出、財務活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-95626000
+jpigp_cor:RepaymentsOfLongTermBorrowingsFinCFIFRS	長期借入金の返済による支出、財務活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		－
+jpigp_cor:RepaymentsOfLeaseObligationsFinCFIFRS	リース負債の返済による支出、財務活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-8514000
+jpigp_cor:RepaymentsOfLeaseObligationsFinCFIFRS	リース負債の返済による支出、財務活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		-9058000
+jpcrp040300-ssr_E01725-000:ProceedsFromCMSDepositsReceivedFinCFIFRS		Prior1InterimDuration	前中間期	その他	期間	USD		22951000
+jpcrp040300-ssr_E01725-000:ProceedsFromCMSDepositsReceivedFinCFIFRS		InterimDuration	当中間期	その他	期間	USD		6335000
+jpcrp040300-ssr_E01725-000:RepaymentsOfCMSDepositsReceivedFinCFIFRS		Prior1InterimDuration	前中間期	その他	期間	USD		-4437000
+jpcrp040300-ssr_E01725-000:RepaymentsOfCMSDepositsReceivedFinCFIFRS		InterimDuration	当中間期	その他	期間	USD		-6843000
+jpigp_cor:DividendsPaidFinCFIFRS	配当金の支払額、財務活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-22819000
+jpigp_cor:DividendsPaidFinCFIFRS	配当金の支払額、財務活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		-35082000
+jpcrp040300-ssr_E01725-000:DividendsPaidToNonControllingShareholdersFinCFIFRS		Prior1InterimDuration	前中間期	その他	期間	USD		-14000000
+jpcrp040300-ssr_E01725-000:DividendsPaidToNonControllingShareholdersFinCFIFRS		InterimDuration	当中間期	その他	期間	USD		-14259000
+jpigp_cor:PaymentsForPurchaseOfTreasurySharesFinCFIFRS	自己株式の取得による支出、財務活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		－
+jpigp_cor:PaymentsForPurchaseOfTreasurySharesFinCFIFRS	自己株式の取得による支出、財務活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		-1000
+jpigp_cor:NetCashProvidedByUsedInFinancingActivitiesIFRS	財務活動によるキャッシュ・フロー（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		-122446000
+jpigp_cor:NetCashProvidedByUsedInFinancingActivitiesIFRS	財務活動によるキャッシュ・フロー（IFRS）	InterimDuration	当中間期	その他	期間	USD		-58910000
+jpigp_cor:EffectOfExchangeRateChangesOnCashAndCashEquivalentsIFRS	現金及び現金同等物の為替変動による影響（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		19028000
+jpigp_cor:EffectOfExchangeRateChangesOnCashAndCashEquivalentsIFRS	現金及び現金同等物の為替変動による影響（IFRS）	InterimDuration	当中間期	その他	期間	USD		-2711000
+jpigp_cor:NetIncreaseDecreaseInCashAndCashEquivalentsIFRS	現金及び現金同等物の増減額（△は減少）（IFRS）	Prior1InterimDuration	前中間期	その他	期間	USD		238595000
+jpigp_cor:NetIncreaseDecreaseInCashAndCashEquivalentsIFRS	現金及び現金同等物の増減額（△は減少）（IFRS）	InterimDuration	当中間期	その他	期間	USD		587493000
+jpigp_cor:CashAndCashEquivalentsIFRS	現金及び現金同等物（IFRS）	Prior2YearInstant	前々期末	その他	時点	USD		1253276000
+jpigp_cor:CashAndCashEquivalentsIFRS	現金及び現金同等物（IFRS）	Prior1YearInstant	前期末	その他	時点	USD		1326950000
+jpigp_cor:CashAndCashEquivalentsIFRS	現金及び現金同等物（IFRS）	Prior1InterimInstant	前中間期末	その他	時点	USD		1491872000
+jpigp_cor:CashAndCashEquivalentsIFRS	現金及び現金同等物（IFRS）	InterimInstant	当中間期末	その他	時点	USD		1914443000
+jpcrp_cor:DocumentTitleCoverPage	提出書類、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	半期報告書
+jpcrp_cor:ClauseOfStipulationCoverPage	根拠条文、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	金融商品取引法第24条の５第１項の表の第１号
+jpcrp_cor:PlaceOfFilingCoverPage	提出先、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	関東財務局長
+jpcrp_cor:FilingDateCoverPage	提出日、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	2026-08-07
+jpcrp_cor:SemiAnnualAccountingPeriodCoverPage	中間会計期間、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	第41期中(自  2026年１月１日  至  2026年６月30日)
+jpcrp_cor:CompanyNameCoverPage	会社名、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	三井海洋開発株式会社
+jpcrp_cor:CompanyNameInEnglishCoverPage	英訳名、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	MODEC, INC.
+jpcrp_cor:TitleAndNameOfRepresentativeCoverPage	代表者の役職氏名、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	代表取締役 社長執行役員　　宮　田　裕　彦
+jpcrp_cor:AddressOfRegisteredHeadquarterCoverPage	本店の所在の場所、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	東京都中央区日本橋二丁目３番10号
+jpcrp_cor:TelephoneNumberAddressOfRegisteredHeadquarterCoverPage	電話番号、本店の所在の場所、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	03-5290-1200（代表）
+jpcrp_cor:NameOfContactPersonAddressOfRegisteredHeadquarterCoverPage	事務連絡者氏名、本店の所在の場所、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	執行役員 経理部長　　立　花　大　輔
+jpcrp_cor:NearestPlaceOfContactCoverPage	最寄りの連絡場所、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	東京都中央区日本橋二丁目３番10号
+jpcrp_cor:TelephoneNumberNearestPlaceOfContactCoverPage	電話番号、最寄りの連絡場所、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	03-5290-1200（代表）
+jpcrp_cor:NameOfContactPersonNearestPlaceOfContactCoverPage	事務連絡者氏名、最寄りの連絡場所、表紙	FilingDateInstant	提出日時点	その他	時点	－	－	執行役員 経理部長　　立　花　大　輔
+jpcrp_cor:PlaceForPublicInspectionCoverPageTextBlock	縦覧に供する場所、表紙 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	株式会社東京証券取引所(東京都中央区日本橋兜町２番１号)
+jpdei_cor:EDINETCodeDEI	EDINETコード、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	E01725
+jpdei_cor:FundCodeDEI	ファンドコード、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:SecurityCodeDEI	証券コード、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	62690
+jpdei_cor:FilerNameInJapaneseDEI	提出者名（日本語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	三井海洋開発株式会社
+jpdei_cor:FilerNameInEnglishDEI	提出者名（英語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	MODEC, INC.
+jpdei_cor:FundNameInJapaneseDEI	ファンド名称（日本語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:FundNameInEnglishDEI	ファンド名称（英語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:CabinetOfficeOrdinanceDEI	府令、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	企業内容等の開示に関する内閣府令
+jpdei_cor:DocumentTypeDEI	様式、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	第四号の三様式
+jpdei_cor:AccountingStandardsDEI	会計基準、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	IFRS
+jpdei_cor:WhetherConsolidatedFinancialStatementsArePreparedDEI	連結決算の有無、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	true
+jpdei_cor:IndustryCodeWhenConsolidatedFinancialStatementsArePreparedInAccordanceWithIndustrySpecificRegulationsDEI	別記事業（連結）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	cte
+jpdei_cor:IndustryCodeWhenFinancialStatementsArePreparedInAccordanceWithIndustrySpecificRegulationsDEI	別記事業（個別）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:CurrentFiscalYearStartDateDEI	当事業年度開始日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2026-01-01
+jpdei_cor:CurrentPeriodEndDateDEI	当会計期間終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2026-06-30
+jpdei_cor:TypeOfCurrentPeriodDEI	当会計期間の種類、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	HY
+jpdei_cor:CurrentFiscalYearEndDateDEI	当事業年度終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2026-12-31
+jpdei_cor:PreviousFiscalYearStartDateDEI	前事業年度開始日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2025-01-01
+jpdei_cor:ComparativePeriodEndDateDEI	比較対象会計期間終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2025-06-30
+jpdei_cor:PreviousFiscalYearEndDateDEI	前事業年度終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2025-12-31
+jpdei_cor:NextFiscalYearStartDateDEI	次の事業年度開始日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:EndDateOfQuarterlyOrSemiAnnualPeriodOfNextFiscalYearDEI	次の中間期の会計期間終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:AmendmentFlagDEI	訂正の有無、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	false
+jpdei_cor:IdentificationOfDocumentSubjectToAmendmentDEI	訂正対象書類の書類管理番号、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:ReportAmendmentFlagDEI	記載事項訂正のフラグ、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	false
+jpdei_cor:XBRLAmendmentFlagDEI	XBRL訂正のフラグ、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	false
+jpcrp_cor:BusinessResultsOfGroupTextBlock	連結経営指標等 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	回次第40期 中間連結会計期間第41期 中間連結会計期間第40期会計期間自  2025年１月１日至  2025年６月30日自  2026年１月１日至  2026年６月30日自  2025年１月１日至  2025年12月31日売上収益(千米ドル)2,074,2962,447,0504,581,232営業利益(千米ドル)172,196293,022437,607税引前中間（当期）利益(千米ドル)196,532307,947508,317親会社の所有者に帰属する中間（当期）利益(千米ドル)145,076224,046360,677親会社の所有者に帰属する中間（当期）包括利益(千米ドル)123,850229,423322,628親会社の所有者に帰属する持分(千米ドル)1,281,9461,646,8991,452,809資産合計(千米ドル)4,497,3285,077,0874,762,572基本的１株当たり中間（当期）利益(米ドル)2.123.285.28希薄化後１株当たり中間（当期）利益(米ドル)2.123.285.28親会社所有者帰属持分比率(％)28.532.430.5営業活動によるキャッシュ・フロー(千米ドル)336,829645,196244,035投資活動によるキャッシュ・フロー(千米ドル)5,1833,9195,535財務活動によるキャッシュ・フロー(千米ドル)△122,446△58,910△194,243現金及び現金同等物の中間期末（期末）残高(千米ドル)1,491,8721,914,4431,326,950 (注) １　当社は要約中間連結財務諸表を作成しているため、提出会社の主要な経営指標等の推移については記載しておりません。２　上記の指標は，国際財務報告基準(IFRS)により作成した要約中間連結財務諸表及び連結財務諸表に基づいております。   連結経営指標等の邦貨による併記情報回次第40期 中間連結会計期間第41期 中間連結会計期間第40期会計期間自  2025年１月１日至  2025年６月30日自  2026年１月１日至  2026年６月30日自  2025年１月１日至  2025年12月31日売上収益(百万円)300,378397,376717,100営業利益(百万円)24,93547,58368,498税引前中間（当期）利益(百万円)28,45950,00779,566親会社の所有者に帰属する中間（当期）利益(百万円)21,00836,38256,456親会社の所有者に帰属する中間（当期）包括利益(百万円)17,93437,25650,501親会社の所有者に帰属する持分(百万円)185,638267,439227,408資産合計(百万円)651,258824,468745,485基本的１株当たり中間（当期）利益(円)307.51532.37826.25希薄化後１株当たり中間（当期）利益(円)307.39532.37826.25営業活動によるキャッシュ・フロー(百万円)48,776104,77338,198投資活動によるキャッシュ・フロー(百万円)750636866財務活動によるキャッシュ・フロー(百万円)△17,731△9,566△30,404現金及び現金同等物の中間期末（期末）残高(百万円)216,038310,886207,707 (注)　「円」で表示している金額は、便宜上の換算として、それぞれ2025年12月期中間期　１米ドル＝144.81円（2025年６月30日現在 株式会社三井住友銀行の対顧客電信直物相場の仲値）、2026年12月期中間期　１米ドル＝162.39円（2026年６月30日現在 株式会社三井住友銀行の対顧客電信直物相場の仲値）、2025年12月期　１米ドル＝156.53円（2025年12月30日現在 株式会社三井住友銀行の対顧客電信直物相場の仲値）の換算レートに基づいて算出しております。  
+jpcrp_cor:DescriptionOfBusinessTextBlock	事業の内容 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	２ 【事業の内容】当中間連結会計期間において、当社グループ（当社、子会社及び関係会社）の営む事業の内容について、重要な変更はありません。　また、主要な関係会社についても異動はありません。 
+jpcrp_cor:BusinessRisksTextBlock	事業等のリスク [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	１ 【事業等のリスク】当中間連結会計期間において、新たな事業等のリスクの発生、または、前事業年度の有価証券報告書に記載した「事業等のリスク」についての重要な変更はありません。  
+jpcrp_cor:ManagementAnalysisOfFinancialPositionOperatingResultsAndCashFlowsTextBlock	経営者による財政状態、経営成績及びキャッシュ・フローの状況の分析 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	２ 【経営者による財政状態、経営成績及びキャッシュ・フローの状況の分析】文中の将来に関する事項は、当中間連結会計期間の末日現在において当社グループが判断したものであります。 (1)　経営成績の分析当中間連結会計期間における世界経済は、米国・イスラエルとイランの軍事衝突に伴うホルムズ海峡の通航停止によりエネルギー価格が高騰し、先行き不透明感が急速に高まりました。６月下旬には米国とイランの間で戦闘終結に関する覚書が締結されたものの、依然として地政学的な対立は継続しています。このような緊迫した状況を背景にエネルギー価格が高止まりし、インフレ沈静化に向かっていた主要国の物価水準を再び押し上げたことから、世界的な景気下振れへの警戒感が一段と強まりました。原油価格は、中東地域における軍事衝突の本格化とホルムズ海峡封鎖を巡る混乱を受けて急騰し、一時１バレル110米ドルを超える水準まで急騰しました。その後、関係国が停戦に合意し、海峡再開に伴う供給正常化への見通しから原油価格は落ち着きを見せ始めたものの、情勢の先行きに対する警戒感から、原油価格は１バレル70米ドルから80米ドル前後と衝突前よりも高い水準で推移しました。脱炭素の流れと並存しつつ、安定したエネルギー供給を維持することは依然重要な課題であり、石油会社による深海油ガス田開発は将来的にも十分な埋蔵量が確認され、併せてコスト競争力に優れた領域として継続して進められています。当社グループの主要事業である浮体式海洋石油・ガス生産設備に関する事業、特に当社グループが強みを持つ超大水深大型プロジェクトに対する需要も堅調に推移しています。こうした状況のもと、当中間連結会計期間の連結業績は、既存のFPSO建造プロジェクトの仕様変更等により、受注高は481,202千米ドル、また受注残高は17,021,399千米ドルとなりました。売上収益及び利益面では、FPSO建造プロジェクトの順調な進捗による売上収益及び売上総利益の計上により、売上収益は2,447,050千米ドル（前年同期比18.0％増）、また持分法による投資利益86,101千米ドル（前年同期比0.1％減）を加えた営業利益は293,022千米ドル（前年同期比70.2％増）となりました。また、親会社の所有者に帰属する中間利益は、224,046千米ドル（前年同期比54.4％増）となりました。 (2)　財政状態の分析当中間連結会計期間末の資産合計は、主に現金及び現金同等物の増加により、前連結会計年度末から314,515千米ドル増加し、5,077,087千米ドルとなりました。負債合計は、主に営業債務及びその他の債務の増加により、前連結会計年度末から109,685千米ドル増加し、3,398,215千米ドルとなりました。資本合計は、主に利益剰余金の増加により、前連結会計年度末から204,829千米ドル増加し、1,678,872千米ドルとなりました。  (3)　キャッシュ・フローの状況当中間連結会計期間末における現金及び現金同等物（以下「資金」）の残高は、前連結会計年度末から587,493千米ドル増加し、1,914,443千米ドルとなりました。当中間連結会計期間における各キャッシュ・フローの状況とそれらの要因は、以下のとおりであります。（営業活動によるキャッシュ・フロー）営業活動によって得た資金は、645,196千米ドル（前年同期は336,829千米ドルの収入）となりました。これは主に、FPSO等の建造工事に関わる売上債権の回収時期と買掛金の支払時期のバランスによる変動であります。（投資活動によるキャッシュ・フロー）投資活動によって得た資金は、3,919千米ドル（前年同期は5,183千米ドルの収入）となりました。これは主に、短期貸付金の回収による収入によるものであります。（財務活動によるキャッシュ・フロー）財務活動に使用した資金は、58,910千米ドル（前年同期は122,446千米ドルの使用）となりました。これは主に、配当金の支払による支出によるものであります。 (4)　資本の財源及び資金の流動性についての分析当社グループの運転資金及び設備資金については、社債及び借入金、並びに自己資金により充当しております。当中間連結会計期間末の有利子負債残高はリース負債を含め492,089千米ドルとなり、前連結会計年度末から7,202千米ドル減少しました。これは、リース負債の減少によるものであります。資金の流動性については、主要銀行とのコミットメントライン契約を継続しており、現金及び現金同等物と合わせて十分な流動性を確保しております。 (5)　経営方針、経営戦略、対処すべき課題当中間連結会計期間において、経営方針、経営戦略、対処すべき課題について重要な変更はありません。 (6)　研究開発活動当中間連結会計期間の研究開発費の総額は14,350千米ドルであります。　なお、当中間連結会計期間において、当社グループの研究開発活動の状況に重要な変更はありません。  
+jpcrp_cor:CriticalContractsTextBlock	重要な契約等 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	３ 【重要な契約等】当中間連結会計期間において、重要な契約等の決定又は締結等はありません。  
+jpcrp_cor:TotalNumberOfSharesTextBlock	株式の総数 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	① 【株式の総数】 種類発行可能株式総数(株)普通株式102,868,000計102,868,000  
+jpcrp_cor:IssuedSharesTotalNumberOfSharesEtcTextBlock	発行済株式、株式の総数等 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	② 【発行済株式】 種類中間会計期間末現在発行数(株)(2026年６月30日)提出日現在発行数(株)(2026年８月７日)上場金融商品取引所名又は登録認可金融商品取引業協会名内容普通株式68,345,30068,345,300東京証券取引所(プライム市場)単元株式数は100株であります計68,345,30068,345,300－－  
+jpcrp_cor:ClassIssuedSharesTotalNumberOfSharesEtc	種類、発行済株式、株式の総数等	FilingDateInstant_OrdinaryShareMember	提出日時点	その他	時点	－	－	普通株式
+jpcrp_cor:NameOfFinancialInstrumentsExchangeOnWhichSecuritiesAreListedOrAuthorizedFinancialInstrumentsBusinessAssociationToWhichSecuritiesAreRegistered	上場金融商品取引所名又は登録認可金融商品取引業協会名	FilingDateInstant_OrdinaryShareMember	提出日時点	その他	時点	－	－	東京証券取引所(プライム市場)
+jpcrp_cor:DescriptionIssuedSharesTotalNumberOfSharesEtc	内容、発行済株式、株式の総数等	FilingDateInstant_OrdinaryShareMember	提出日時点	その他	時点	－	－	単元株式数は100株であります
+jpcrp_cor:DetailsOfEmployeeShareOptionProgramTextBlock	ストックオプション制度の内容 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	① 【ストックオプション制度の内容】該当事項はありません。 
+jpcrp_cor:OtherInformationOnShareAcquisitionRightsTextBlock	その他の新株予約権等の状況 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	② 【その他の新株予約権等の状況】該当事項はありません。 
+jpcrp_cor:ExercisesEtcOfMovingStrikeConvertibleBondsEtcTextBlock	行使価額修正条項付新株予約権付社債券等の行使状況等 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	(3) 【行使価額修正条項付新株予約権付社債券等の行使状況等】該当事項はありません。 
+jpcrp_cor:ChangesInNumberOfIssuedSharesStatedCapitalEtcTextBlock	発行済株式総数、資本金等の推移 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	(4) 【発行済株式総数、資本金等の推移】 年月日発行済株式総数増減数(千株)発行済株式総数残高(千株)資本金増減額(百万円)資本金残高(百万円)資本準備金増減額(百万円)資本準備金残高(百万円)    2026年６月30日－68,345－18,166－18,573  　
+jpcrp_cor:MajorShareholdersTextBlock	大株主の状況 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	 (5) 【大株主の状況】  2026年６月30日現在氏名又は名称住所所有株式数(千株) 発行済株式(自己株式を除く。)の総数に対する所有株式数の割合(％) 株式会社商船三井東京都港区虎ノ門2－1－110,25115.00三井物産株式会社東京都千代田区大手町1－2－110,16214.86日本マスタートラスト信託銀行株式会社(信託口)東京都港区赤坂1－8－1赤坂インターシティAIR7,93811.61株式会社日本カストディ銀行(信託口)東京都中央区晴海1－8－125,3627.84株式会社三井Ｅ＆Ｓ東京都中央区築地5－6－42,5023.66ＪＰモルガン証券株式会社東京都千代田区丸の内2－7－3 東京ビルディング1,4102.06J.P. MORGAN BANK LUXEMBOURG S.A. 384513(常任代理人　株式会社みずほ銀行決済営業部)EUROPEAN BANK AND BUSINESS CENTER 6,ROUTE DE TREVES, L-2633SENNINGERBERG, LUXEMBOURG (東京都港区港南2－15－1 品川インターシティＡ棟)1,1391.66STATE STREET BANK AND TRUST COMPANY 505103(常任代理人　株式会社みずほ銀行決済営業部)ONE CONGRESS STREET，SUITE 1，BOSTON，MASSACHUSETTS (東京都港区港南2－15－1 品川インターシティＡ棟)9121.33MSIP CLIENT SECURITIES(常任代理人　モルガン・スタンレーMUFG証券株式会社)25 CABOT SQUARE, CANARY WHARF,LONDONE14 4QA, U.K. (東京都千代田区大手町1－9－7 大手町フィナンシャルシティサウスタワー)9011.31GOVERNMENT OF NORWAY(常任代理人　シティバンク、エヌ・エイ東京支店)BANKPLASSEN 2，0107 OSLO 1 OSLO 0107NORWAY(東京都新宿区新宿6－27－30)6911.01計 ―41,27360.38   (注)  日本マスタートラスト信託銀行株式会社(信託口)及び株式会社日本カストディ銀行(信託口)の信託業務に係る株式数については、当社として把握することができないため記載しておりません。  
+jpcrp_cor:NameMajorShareholders	氏名又は名称、大株主の状況	InterimInstant_No1MajorShareholdersMember	当中間期末	その他	時点	－	－	株式会社商船三井
+jpcrp_cor:AddressMajorShareholders	住所、大株主の状況	InterimInstant_No1MajorShareholdersMember	当中間期末	その他	時点	－	－	東京都港区虎ノ門2－1－1
+jpcrp_cor:NameMajorShareholders	氏名又は名称、大株主の状況	InterimInstant_No2MajorShareholdersMember	当中間期末	その他	時点	－	－	三井物産株式会社
+jpcrp_cor:AddressMajorShareholders	住所、大株主の状況	InterimInstant_No2MajorShareholdersMember	当中間期末	その他	時点	－	－	東京都千代田区大手町1－2－1
+jpcrp_cor:NameMajorShareholders	氏名又は名称、大株主の状況	InterimInstant_No3MajorShareholdersMember	当中間期末	その他	時点	－	－	日本マスタートラスト信託銀行株式会社(信託口)
+jpcrp_cor:AddressMajorShareholders	住所、大株主の状況	InterimInstant_No3MajorShareholdersMember	当中間期末	その他	時点	－	－	東京都港区赤坂1－8－1赤坂インターシティAIR
+jpcrp_cor:NameMajorShareholders	氏名又は名称、大株主の状況	InterimInstant_No4MajorShareholdersMember	当中間期末	その他	時点	－	－	株式会社日本カストディ銀行(信託口)
+jpcrp_cor:AddressMajorShareholders	住所、大株主の状況	InterimInstant_No4MajorShareholdersMember	当中間期末	その他	時点	－	－	東京都中央区晴海1－8－12
+jpcrp_cor:NameMajorShareholders	氏名又は名称、大株主の状況	InterimInstant_No5MajorShareholdersMember	当中間期末	その他	時点	－	－	株式会社三井Ｅ＆Ｓ
+jpcrp_cor:AddressMajorShareholders	住所、大株主の状況	InterimInstant_No5MajorShareholdersMember	当中間期末	その他	時点	－	－	東京都中央区築地5－6－4
+jpcrp_cor:NameMajorShareholders	氏名又は名称、大株主の状況	InterimInstant_No6MajorShareholdersMember	当中間期末	その他	時点	－	－	ＪＰモルガン証券株式会社
+jpcrp_cor:AddressMajorShareholders	住所、大株主の状況	InterimInstant_No6MajorShareholdersMember	当中間期末	その他	時点	－	－	東京都千代田区丸の内2－7－3 東京ビルディング
+jpcrp_cor:NameMajorShareholders	氏名又は名称、大株主の状況	InterimInstant_No7MajorShareholdersMember	当中間期末	その他	時点	－	－	J.P. MORGAN BANK LUXEMBOURG S.A. 384513(常任代理人　株式会社みずほ銀行決済営業部)
+jpcrp_cor:AddressMajorShareholders	住所、大株主の状況	InterimInstant_No7MajorShareholdersMember	当中間期末	その他	時点	－	－	EUROPEAN BANK AND BUSINESS CENTER 6,ROUTE DE TREVES, L-2633SENNINGERBERG, LUXEMBOURG (東京都港区港南2－15－1 品川インターシティＡ棟)
+jpcrp_cor:NameMajorShareholders	氏名又は名称、大株主の状況	InterimInstant_No8MajorShareholdersMember	当中間期末	その他	時点	－	－	STATE STREET BANK AND TRUST COMPANY 505103(常任代理人　株式会社みずほ銀行決済営業部)
+jpcrp_cor:AddressMajorShareholders	住所、大株主の状況	InterimInstant_No8MajorShareholdersMember	当中間期末	その他	時点	－	－	ONE CONGRESS STREET，SUITE 1，BOSTON，MASSACHUSETTS (東京都港区港南2－15－1 品川インターシティＡ棟)
+jpcrp_cor:NameMajorShareholders	氏名又は名称、大株主の状況	InterimInstant_No9MajorShareholdersMember	当中間期末	その他	時点	－	－	MSIP CLIENT SECURITIES(常任代理人　モルガン・スタンレーMUFG証券株式会社)
+jpcrp_cor:AddressMajorShareholders	住所、大株主の状況	InterimInstant_No9MajorShareholdersMember	当中間期末	その他	時点	－	－	25 CABOT SQUARE, CANARY WHARF,LONDONE14 4QA, U.K. (東京都千代田区大手町1－9－7 大手町フィナンシャルシティサウスタワー)
+jpcrp_cor:NameMajorShareholders	氏名又は名称、大株主の状況	InterimInstant_No10MajorShareholdersMember	当中間期末	その他	時点	－	－	GOVERNMENT OF NORWAY(常任代理人　シティバンク、エヌ・エイ東京支店)
+jpcrp_cor:AddressMajorShareholders	住所、大株主の状況	InterimInstant_No10MajorShareholdersMember	当中間期末	その他	時点	－	－	BANKPLASSEN 2，0107 OSLO 1 OSLO 0107NORWAY(東京都新宿区新宿6－27－30)
+jpcrp_cor:IssuedSharesVotingRightsTextBlock	発行済株式、議決権の状況 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	① 【発行済株式】(2026年６月30日現在)区分株式数(株)議決権の数(個)内容無議決権株式－－－議決権制限株式(自己株式等)－－－議決権制限株式(その他)－－－完全議決権株式(自己株式等)（自己保有株式）普通株式1,000 －－完全議決権株式(その他)普通株式68,068,800 680,688－単元未満株式普通株式275,500 －－発行済株式総数68,345,300－－総株主の議決権－680,688－ （注）「単元未満株式」欄には、当社所有の自己株式40株が含まれております。 
+jpcrp_cor:DescriptionIssuedSharesVotingRights	内容、発行済株式、議決権の状況	InterimInstant_SharesWithNoVotingRightsMember	当中間期末	その他	時点	－	－	－
+jpcrp_cor:DescriptionIssuedSharesVotingRights	内容、発行済株式、議決権の状況	InterimInstant_SharesWithRestrictedVotingRightsTreasurySharesEtcMember	当中間期末	その他	時点	－	－	－
+jpcrp_cor:DescriptionIssuedSharesVotingRights	内容、発行済株式、議決権の状況	InterimInstant_SharesWithRestrictedVotingRightsOtherMember	当中間期末	その他	時点	－	－	－
+jpcrp_cor:DescriptionIssuedSharesVotingRights	内容、発行済株式、議決権の状況	InterimInstant_OrdinarySharesTreasurySharesSharesWithFullVotingRightsTreasurySharesEtcMember	当中間期末	その他	時点	－	－	－
+jpcrp_cor:DescriptionIssuedSharesVotingRights	内容、発行済株式、議決権の状況	InterimInstant_OrdinarySharesSharesWithFullVotingRightsOtherMember	当中間期末	その他	時点	－	－	－
+jpcrp_cor:DescriptionIssuedSharesVotingRights	内容、発行済株式、議決権の状況	InterimInstant_OrdinarySharesSharesLessThanOneUnitMember	当中間期末	その他	時点	－	－	－
+jpcrp_cor:TreasurySharesEtcTextBlock	自己株式等 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	② 【自己株式等】(2026年６月30日現在)所有者の氏名又は名称所有者の住所自己名義所有株式数(株)他人名義所有株式数(株)所有株式数の合計(株)発行済株式総数に対する所有株式数の割合(％)（自己保有株式）三井海洋開発株式会社東京都中央区日本橋二丁目３番10号1,000－1,0000.00計－1,000－1,0000.00   
+jpcrp_cor:NameOfShareholderTreasurySharesEtc	所有者の氏名又は名称、自己株式等	InterimInstant_Row1Member	当中間期末	その他	時点	－	－	三井海洋開発株式会社
+jpcrp_cor:AddressOfShareholderTreasurySharesEtc	所有者の住所、自己株式等	InterimInstant_Row1Member	当中間期末	その他	時点	－	－	東京都中央区日本橋二丁目３番10号
+jpcrp_cor:InformationAboutOfficersTextBlock	役員の状況 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	２ 【役員の状況】該当事項はありません。 
+jpcrp_cor:DescriptionOfFactThatConsolidatedFinancialStatementsHaveBeenPreparedInAccordanceWithIFRSFinancialInformation	指定国際会計基準により連結財務諸表を作成した場合の記載、経理の状況	InterimDuration	当中間期	その他	期間	－	－	当社グループの要約中間連結財務諸表は、「連結財務諸表の用語、様式及び作成方法に関する規則」(昭和51年大蔵省令第28号)第312条の規定により、国際会計基準第34号「期中財務報告」に準拠して作成しております。
+jpcrp_cor:Type1SemiAnnualConsolidatedFinancialStatementsFinancialInformation	第1種中間連結財務諸表、経理の状況	InterimDuration	当中間期	その他	期間	－	－	当社の中間連結財務諸表は、第一種中間連結財務諸表であります。
+jpcrp_cor:NoteOnIndependentAuditFinancialInformation	監査証明について、経理の状況	InterimDuration	当中間期	その他	期間	－	－	当社グループは、金融商品取引法第193条の２第１項の規定に基づき、中間連結会計期間(2026年１月１日から2026年６月30日まで)に係る要約中間連結財務諸表について、有限責任 あずさ監査法人により期中レビューを受けております。
+jpigp_cor:CondensedSemiAnnualConsolidatedStatementOfFinancialPositionIFRSTextBlock	要約中間連結財政状態計算書（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	(1) 【要約中間連結財政状態計算書】   (単位：千米ドル) 注記番号前連結会計年度(2025年12月31日)当中間連結会計期間(2026年６月30日)資産   流動資産   現金及び現金同等物 1,326,9501,914,443営業債権及びその他の債権 977,796649,958契約資産 70,70375,821貸付金８120,866108,547その他の金融資産８60,19469,360その他の流動資産 223,100234,065流動資産合計 2,779,6123,052,197非流動資産   有形固定資産 92,29182,200無形資産 28,52723,933持分法で会計処理されている投資 1,576,5381,638,304貸付金８222,105222,105その他の金融資産８15,42615,728繰延税金資産 44,59939,014その他の非流動資産 3,4713,603非流動資産合計 1,982,9602,024,890資産合計 4,762,5725,077,087      (単位：千米ドル) 注記番号前連結会計年度(2025年12月31日)当中間連結会計期間(2026年６月30日)負債及び資本   負債   流動負債   営業債務及びその他の債務 1,121,3191,291,184契約負債 1,061,7551,046,594社債８237,679238,226未払法人所得税 105,849105,353引当金 137,834138,260その他の金融負債８217,939187,021その他の流動負債 82,37274,091流動負債合計 2,964,7503,080,732非流動負債   社債８182,604182,789繰延税金負債 3,5215,247確定給付負債 51,53050,517引当金 22,29522,993その他の金融負債８63,10055,399その他の非流動負債 727536非流動負債合計 323,779317,482負債合計 3,288,5293,398,215資本   資本金 190,495190,495資本剰余金 168,496168,160利益剰余金 1,027,4071,216,116自己株式 △127△25その他の資本の構成要素 66,53772,152親会社の所有者に帰属する持分合計 1,452,8091,646,899非支配持分 21,23331,973資本合計 1,474,0431,678,872負債及び資本合計 4,762,5725,077,087  
+jpigp_cor:CondensedSemiAnnualConsolidatedStatementOfProfitOrLossIFRSTextBlock	要約中間連結損益計算書（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	【要約中間連結損益計算書】   (単位：千米ドル) 注記番号前中間連結会計期間(自　2025年１月１日至　2025年６月30日)当中間連結会計期間(自　2026年１月１日至　2026年６月30日)売上収益６2,074,2962,447,050売上原価 △1,879,633△2,109,478売上総利益 194,662337,571販売費及び一般管理費 △108,775△130,618持分法による投資利益 86,21286,101その他の収益 15518その他の費用 △58△51営業利益 172,196293,022金融収益 48,98644,653金融費用 △24,650△29,728税引前中間利益 196,532307,947法人所得税費用 △31,638△59,264中間利益 164,894248,682    中間利益の帰属   親会社の所有者 145,076224,046非支配持分 19,81824,635中間利益 164,894248,682       (単位：米ドル)１株当たり中間利益７  基本的１株当たり中間利益 2.123.28希薄化後１株当たり中間利益 2.123.28  
+jpigp_cor:CondensedSemiAnnualConsolidatedStatementOfComprehensiveIncomeIFRSTextBlock	要約中間連結包括利益計算書（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	【要約中間連結包括利益計算書】   (単位：千米ドル) 注記番号前中間連結会計期間(自　2025年１月１日至　2025年６月30日)当中間連結会計期間(自　2026年１月１日至　2026年６月30日)中間利益 164,894248,682その他の包括利益   純損益に振り替えられることのない項目   確定給付負債の再測定 △1,681△238純損益に振り替えられることのない項目合計 △1,681△238純損益に振り替えられる可能性のある項目   キャッシュ・フロー・ヘッジの有効部分 17,557△349在外営業活動体の換算差額 7,659△4,701持分法適用会社におけるその他の包括利益に対する持分 △40,72411,030純損益に振り替えられる可能性のある項目合計 △15,5075,979税引後その他の包括利益合計 △17,1895,740中間包括利益合計 147,705254,423    中間包括利益の帰属   親会社の所有者 123,850229,423非支配持分 23,85424,999中間包括利益合計 147,705254,423  
+jpigp_cor:CondensedSemiAnnualConsolidatedStatementOfChangesInEquityIFRSTextBlock	要約中間連結持分変動計算書（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	(3) 【要約中間連結持分変動計算書】前中間連結会計期間(自　2025年１月１日　至　2025年６月30日)(単位：千米ドル) 注記番号親会社の所有者に帰属する持分資本金資本剰余金利益剰余金自己株式その他の資本の構成要素確定給付負債の再測定キャッシュ・フロー・ヘッジの有効部分2025年１月１日残高 190,495168,963722,724△1,093-127,419中間利益 --145,076---その他の包括利益 ----△1,645△27,453中間包括利益合計 --145,076-△1,645△27,453親会社の所有者に対する配当金５--△22,837---非支配持分に対する配当金 ------株式報酬取引 -△467-965--その他の資本の構成要素から利益剰余金への振替 --△1,645-1,645-所有者との取引額合計 -△467△24,4839651,645-2025年６月30日残高 190,495168,496843,317△127-99,966   注記番号親会社の所有者に帰属する持分非支配持分資本合計その他の資本の構成要素親会社の所有者に帰属する持分合計在外営業活動体の換算差額その他の資本の構成要素合計2025年１月１日残高 △28,07599,3441,180,43518,0331,198,468中間利益 --145,07619,818164,894その他の包括利益 7,872△21,226△21,2264,036△17,189中間包括利益合計 7,872△21,226123,85023,854147,705親会社の所有者に対する配当金５--△22,837-△22,837非支配持分に対する配当金 ---△14,000△14,000株式報酬取引 --498-498その他の資本の構成要素から利益剰余金への振替 -1,645---所有者との取引額合計 -1,645△22,339△14,000△36,3392025年６月30日残高 △20,20279,7641,281,94627,8881,309,834   当中間連結会計期間(自　2026年１月１日　至　2026年６月30日)(単位：千米ドル) 注記番号親会社の所有者に帰属する持分資本金資本剰余金利益剰余金自己株式その他の資本の構成要素確定給付負債の再測定キャッシュ・フロー・ヘッジの有効部分2026年１月１日残高 190,495168,4961,027,407△127-86,543中間利益 --224,046---その他の包括利益 ----△23810,202中間包括利益合計 --224,046-△23810,202親会社の所有者に対する配当金５--△35,099---非支配持分に対する配当金 ------自己株式の取得 ---△1--株式報酬取引 -△336-103--その他の資本の構成要素から利益剰余金への振替 --△238-238-所有者との取引額合計 -△336△35,338102238-2026年６月30日残高 190,495168,1601,216,116△25-96,745   注記番号親会社の所有者に帰属する持分非支配持分資本合計その他の資本の構成要素親会社の所有者に帰属する持分合計在外営業活動体の換算差額その他の資本の構成要素合計2026年１月１日残高 △20,00566,5371,452,80921,2331,474,043中間利益 --224,04624,635248,682その他の包括利益 △4,5875,3765,3763645,740中間包括利益合計 △4,5875,376229,42324,999254,423親会社の所有者に対する配当金５--△35,099-△35,099非支配持分に対する配当金 ---△14,259△14,259自己株式の取得 --△1-△1株式報酬取引 --△232-△232その他の資本の構成要素から利益剰余金への振替 -238---所有者との取引額合計 -238△35,334△14,259△49,5932026年６月30日残高 △24,59372,1521,646,89931,9731,678,872  
+jpigp_cor:CondensedSemiAnnualConsolidatedStatementOfCashFlowsIFRSTextBlock	要約中間連結キャッシュ・フロー計算書（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	(4) 【要約中間連結キャッシュ・フロー計算書】   (単位：千米ドル) 注記番号前中間連結会計期間(自　2025年１月１日至　2025年６月30日)当中間連結会計期間(自　2026年１月１日至　2026年６月30日)営業活動によるキャッシュ・フロー   税引前中間利益 196,532307,947減価償却費及び償却費 20,39919,642引当金の増減額（△は減少） △1,646852確定給付負債の増減額（△は減少） 2,377△1,005持分法による投資損益（△は益） △86,212△86,101金融収益及び金融費用 △24,335△14,924営業債権及びその他の債権の増減額（△は増加） 241,977324,427契約資産の増減額（△は増加） 93,553△4,999その他の流動資産の増減額（△は増加） △44,555△6,913営業債務及びその他の債務の増減額（△は減少） △35,966164,108契約負債の増減額（△は減少） △23,516△12,154その他の流動負債の増減額（△は減少） 43,928△11,775その他 △38,832△39,344小計 343,704639,758利息の受取額 34,43735,189配当金の受取額 30,67537,189利息の支払額 △17,119△14,790法人所得税の支払額 △54,869△52,150営業活動によるキャッシュ・フロー 336,829645,196投資活動によるキャッシュ・フロー   短期貸付金の純増減額（△は増加） -8,075長期貸付金の回収による収入 6,842-有形固定資産及び無形資産の取得による支出 △1,658△4,156投資活動によるキャッシュ・フロー 5,1833,919財務活動によるキャッシュ・フロー   長期借入金の返済による支出 △95,626-リース負債の返済による支出 △8,514△9,058CMS預り金の受入による収入 22,9516,335CMS預り金の返還による支出 △4,437△6,843配当金の支払額５△22,819△35,082非支配株主への配当金の支払額 △14,000△14,259自己株式の取得による支出 -△1財務活動によるキャッシュ・フロー △122,446△58,910現金及び現金同等物に係る換算差額 19,028△2,711現金及び現金同等物の増減額（△は減少） 238,595587,493現金及び現金同等物の期首残高 1,253,2761,326,950現金及び現金同等物の中間期末残高 1,491,8721,914,443  
+jpigp_cor:NotesReportingEntityCondensedSemiAnnualConsolidatedFinancialStatementsIFRSTextBlock	注記事項－報告企業、要約中間連結財務諸表（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	１．報告企業三井海洋開発株式会社(以下「当社」という。)は、日本に所在する株式会社であります。当社の連結財務諸表は、当社及び連結子会社(以下「当社グループ」という。)、並びに当社グループの関連会社及び共同支配の取決めに対する持分から構成されております。当社グループの主な事業内容は、FPSO、FSO及びTLPといった浮体式海洋石油・ガス生産設備の設計・建造・据付、販売、リース、チャーター及びオペレーションであります。 
+jpigp_cor:NotesBasisOfPreparationCondensedSemiAnnualConsolidatedFinancialStatementsIFRSTextBlock	注記事項－作成の基礎、要約中間連結財務諸表（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	２．作成の基礎(1) IFRSに準拠している旨当社グループの要約中間連結財務諸表は、「連結財務諸表の用語、様式及び作成方法に関する規則」(昭和51年大蔵省令第28号)第１条の２第２号に掲げる「指定国際会計基準特定会社」の要件を満たすことから、同第312条の規定により、国際会計基準第34号「期中財務報告」に準拠して作成しております。要約中間連結財務諸表は、年次連結財務諸表で要求される全ての情報が含まれていないため、前連結会計年度に係る連結財務諸表と併せて利用されるべきものであります。本要約中間連結財務諸表は、2026年８月６日に当社代表取締役社長執行役員 宮田裕彦及び当社取締役常務執行役員 鈴木亮によって承認されております。 (2) 測定の基礎当社グループの要約中間連結財務諸表は、前連結会計年度に係る連結財務諸表の「注記３．重要性がある会計方針」に記載のとおり、公正価値で測定する金融商品及び確定給付負債等を除き、取得原価を基礎として作成しております。 (3) 機能通貨及び表示通貨当社グループの要約中間連結財務諸表は、当社の機能通貨である米ドルを表示通貨としており、千米ドル未満の端数は切り捨てております。 (4) 判断及び見積りの使用IFRSに準拠した要約中間連結財務諸表を作成する際に、経営者は、会計方針の適用並びに資産、負債、収益及び費用の報告額、及び報告期間の末日における偶発負債の開示に影響を及ぼす会計上の重要な判断、見積り及び仮定の設定を行っておりますが、実績がこれらの見積りとは異なることがあります。見積り及びその基礎となる仮定は継続して見直され、見直しによる影響は、見直しを行った期間又はそれ以降の期間において認識されます。要約中間連結財務諸表における重要な会計上の判断、見積り及び仮定は、前連結会計年度に係る連結財務諸表と同様であります。 (5) 会計方針の変更 該当事項はありません。  
+jpigp_cor:NotesSignificantAccountingPoliciesCondensedSemiAnnualConsolidatedFinancialStatementsIFRSTextBlock	注記事項－重要性がある会計方針、要約中間連結財務諸表（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	３．重要性がある会計方針当社グループが要約中間連結財務諸表において適用する重要性がある会計方針は、前連結会計年度に係る連結財務諸表において適用した会計方針と同一であります。 
+jpigp_cor:NotesSegmentInformationCondensedSemiAnnualConsolidatedFinancialStatementsIFRSTextBlock	注記事項－セグメント情報、要約中間連結財務諸表（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	 ４．セグメント情報当社グループの事業は、浮体式石油生産設備の建造及びこれに関連する各種サービスの提供を中心としたほぼ単一のセグメントであるため、記載を省略しております。 
+jpigp_cor:DescriptionOfFactThatCompanysBusinessComprisesSingleSegmentIFRS	単一セグメントである旨（IFRS）	InterimDuration	当中間期	その他	期間	－	－	当社グループの事業は、浮体式石油生産設備の建造及びこれに関連する各種サービスの提供を中心としたほぼ単一のセグメントであるため、記載を省略しております。
+jpigp_cor:NotesDividendsCondensedSemiAnnualConsolidatedFinancialStatementsIFRSTextBlock	注記事項－配当金、要約中間連結財務諸表（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	５．配当金　配当金の支払額は、以下のとおりであります。前中間連結会計期間(自　2025年１月１日　至　2025年６月30日)決議株式の種類配当金の総額（百万円）１株当たり配当額（円）基準日効力発生日配当の原資2025年３月27日定時株主総会普通株式3,41750.00 2024年12月31日2025年３月28日利益剰余金 (注)　配当金の総額には、「役員向け株式報酬制度」が保有する当社株式に対する配当金1,861千円が含まれております。 当中間連結会計期間(自  2026年１月１日  至  2026年６月30日)決議株式の種類配当金の総額（百万円）１株当たり配当額（円）基準日効力発生日配当の原資2026年３月30日定時株主総会普通株式5,46780.002025年12月31日2026年３月31日利益剰余金 (注)　配当金の総額には、「役員向け株式報酬制度」が保有する当社株式に対する配当金288千円が含まれております。 基準日が当中間連結会計期間に属する配当のうち、配当の効力発生日が当中間連結会計期間の末日後となるものは、以下のとおりであります。前中間連結会計期間(自　2025年１月１日　至　2025年６月30日)決議株式の種類配当金の総額（百万円）１株当たり配当額（円）基準日効力発生日配当の原資2025年８月７日取締役会普通株式4,10060.00 2025年６月30日2025年９月９日利益剰余金 (注)　配当金の総額には、「役員向け株式報酬制度」が保有する当社株式に対する配当金216千円が含まれております。 当中間連結会計期間(自  2026年１月１日  至  2026年６月30日)決議株式の種類配当金の総額（百万円）１株当たり配当額（円）基準日効力発生日配当の原資2026年８月７日取締役会普通株式6,834 100.00 2026年６月30日2026年９月９日利益剰余金   
+jpigp_cor:NotesRevenueCondensedSemiAnnualConsolidatedFinancialStatementsIFRSTextBlock	注記事項－売上収益、要約中間連結財務諸表（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	 ６．売上収益顧客との契約から生じた収益の分解及び地域別の内訳は、以下のとおりであります。(1) 収益の分解(単位：千米ドル) 前中間連結会計期間(自　2025年１月１日至　2025年６月30日)当中間連結会計期間(自　2026年１月１日至　2026年６月30日)建造工事1,397,6591,616,371オペレーション655,021823,322その他21,6147,356合計2,074,2962,447,050 　(注)　グループ会社間の内部取引控除後の金額を表示しております。 (2) 地域別に関する情報(単位：千米ドル) 前中間連結会計期間(自　2025年１月１日至　2025年６月30日)当中間連結会計期間(自　2026年１月１日至　2026年６月30日)ブラジル1,265,4211,200,657ガイアナ481,494837,449コートジボワール115,359123,450セネガル76,555－(注)２モザンビーク38,076－(注)２その他97,388285,492合計2,074,2962,447,050 　(注)１  売上収益は製品及びサービスの最終提供地を基礎として分類しております。２  該当年度においては重要性が低いため、記載を省略しております。  
+jpigp_cor:NotesEarningsPerShareCondensedSemiAnnualConsolidatedFinancialStatementsIFRSTextBlock	注記事項－１株当たり利益、要約中間連結財務諸表（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	７．１株当たり利益  基本的１株当たり中間利益及び希薄化後１株当たり中間利益の算定上の基礎は、以下のとおりであります。  前中間連結会計期間(自　2025年１月１日  至　2025年６月30日)当中間連結会計期間(自　2026年１月１日  至　2026年６月30日)基本的１株当たり中間利益の計算に使用する中間利益(千米ドル)145,076224,046　中間利益調整額(千米ドル)－－希薄化後１株当たり中間利益の計算に使用する中間利益(千米ドル)145,076224,046基本的１株当たり中間利益の計算に使用する普通株式の加重平均株式数(千株)68,317 68,341 希薄化効果を有する潜在的普通株式の影響　株式報酬(千株)26 －希薄化後１株当たり中間利益の計算に使用する普通株式の加重平均株式数(千株)68,34468,341 （注）株式給付信託に係る信託口が保有する当社株式は、基本的１株当たり中間利益の算定上、加重平均株式数の計算において控除する自己株式に含めております。当中間連結会計期間における当該株式の加重平均株式数は、2千株（前中間連結会計期間は26千株）であります。 
+jpigp_cor:NotesFairValueOfFinancialInstrumentsCondensedSemiAnnualConsolidatedFinancialStatementsIFRSTextBlock	注記事項－金融商品の公正価値、要約中間連結財務諸表（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	 ８．金融商品の公正価値①　公正価値及び帳簿価額償却原価で測定する金融商品の公正価値及び帳簿価額は、以下のとおりであります。なお、貸付金、社債以外の償却原価で測定する金融資産及び金融負債は、帳簿価額が公正価値と近似していると考えられるため、含めておりません。  (単位：千米ドル) 前連結会計年度(2025年12月31日)当中間連結会計期間(2026年６月30日)帳簿価額公正価値帳簿価額公正価値貸付金342,972329,078330,653313,038社債420,283417,404421,015409,622 (注)　１年内回収予定の貸付金は貸付金に含めて表示しております。 ②　金融商品の公正価値公正価値の算定方法（貸付金）貸付金の公正価値は、満期日ごとに分類し、その将来キャッシュ・フローを国債利回り等適切な指標に信用スプレッドを上乗せした利率で割り引いた現在価値により算定しております。（社債）固定金利によるものについては、元利金の合計額を同様の新規借入を公正価値評価時点で行った場合に想定される利率で割り引いて算定する方法によっております。変動金利によるものについては、短期間で市場金利を反映することから、帳簿価額が公正価値に近似していると考えられるため、当該帳簿価額によっております。公正価値ヒエラルキーにおいて貸付金はレベル３、社債はレベル２に分類しております。 ③　金融商品の公正価値ヒエラルキー当初認識後に経常的に公正価値で測定する金融商品は、測定に使用したインプットの観察可能性及び重要性に応じて３つの公正価値ヒエラルキー・レベルに分類しており、その定義は、以下のとおりであります。レベル１： 活発な市場における公表価格レベル２： レベル１以外の直接又は間接的に観察可能なインプットレベル３： 観察可能でないインプット 公正価値ヒエラルキーのレベル間の振り替えは、各報告期間の期首時点で発生したものとして認識しております。なお、前連結会計年度及び当中間連結会計期間において、レベル間の振り替えはありません。 経常的に公正価値で測定している資産は、以下のとおりであります。前連結会計年度(2025年12月31日)    (単位：千米ドル) レベル１レベル２レベル３合計金融資産    純損益を通じて公正価値で測定する金融資産    デリバティブ資産－3,828－3,828その他－410－410合計－4,239－4,239金融負債    純損益を通じて公正価値で測定する金融負債    デリバティブ負債－3,725－3,725合計－3,725－3,725   当中間連結会計期間(2026年６月30日)    (単位：千米ドル) レベル１レベル２レベル３合計金融資産    純損益を通じて公正価値で測定する金融資産    デリバティブ資産－3,664－3,664その他－410－410合計－4,074－4,074金融負債    純損益を通じて公正価値で測定する金融負債    デリバティブ負債－3,771－3,771合計－3,771－3,771  当社グループのデリバティブ資産及びデリバティブ負債は、活発な市場で取引されていないため、それらの公正価値測定に際し、当社グループは、独自の見積りには可能な限り依存せず、入手可能な範囲で観察可能な市場データを最大限に利用しております。デリバティブ資産及びデリバティブ負債は、すべての重要なインプットが観察可能であることから、レベル２に分類しております。デリバティブ資産及びデリバティブ負債の公正価値は、当社グループの公正価値評価方針及び測定手続に従い、当社グループの財務担当部門が測定しております。測定結果は、財務担当部門の責任者が承認しております。 
+jpigp_cor:NotesSubsequentEventsCondensedSemiAnnualConsolidatedFinancialStatementsIFRSTextBlock	注記事項－後発事象、要約中間連結財務諸表（IFRS） [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	９．後発事象該当事項はありません。  
+jpcrp_cor:OtherInformationConsolidatedFinancialStatementsEtcTextBlock	その他、連結財務諸表等 [テキストブロック]	InterimDuration	当中間期	その他	期間	－	－	２ 【その他】2026年８月７日開催の取締役会において、当期中間配当に関し、次のとおり決議いたしました。（１）中間配当による配当金の総額　　6,834百万円（２）１株当たりの金額　　　　　　　100円00銭  
+jpcrp_cor:InformationAboutCompanyWhichProvidesGuaranteeToReportingCompanyTextBlock	提出会社の保証会社等の情報 [テキストブロック]	FilingDateInstant	提出日時点	その他	時点	－	－	第二部 【提出会社の保証会社等の情報】 該当事項はありません。

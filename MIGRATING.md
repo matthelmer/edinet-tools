@@ -1,10 +1,80 @@
-# Migrating to 0.8.0
+# Migrating edinet-tools
 
-0.8.0 removes several fields and a few long-deprecated shims. Every removal
-raises immediately and by name — an `AttributeError` naming the replacement,
-or (for the dataclass fields) a `TypeError` on construction — so nothing
-breaks silently. This page is the fix-it checklist; see
-[CHANGELOG.md](CHANGELOG.md) for the full reasoning behind each change.
+## 0.9.0 — values, provenance and native XBRL
+
+The default source is still EDINET's CSV. These changes also affect that
+path; installing 0.9.0 does not leave previously parsed values unchanged.
+
+- **Re-check stored financial values before replacing them.** IFRS and
+  US GAAP fields now prefer the filing's own-standard fact. Missing facts
+  follow the field's listed fallback. Compare value, `source_elements`,
+  `source_contexts` and `units` together. Yen preference applies only to
+  currency variants of the same element and context, not across element
+  tiers. A selected foreign-currency value is not converted to yen even
+  when another concept supplies a yen figure. Check each field's unit;
+  different fields and report types can select different currencies.
+  Quarterly `ordinary_profit_ytd` and
+  `prior_ordinary_profit_ytd` are `None` on IFRS and US GAAP; use
+  `profit_before_tax` for the current profit-before-tax figure.
+- **Check shelf-supplement amount meanings.** Existing `planned_amount` is the
+  parent shelf's planned amount/ceiling, and `remaining_balance` reads 【残高】.
+  Their values have not been repurposed. New `offering_amount_text` and
+  `remaining_amount_text` expose this offering and the separate 【残額】 section.
+  They preserve filed text, units and qualifications; update consumers explicitly.
+- **Review values that become unknown when re-parsing stored reports.**
+  Missing lead-holder facts must not retain another holder's business,
+  purpose or funding; a group without its own denominator/date remains
+  unknown. Parent-only owners' profit must not retain a historical group
+  figure, and IFRS revenue must not retain J-GAAP ordinary revenue. An
+  updater that skips `None` preserves the old error. Review affected rows
+  and explicitly replace disproved values; do not blanket-clear all fields.
+- **Use document-list submission dates for chronology.** Amended 150, 170, 360,
+  250/300, 236, 190 and 040 packages may retain the original cover date.
+  Extraordinary-report reasons may also be the original's; the non-XBRL
+  correction document is outside this reader. Its amendment fields are
+  `amendment_flag` and `report_amendment_flag`; `event_type` is a keyword heuristic
+  and can describe a subsidiary rather than the filer.
+- **Re-check stored semi-annual filing dates.** `filing_date` now reads the
+  cover page's stated submission date instead of falling back to `period_end`.
+  Missing, invalid or conflicting dates return `None`; write that unknown
+  over an old substituted period end when re-parsing. The valid legacy
+  submission-date DEI field remains supported. `period_end` is unchanged.
+  On amendments this may be the original report's cover date; use
+  `Document`/EDINET list metadata for the actual document submission date.
+- **Keep both share-count bases.** `JointHolder.shares_held` changes from
+  the main-clause stock line to the member's filed 総数. It can be zero or
+  negative, and member totals need not sum to the group's figure.
+  `stock_lines_held` sums stock lines before deductions and excludes other
+  security classes. `LargeHoldingReport.shares_held` retains its group-total
+  meaning. Re-parse stored member rows if you need the new basis; do not
+  relabel the old values. An empty holder EDINET code now reads `None` on
+  CSV instead of a dash.
+- **Allow new serialized keys.** Every report's `to_dict()` includes
+  `source_elements`, `source_contexts` and `units`; securities, quarterly
+  and semi-annual reports populate them. Empty maps or absent field entries
+  mean provenance was not recorded. New typed fields are listed in the
+  [CHANGELOG](CHANGELOG.md).
+- **Large integers retain their digits.** Integer parsing no longer passes
+  through a binary float. Re-parsing a value above floating point's exact
+  integer range can correct a stored rounded number. Fractional inputs
+  still truncate toward zero. Nonfinite percentages now read as `None`.
+- **Quarterly EPS follows the finite-decimal rule.** NaN and Infinity now
+  read as `None`; comma-formatted values such as `1,234.56` are retained.
+  Equity-ratio annotations use exact tolerance comparisons and no longer
+  change when an application changes its Decimal context.
+- **Replace two-name `TierHit` unpacking.** `value, element = hit` no longer
+  works because the result also holds context and unit. Use `hit.value`
+  and `hit.element_id`; `hit[0]` and `hit[1]` retain their meanings.
+- **Opt into native reading explicitly.** Use `doc.parse(source="xbrl")`
+  or `parse_xbrl(package_bytes, doc_type_code)`. Pass a type-1 package,
+  not a type-5 CSV ZIP. `source="instance"` selects the package's XBRL
+  instance; it is a useful explicit alternative for non-XHTML inline files.
+  Catch `UnsupportedInlineXBRL` from `edinet_tools.parsers.ixbrl` for a
+  named refusal. No automatic fallback changes the source you requested.
+- **Compare sources before switching stored data.** Native text can be
+  longer and retain content CSV dropped. Multi-series fund file ordering
+  can change which sub-fund supplies a typed value; inspect the source
+  rows rather than assuming every field belongs to one series.
 
 ## 0.8.4 — behaviour changes to know about
 
@@ -43,6 +113,14 @@ caller can observe; each is a defect fixed rather than a redesign, and the
   the codes, not the names. `DocType.name_jp` now carries the FSA's own
   docTypeCode names verbatim (21 entries changed), and 070 / 080 / 370 / 380
   name the documents they actually are.
+
+## Upgrading from before 0.8.0
+
+0.8.0 removes several fields and a few long-deprecated shims. Every removal
+raises immediately and by name — an `AttributeError` naming the replacement,
+or (for the dataclass fields) a `TypeError` on construction — so nothing
+breaks silently. This page is the fix-it checklist; see
+[CHANGELOG.md](CHANGELOG.md) for the full reasoning behind each change.
 
 ## `SecuritiesReport`: ownership-basis field split
 

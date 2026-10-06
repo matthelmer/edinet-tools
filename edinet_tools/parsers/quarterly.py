@@ -13,18 +13,28 @@ from decimal import Decimal
 from datetime import date, timedelta
 from typing import Any, Optional
 
+from . import securities as _securities
+from ._standard_policy import (
+    IFRS,
+    JGAAP,
+    USGAAP,
+    FieldPolicy,
+    close_legacy,
+    own_standard_stage,
+    with_own_standard_first,
+)
 from .base import ParsedReport
 from .extraction import (
     Tier,
+    PREFERRED_PER_SHARE_UNIT,
     resolve_tiers,
     get_dei,
     extract_csv_from_zip,
     extract_value,
     categorize_elements,
-    get_context_patterns,
     parse_percentage,
+    parse_decimal,
     parse_date,
-    coerce_numeric_value,
 )
 
 
@@ -61,6 +71,10 @@ ELEMENT_MAP = {
     'equity_ratio': 'jpcrp_cor:EquityToAssetRatioSummaryOfBusinessResults',
 }
 
+# Read beside ELEMENT_MAP, not in it: an ELEMENT_MAP element leaves
+# unmapped_fields, and this DEI fact has always been there.
+_ACCOUNTING_STANDARD_DEI = 'jpdei_cor:AccountingStandardsDEI'
+
 # IFRS fallback elements
 IFRS_FALLBACK_MAP = {
     'jppfs_cor:NetSales': 'jpigp_cor:RevenueIFRS',
@@ -82,29 +96,178 @@ def _chain(key: str):
     return (element_id, fallback)
 
 
-# Per-field tier tables (v0.8.0 stage-5 migration). Single-tier waterfalls:
-# each field is one primary element with at most one IFRS fallback, exactly
-# the pre-migration extract_financial calls. Deliberately NO per-standard
-# gate here — the quarterly gate (and the 0.7.1-class leak it would close)
-# is a deferred, separately-predicted change, not migration drift.
-# Income-statement + cash-flow tables serve both the CurrentYTDDuration and
-# Prior1YTDDuration reads; balance-sheet tables read CurrentQuarterInstant.
-_YTD_TIERS = {
-    'revenue_ytd': (Tier(_chain('net_sales')),),
-    'operating_profit_ytd': (Tier(_chain('operating_income')),),
+# ---------------------------------------------------------------------------
+# Standard-selection policy (see _standard_policy for the contract)
+#
+# Every financial field reads the filing's declared standard first
+# (AccountingStandardsDEI): one stage per standard at the head of the field's
+# table, built from the legacy table's elements of that standard. A missing
+# own fact follows the field's declared fallback: 'legacy' serves the legacy
+# table; 'none' closes it to that standard. IFRS and US-GAAP filers never read
+# the J-GAAP operating or ordinary profit (no fallback to another standard's
+# figure), and owners' equity is never read for a J-GAAP filer (J-GAAP states
+# no owners-only figure).
+#
+# The legacy tables: each field's 0.8 tier (one element with at most one IFRS
+# fallback), unchanged, plus the other standards' elements as tiers scoped to
+# their own standard. A scoped tier never serves a filing of another standard,
+# nor one that declares none, so the legacy order for a J-GAAP or undeclared
+# filing is the 0.8 tier. The 0.8 tier comes first, so its own-standard
+# element keeps its place in the own stage: a value 0.8 already read on the
+# declared standard does not move (a filing whose highlights table and
+# statements disagree keeps the statements' figure). Periods are unchanged:
+# duration fields read CurrentYTDDuration (and the prior_ fields
+# Prior1YTDDuration), instant fields CurrentQuarterInstant; the context rule
+# is get_context_patterns.
+# ---------------------------------------------------------------------------
+
+_C, _G, _J = 'jpcrp_cor:', 'jpigp_cor:', 'jppfs_cor:'
+_SB = 'SummaryOfBusinessResults'
+_JG, _IFRS, _US = JGAAP, IFRS, USGAAP
+
+
+def _own(element, standard):
+    return Tier(element, standards=(standard,))
+
+
+# Custom-namespace consolidated IFRS revenue / operating profit (filer-local
+# elements); bare period only, so a parent figure can never win.
+_REVENUE_SUFFIX = Tier(('SalesRevenuesIFRS', 'TotalNetRevenuesIFRS', 'RevenueIFRS' + _SB),
+                       standards=(_IFRS,), suffix_match=True)
+_OPERATING_SUFFIX = Tier(('OperatingProfitLossIFRS' + _SB, 'OperatingIncomeIFRS' + _SB,
+                          'OperatingIncomeLossIFRS' + _SB, 'OperatingProfitIFRS' + _SB),
+                         standards=(_IFRS,), suffix_match=True)
+
+
+def _cash_flow_legacy(key, kind):
+    return (
+        Tier(_chain(key)),
+        _own(_C + f'CashFlowsFromUsedIn{kind}ActivitiesIFRS' + _SB, _IFRS),
+        _own(_G + f'NetCashProvidedByUsedIn{kind}ActivitiesIFRS', _IFRS),
+        _own(_C + f'CashFlowsFromUsedIn{kind}ActivitiesUSGAAP' + _SB, _US),
+    )
+
+
+_YTD_LEGACY = {
+    'revenue_ytd': (
+        Tier(_chain('net_sales')),
+        _own(_C + 'RevenueIFRS' + _SB, _IFRS),
+        _own(_C + 'RevenuesUSGAAP' + _SB, _US),
+        _own((_G + 'Revenue2IFRS', _G + 'NetSalesIFRS'), _IFRS),
+        _REVENUE_SUFFIX,
+    ),
+    'operating_profit_ytd': (
+        Tier(_chain('operating_income')),
+        _own(_C + 'OperatingProfitLossIFRS' + _SB, _IFRS),
+        _own(_C + 'OperatingIncomeLossUSGAAP' + _SB, _US),
+        _OPERATING_SUFFIX,
+    ),
     'ordinary_profit_ytd': (Tier(_chain('ordinary_income')),),
-    'net_income_ytd': (Tier(_chain('net_income')),),
+    'net_income_ytd': (
+        Tier(_chain('net_income')),
+        _own(_C + 'ProfitLossAttributableToOwnersOfParentIFRS' + _SB, _IFRS),
+        _own(_C + 'NetIncomeLossAttributableToOwnersOfParentUSGAAP' + _SB, _US),
+    ),
 }
-_CF_TIERS = {
-    'operating_cash_flow_ytd': (Tier(_chain('operating_cf')),),
-    'investing_cash_flow_ytd': (Tier(_chain('investing_cf')),),
-    'financing_cash_flow_ytd': (Tier(_chain('financing_cf')),),
+# Current period only (no prior_ read).
+_YTD_CURRENT_LEGACY = {
+    'profit_before_tax': _securities._PROFIT_BEFORE_TAX_LEGACY,
 }
-_INSTANT_TIERS = {
-    'total_assets': (Tier(_chain('total_assets')),),
-    'net_assets': (Tier(_chain('net_assets')),),
+_CF_LEGACY = {
+    'operating_cash_flow_ytd': _cash_flow_legacy('operating_cf', 'Operating'),
+    'investing_cash_flow_ytd': _cash_flow_legacy('investing_cf', 'Investing'),
+    'financing_cash_flow_ytd': _cash_flow_legacy('financing_cf', 'Financing'),
+}
+_INSTANT_LEGACY = {
+    'total_assets': (
+        Tier(_chain('total_assets')),
+        _own(_C + 'TotalAssetsIFRS' + _SB, _IFRS),
+        _own(_C + 'TotalAssetsUSGAAP' + _SB, _US),
+    ),
+    'net_assets': (
+        Tier(_chain('net_assets')),
+        _own(_C + 'EquityIncludingPortionAttributableToNonControllingInterestUSGAAP' + _SB, _US),
+    ),
+    'net_assets_owners': _securities._INSTANT_LEGACY['net_assets_owners'],
     'total_liabilities': (Tier(_chain('total_liabilities')),),
 }
+# Per-share and ratio ('string' mode; the caller parses). EPS keeps its
+# null-marker skipping (coerce); the equity ratio keeps its legacy
+# first-non-empty-raw-string read (a marker parses to None). The IFRS ratio
+# element is the real ratio, never EquityToAssetRatioIFRS... (per-share
+# equity in yen, a taxonomy misnomer).
+_EPS_LEGACY = (
+    Tier(ELEMENT_MAP['eps_basic']),
+    _own(_C + 'BasicEarningsLossPerShareIFRS' + _SB, _IFRS),
+    _own(_C + 'BasicEarningsLossPerShareUSGAAP' + _SB, _US),
+)
+_EQUITY_RATIO_LEGACY = (
+    Tier(ELEMENT_MAP['equity_ratio']),
+    _own(_C + 'RatioOfOwnersEquityToGrossAssetsIFRS' + _SB, _IFRS),
+    _own(_C + 'EquityToAssetRatioUSGAAP' + _SB, _US),
+)
+
+_LEGACY_TABLES = {
+    **{name: (t,) for name, t in _YTD_LEGACY.items()},
+    **{name: (t,) for name, t in _YTD_CURRENT_LEGACY.items()},
+    **{name: (t,) for name, t in _CF_LEGACY.items()},
+    **{name: (t,) for name, t in _INSTANT_LEGACY.items()},
+    'eps_basic_ytd': (_EPS_LEGACY,),
+    'equity_ratio': (_EQUITY_RATIO_LEGACY,),
+}
+
+_ALL = (_JG, _IFRS, _US)
+_LEGACY = 'legacy'
+# IFRS and US-GAAP filers never read the J-GAAP figure (the 0.7.1 gate).
+_JGAAP_ONLY_FALLBACK = {_JG: 'legacy', _IFRS: 'none', _US: 'none'}
+
+_STANDARD_POLICY = {
+    'revenue_ytd': FieldPolicy('Revenue: net sales / IFRS revenue / US-GAAP revenues '
+                               '(year to date)', _ALL, _LEGACY),
+    'operating_profit_ytd': FieldPolicy('Operating profit (year to date); no J-GAAP '
+                                        'figure for IFRS or US-GAAP filers', _ALL,
+                                        _JGAAP_ONLY_FALLBACK),
+    'ordinary_profit_ytd': FieldPolicy('Ordinary profit (J-GAAP only; blank for IFRS and '
+                                       'US-GAAP filers)', (_JG,),
+                                       {_JG: 'n/a', _IFRS: 'none', _US: 'none'}),
+    'net_income_ytd': FieldPolicy('Profit attributable to owners of parent (year to date)',
+                                  _ALL, _LEGACY),
+    'profit_before_tax': FieldPolicy('Profit before income taxes (year to date)', _ALL,
+                                     'none'),
+    'total_assets': FieldPolicy('Total assets', _ALL, _LEGACY),
+    'net_assets': FieldPolicy('Net assets / total equity including non-controlling '
+                              'interests', _ALL, _LEGACY),
+    'net_assets_owners': FieldPolicy('Equity attributable to owners of parent (no J-GAAP '
+                                     'element)', (_IFRS, _US),
+                                     {s: 'none' for s in _ALL}),
+    'total_liabilities': FieldPolicy('Total liabilities (FS)', (_JG, _IFRS), _LEGACY),
+    'operating_cash_flow_ytd': FieldPolicy('Cash flows from operating activities', _ALL,
+                                           _LEGACY),
+    'investing_cash_flow_ytd': FieldPolicy('Cash flows from investing activities', _ALL,
+                                           _LEGACY),
+    'financing_cash_flow_ytd': FieldPolicy('Cash flows from financing activities', _ALL,
+                                           _LEGACY),
+    'eps_basic_ytd': FieldPolicy('Basic earnings per share (year to date)', _ALL, _LEGACY),
+    'equity_ratio': FieldPolicy('Equity-to-assets ratio (owners basis)', _ALL, _LEGACY),
+}
+
+
+def _resolved(tables):
+    return {name: with_own_standard_first(t, _STANDARD_POLICY[name]) for name, t in tables.items()}
+
+
+# Resolved tables: own-standard stage, then the legacy table (closed where the
+# fallback is 'none').
+_YTD_TIERS = _resolved(_YTD_LEGACY)
+_YTD_CURRENT_TIERS = _resolved(_YTD_CURRENT_LEGACY)
+_CF_TIERS = _resolved(_CF_LEGACY)
+_INSTANT_TIERS = _resolved(_INSTANT_LEGACY)
+# Per-share and ratio: the own stage is resolved with coerce semantics (a
+# marker-valued own fact falls through), then the legacy scan.
+_EPS_OWN = own_standard_stage(_EPS_LEGACY, _STANDARD_POLICY['eps_basic_ytd'])
+_EPS_REST = close_legacy(_EPS_LEGACY, _STANDARD_POLICY['eps_basic_ytd'])
+_EQUITY_RATIO_OWN = own_standard_stage(_EQUITY_RATIO_LEGACY, _STANDARD_POLICY['equity_ratio'])
+_EQUITY_RATIO_REST = close_legacy(_EQUITY_RATIO_LEGACY, _STANDARD_POLICY['equity_ratio'])
 
 
 @dataclass
@@ -115,6 +278,9 @@ class QuarterlyReport(ParsedReport):
     filer_name: str | None = None
     filer_edinet_code: str | None = None
     ticker: str | None = None
+    # AccountingStandardsDEI as declared ('Japan GAAP', 'IFRS', 'US GAAP'),
+    # whitespace-stripped; None when the filing declares none.
+    accounting_standard: str | None = None
     is_consolidated: bool | None = None
 
     # Period
@@ -127,6 +293,12 @@ class QuarterlyReport(ParsedReport):
     operating_profit_ytd: int | None = None
     ordinary_profit_ytd: int | None = None
     net_income_ytd: int | None = None
+    # Profit before income taxes (total basis, pre-tax): J-GAAP
+    # 税金等調整前四半期純利益, IFRS / US-GAAP profit before tax. A filing that
+    # declares a standard reads that standard's figure only (honest None when
+    # it does not tag it); a filing that declares none reads the legacy order
+    # (J-GAAP FS, IFRS highlights then FS, US-GAAP highlights).
+    profit_before_tax: int | None = None
 
     # Income Statement (Prior Year YTD)
     prior_revenue_ytd: int | None = None
@@ -137,6 +309,9 @@ class QuarterlyReport(ParsedReport):
     # Balance Sheet
     total_assets: int | None = None
     net_assets: int | None = None
+    # Equity attributable to owners of parent (IFRS / US GAAP). None for
+    # J-GAAP filers by design: J-GAAP states no owners-only figure.
+    net_assets_owners: int | None = None
     total_liabilities: int | None = None
 
     # Cash Flow
@@ -165,6 +340,10 @@ class QuarterlyReport(ParsedReport):
         q = f"Q{self.quarter_number}" if self.quarter_number else 'Q?'
         fy = self.fiscal_year_end.year if self.fiscal_year_end else '?'
         return f"QuarterlyReport(filer='{filer}', {q} FY{fy})"
+
+
+def _decimal_or_none(value):
+    return parse_decimal(value)
 
 
 def _derive_quarter_number(filing_date: date, fiscal_year_end: date) -> Optional[int]:
@@ -244,6 +423,10 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
     security_code = get_dei(csv_files, ELEMENT_MAP, 'security_code')
     is_consolidated_raw = get_dei(csv_files, ELEMENT_MAP, 'is_consolidated')
     is_consolidated = (is_consolidated_raw == 'true') if is_consolidated_raw else None
+    # Whitespace-stripped: some filings tag the DEI value with trailing tabs.
+    standard_raw = extract_value(csv_files, _ACCOUNTING_STANDARD_DEI,
+                                 context_patterns=['FilingDateInstant'])
+    accounting_standard = (standard_raw.strip() or None) if standard_raw else None
 
     # Format ticker
     ticker = None
@@ -260,40 +443,51 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
     if filing_date and fiscal_year_end:
         quarter_number = _derive_quarter_number(filing_date, fiscal_year_end)
 
-    # Financials from the tier tables. Standard is intentionally None-ish
-    # here: quarterly tiers carry no standards scoping (no gate — see the
-    # table comment), so nothing consults it.
-    def fin(tiers, period):
-        hit = resolve_tiers(csv_files, tiers, standard=None, period=period,
+    # Financials: every field reads the declared standard first (see the
+    # policy above); source_elements / source_contexts record the element and
+    # context of every value.
+    sources, contexts, units = {}, {}, {}
+
+    def fin(name, tiers, period):
+        hit = resolve_tiers(csv_files, tiers, standard=accounting_standard, period=period,
                             is_consolidated=is_consolidated)
-        return hit.value if hit else None
+        if hit is None:
+            return None
+        sources[name], contexts[name] = hit.element_id, hit.context_id
+        units[name] = hit.unit_id
+        return hit.value
 
     fields = {}
     for name, tiers in _YTD_TIERS.items():
-        fields[name] = fin(tiers, 'CurrentYTDDuration')
-        fields[f'prior_{name}'] = fin(tiers, 'Prior1YTDDuration')
-    for name, tiers in _CF_TIERS.items():
-        fields[name] = fin(tiers, 'CurrentYTDDuration')
+        fields[name] = fin(name, tiers, 'CurrentYTDDuration')
+        fields[f'prior_{name}'] = fin(f'prior_{name}', tiers, 'Prior1YTDDuration')
+    for name, tiers in {**_YTD_CURRENT_TIERS, **_CF_TIERS}.items():
+        fields[name] = fin(name, tiers, 'CurrentYTDDuration')
     for name, tiers in _INSTANT_TIERS.items():
-        fields[name] = fin(tiers, 'CurrentQuarterInstant')
+        fields[name] = fin(name, tiers, 'CurrentQuarterInstant')
 
-    # Per-share metrics. coerce_numeric_value nulls the full dash-family
-    # marker set (incl. '―'/'—' — the local tuple this replaced); the
-    # guarded Decimal keeps the legacy silent-None on non-numeric strings.
-    patterns = get_context_patterns(is_consolidated, 'CurrentYTDDuration')
-    eps_str = coerce_numeric_value(extract_value(
-        csv_files, ELEMENT_MAP['eps_basic'], context_patterns=patterns))
-    eps_basic = None
-    if eps_str:
-        try:
-            eps_basic = Decimal(eps_str)
-        except ArithmeticError:
-            eps_basic = None
+    def per_share(name, own, rest, period, rest_coerce, parse, prefer_unit=None):
+        hit = resolve_tiers(csv_files, own, standard=accounting_standard, period=period,
+                            is_consolidated=is_consolidated, mode='string', coerce=True,
+                            prefer_unit=prefer_unit)
+        if hit is None:
+            hit = resolve_tiers(csv_files, rest, standard=accounting_standard, period=period,
+                                is_consolidated=is_consolidated, mode='string',
+                                coerce=rest_coerce, prefer_unit=prefer_unit)
+        value = parse(hit.value) if hit else None
+        if value is not None:
+            sources[name], contexts[name] = hit.element_id, hit.context_id
+            if prefer_unit:
+                units[name] = hit.unit_id
+        return value
 
-    # Ratios
-    patterns = get_context_patterns(is_consolidated, 'CurrentQuarterInstant')
-    equity_str = extract_value(csv_files, ELEMENT_MAP['equity_ratio'], context_patterns=patterns)
-    equity_ratio = parse_percentage(equity_str)
+    # EPS: a marker is a missing fact (coerce); a non-numeric string is a
+    # silent None (the guarded Decimal). The equity ratio's legacy scan keeps
+    # its first-non-empty-raw-string read: a marker parses to None.
+    eps_basic = per_share('eps_basic_ytd', _EPS_OWN, _EPS_REST, 'CurrentYTDDuration', True,
+                          _decimal_or_none, PREFERRED_PER_SHARE_UNIT)
+    equity_ratio = per_share('equity_ratio', _EQUITY_RATIO_OWN, _EQUITY_RATIO_REST,
+                             'CurrentQuarterInstant', False, parse_percentage)
 
     # Categorize all elements
     raw_fields, text_blocks, unmapped_fields, raw_facts = categorize_elements(csv_files, ELEMENT_MAP)
@@ -311,6 +505,7 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
         filer_name=company_name or getattr(document, 'filer_name', None),
         filer_edinet_code=edinet_code or getattr(document, 'filer_edinet_code', None),
         ticker=ticker,
+        accounting_standard=accounting_standard,
         is_consolidated=is_consolidated,
 
         # Period
@@ -327,4 +522,10 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
 
         # Ratios
         equity_ratio=equity_ratio,
+
+        # Provenance
+        source_elements=sources,
+        source_contexts=contexts,
+        # a row without a unit id has no entry (never None)
+        units={k: u for k, u in units.items() if u is not None},
     )

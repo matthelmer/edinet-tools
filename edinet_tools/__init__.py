@@ -4,7 +4,7 @@ EDINET Tools - Python package for accessing Japanese corporate financial data.
 Python library for Japanese financial disclosure data.
 """
 
-__version__ = "0.8.4"
+__version__ = "0.9.0"
 __author__ = "Matt Helmer"
 __description__ = "Python package for accessing Japanese corporate financial data from EDINET"
 
@@ -37,6 +37,7 @@ from .doc_types import DocType, doc_type, list_doc_types, doc_types
 # Parsers
 from .parsers import (
     parse,
+    parse_xbrl,
     supported_doc_types,
     ParsedReport,
     RawReport,
@@ -83,6 +84,7 @@ __all__ = [
     "doc_types",
     # Parsers
     "parse",
+    "parse_xbrl",
     "supported_doc_types",
     "ParsedReport",
     "RawReport",

@@ -25,6 +25,19 @@ class ParsedReport:
         unmapped_fields: Elements not mapped to explicit fields (excluding TextBlocks)
         text_blocks: TextBlock elements by name
         extraction_flags: Validation findings (bounds withheld / identities annotated)
+        source_elements: Field name -> the element its value was read from
+        source_contexts: Field name -> the context that element was read at
+        units: Monetary or per-share field name -> the unit id of the fact
+            read ('JPY' / 'JPYPerShares', or the foreign currency a filer
+            tagged it in, e.g. 'USD' / 'USDPerShares'). A fact filed in yen and
+            another currency at one context is read in yen. A value read from a
+            row without a unit id has no entry: the map never holds None.
+
+    The provenance maps are filled by the parsers that record them (the
+    securities, quarterly and semi-annual reports) for every field that holds
+    a value (`units`: every monetary and per-share field; ratios are not in
+    it); a parser that records none leaves them empty, which means
+    "not recorded", never "no value".
     """
     doc_id: str
     doc_type_code: str
@@ -34,6 +47,9 @@ class ParsedReport:
     text_blocks: dict[str, Any] = field(default_factory=dict)
     raw_facts: list[Fact] = field(default_factory=list)
     extraction_flags: list = field(default_factory=list)
+    source_elements: dict[str, str] = field(default_factory=dict)
+    source_contexts: dict[str, str] = field(default_factory=dict)
+    units: dict[str, str] = field(default_factory=dict)
 
     def fields(self) -> list[str]:
         """List all field names for this report type."""

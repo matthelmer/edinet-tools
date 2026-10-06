@@ -41,6 +41,12 @@ def load_securities_fixture(name: str) -> list:
     return load_fixture('securities', name)
 
 
+def load_quarterly_fixture(name: str) -> list:
+    """Load tests/fixtures/quarterly/<name>.csv. Import as
+    `from tests.conftest import load_quarterly_fixture`."""
+    return load_fixture('quarterly', name)
+
+
 def load_semi_annual_fixture(name: str) -> list:
     """Load tests/fixtures/semi_annual/<name>.csv. Import as
     `from tests.conftest import load_semi_annual_fixture`."""
