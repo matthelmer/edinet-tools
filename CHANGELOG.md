@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.9.0 — Unreleased
+## v0.9.0 — 2026-10-06
 
 Read a filing from its own XBRL as well as EDINET's CSV conversion. The new
 reader keeps long text sections in full. Financial parsers now give the
