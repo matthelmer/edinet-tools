@@ -114,9 +114,20 @@ def test_guard_refuses_a_missing_package(monkeypatch, tmp_path):
         test_no_adhoc_context_hatches_outside_extraction()
 
 
-def test_guard_checks_the_imported_package():
-    """Scan the installed library even when tests live outside its tree."""
-    assert PACKAGE_ROOT == Path(edinet_tools.__file__).resolve().parent
+def test_guard_rejects_a_hatch_in_the_scanned_package(monkeypatch, tmp_path):
+    """Exercise the full scan, including the exempt extraction module."""
+    import sys
+    import pytest
+
+    extraction = tmp_path / 'parsers' / 'extraction.py'
+    extraction.parent.mkdir()
+    extraction.write_text('match_element_by_suffix([], "Allowed")\n')
+    (tmp_path / 'forbidden.py').write_text(
+        'match_element_by_suffix([], "Forbidden")\n')
+    monkeypatch.setattr(sys.modules[__name__], 'PACKAGE_ROOT', tmp_path)
+    monkeypatch.setattr(sys.modules[__name__], 'ALLOWED', {extraction})
+    with pytest.raises(AssertionError, match='forbidden.py:1'):
+        test_no_adhoc_context_hatches_outside_extraction()
 
 
 def test_guard_catches_the_house_idiom():
