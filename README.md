@@ -3,60 +3,185 @@
 [![PyPI](https://img.shields.io/pypi/v/edinet-tools)](https://pypi.org/project/edinet-tools/)
 [![Downloads](https://static.pepy.tech/badge/edinet-tools)](https://pepy.tech/project/edinet-tools)
 [![Tests](https://github.com/matthelmer/edinet-tools/actions/workflows/test.yml/badge.svg)](https://github.com/matthelmer/edinet-tools/actions/workflows/test.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/matthelmer/edinet-tools/blob/main/LICENSE)
 
-Python library for Japan's [EDINET](https://disclosure2.edinet-fsa.go.jp/) disclosure system — the official source for securities reports, shareholding notices, tender offers, and other regulatory filings from listed Japanese companies.
+Read Japan's EDINET regulatory filings as typed Python objects: financial
+reports, 5% shareholding disclosures, tender offers and more.
+Each filing can be read from EDINET's CSV conversion, from the filing's own
+inline XBRL, or from its XBRL instance.
 
-J-GAAP, IFRS, and US-GAAP filers tag the same figure under different XBRL elements. edinet-tools maps them all to one typed Python field, reading the filing's own accounting standard first. For securities, quarterly and semi-annual reports it records which element, context and unit each financial field was read from.
+Python 3.10+. No runtime dependencies. Company lookup works offline;
+fetching filings requires a free EDINET API key.
 
-It reads either EDINET's CSV conversion or the filing's own inline XBRL. The XBRL path keeps text sections that the CSV cuts at 30,000 characters.
+## Install and configure
 
-**Zero runtime dependencies. Typed parsers for all 42 EDINET document types.**
+```bash
+pip install edinet-tools
+export EDINET_API_KEY=your_key_here
+```
+
+Get your key from [EDINET API registration](https://api.edinet-fsa.go.jp/api/auth/index.aspx?mode=1)
+([video walkthrough](https://youtu.be/2ao-CZS-BtQ?t=63)). You can also set it
+in Python with `edinet_tools.configure(api_key="...")`.
+
+**Upgrading to 0.9.0:** financial values, currency selection and per-holder
+share totals change even on the default CSV path. Read
+[MIGRATING.md](https://github.com/matthelmer/edinet-tools/blob/main/MIGRATING.md) before re-parsing stored reports.
+
+## Parse an annual report
+
+This example reads Toyota's annual report filed June 10, 2026. The document
+ID identifies a specific filing; it is not a request for the latest report.
+
+```python
+import edinet_tools
+
+report = edinet_tools.fetch_and_parse("S100Y8NY", "120")
+print(report.net_sales)
+print(report.net_income_owners)
+print(report.accounting_standard)
+print(report.source_elements.get("net_sales"))
+print(report.units.get("net_sales"))
+```
+
+Financial parsers read the filing's declared accounting standard first:
+J-GAAP, IFRS or US GAAP. Listed fallbacks remain where no eligible fact is
+found on that standard. `source_elements`, `source_contexts` and `units`
+identify the selected source on annual, quarterly and semi-annual reports.
+Other report types expose those maps but leave them empty.
+
+An absent field or provenance entry is not a zero. A typed value can be
+`None` when no eligible fact is found or an extraction check withholds it;
+`extraction_flags` records the checks that produced flags. An empty flags
+list does not establish completeness or correctness.
+
+## Find companies and filings
+
+Company lookup uses bundled FSA registry snapshots and needs no API key.
 
 ```python
 import edinet_tools
 
 toyota = edinet_tools.entity("7203")
-docs = toyota.documents(days=30)   # requires EDINET_API_KEY (see Configuration)
-if docs:                            # a quiet month returns an empty list
-    report = docs[0].parse()  # → SecuritiesReport, LargeHoldingReport, etc.
+print(toyota.name, toyota.edinet_code)
+
+edinet_tools.entity("Toyota")
+edinet_tools.entity("E02144")
+edinet_tools.entity_by_corporate_number("1180301018771")
+edinet_tools.search("bank", limit=5)
 ```
 
-## Install
+Lookup accepts digit or alphanumeric tickers and handles width, gaiji and
+middle-dot variants in names. The bundled snapshots are dated October 5,
+2026. Loading data older than a year emits `StaleDataWarning`.
 
-```bash
-pip install edinet-tools
+List a day's annual filings, then select by the filer's EDINET code:
+
+```python
+import edinet_tools
+
+docs = edinet_tools.documents("2026-06-10", doc_type="120")
+for doc in docs:
+    if doc.filer_edinet_code == "E02144":
+        print(doc.doc_id, doc.doc_description, doc.filing_datetime)
 ```
 
-Requires Python 3.10+. Standard library only.
+A quiet day returns an empty list. `toyota.documents(doc_type="120",
+days=365)` scans a year, making a document-list request for each day.
+For chronology, use the document-list submission metadata. Some report
+types' tagged `filing_date` can retain the original date after an amendment.
 
-> **Upgrading to 0.9.0?** Values change for IFRS and US GAAP filers: a field now reads
-> the filing's own standard first, where 0.8.x could return a J-GAAP figure the filing
-> also tags. Listed fallbacks remain where the filing has no own-standard fact;
-> `source_elements` names what was read. Currency selection and per-holder share
-> totals also change, including on the default CSV path. See
-> [MIGRATING.md](MIGRATING.md) before re-parsing stored reports and the
-> [CHANGELOG](CHANGELOG.md) for the changes and known limits.
->
-> Versions before 0.8.1 call EDINET's retired API host and cannot fetch anything.
->
-> Upgrading from 0.7.x? 0.8.0 contains breaking changes; see [MIGRATING.md](https://github.com/matthelmer/edinet-tools/blob/main/MIGRATING.md).
+## Choose a source
 
-## Design
+| Source | How to read it | Useful for |
+|---|---|---|
+| CSV, the default | `doc.parse()` | EDINET's CSV conversion, compatible with existing workflows |
+| Inline XBRL | `doc.parse(source="xbrl")` | Original text sections, table boundaries and native fact metadata |
+| XBRL instance | `doc.parse(source="instance")` | The `.xbrl` file in the same package, including packages whose inline HTML is unsupported |
 
-edinet-tools has three layers:
+`"ixbrl"` is an alias for `"xbrl"`. The CSV source downloads type 5;
+the two native sources download type 1. The inline reader raises
+`UnsupportedInlineXBRL` for unsupported constructs instead of guessing.
+Catch native-reader errors through `edinet_tools.exceptions.EdinetError`;
+`UnsupportedInlineXBRL` is not exported from the top-level package.
+Choosing the instance reader is explicit; there is no automatic fallback.
 
-1. **API client** — fetch document listings and download filings in any format (XBRL, PDF, HTML)
-2. **Typed parsers** — every EDINET document type routes to a named Python dataclass with structured fields
-3. **Source facts** — elements not yet mapped to typed fields remain available in `raw_fields`, `unmapped_fields`, `text_blocks`, and `raw_facts`. The native reader also exposes rows with the filed context, unit and period; see the source-reading example below.
+To parse a saved type-1 package without an API key:
 
-Each parser maps known XBRL elements to typed Python fields (dates, decimals, strings). As EDINET evolves or new elements become useful, adding a field is one line in the element map and one line on the dataclass.
+```python
+from pathlib import Path
+from edinet_tools import parse_xbrl
+from edinet_tools.parsers.xbrl_rows import extract_rows_from_package
 
-If no eligible fact is found, the field is `None`. A financial field reads the filing's declared standard first. Where a filing tags no fact on its own standard, a field may fall back to another standard's element that the parser lists for it. On securities, quarterly and semi-annual reports, `source_elements` names the element actually read. Tests cover competing standards, contexts and currencies using real filings as well as constructed cases. The known limits below matter when comparing or storing the results.
+zip_bytes = Path("S100Y4NW_type1.zip").read_bytes()
+report = parse_xbrl(zip_bytes, "240", source="xbrl", doc_id="S100Y4NW")
 
-## EDINET Document Types
+files = extract_rows_from_package(zip_bytes, source="xbrl")
+for file in files:
+    for row in file["data"]:
+        print(row["要素ID"], row["値"], row["コンテキストID"])
+```
 
-EDINET defines 42 document types spanning corporate disclosure, capital markets activity, and governance reporting. edinet-tools provides typed parsers for all of them.
+Download a package with `doc.fetch(type=1)` or
+`edinet_tools.api.fetch_document(doc_id, type=1)`. Type 2 returns PDF;
+type 5 returns CSV. Source rows also retain HTML, decimals, scale, sign,
+nil status and period dates.
+
+The native path preserves text beyond the CSV's 30,000-character cut. For
+example, S100Y4NW's tender-offer purpose section has 75,894 characters.
+Text tables retain tabs between cells and newlines between rows. Source
+choice can also affect typed values in multi-series fund packages; inspect
+their field identities before combining figures.
+
+## Other report types
+
+Parse a joint 5% shareholding filing:
+
+```python
+import edinet_tools
+
+report = edinet_tools.fetch_and_parse("S100YRDM", "350")
+print(report.filer_name, report.target_company)
+print(report.ownership_pct, report.is_joint_filing)
+for holder in report.joint_holders:
+    print(holder.name_jp, holder.shares_held, holder.stock_lines_held)
+```
+
+On a joint filing, `ownership_pct` is the co-filers' group total.
+Each holder's `shares_held` is the filed total after deductions and can
+be zero or negative. `stock_lines_held` counts stock lines before deductions;
+it excludes depositary receipts, trust certificates, warrants and
+convertibles. The member totals need not sum to the group total.
+
+Parse a tender-offer registration:
+
+```python
+import edinet_tools
+
+report = edinet_tools.fetch_and_parse("S100Y4NW", "240")
+print(report.acquirer_name, report.target_name)
+print(report.holding_ratio_after)
+```
+
+Every report supports `fields()` and `to_dict()`. Unmapped elements and
+narrative sections remain available through `raw_fields`,
+`unmapped_fields`, `text_blocks` and `raw_facts`.
+
+## Coverage and limits
+
+All 42 EDINET document codes route to typed parsers. This does not imply
+complete field extraction for every legal form. Amendments share their
+base parser; amendment attributes vary between report types.
+
+For financial reports, keep owners-of-parent and whole-group figures
+separate: `net_income_owners` versus `net_income_total`, and
+`net_assets_owners` versus `net_assets_total`. J-GAAP filers do not file a
+single owners-only net-assets element. Unit provenance matters when
+storing monetary figures, and segment rows require a checked denominator
+and scope before summing.
+
+<details>
+<summary>All 42 document codes</summary>
 
 | Code | Family | Description |
 |------|--------|-------------|
@@ -84,180 +209,10 @@ EDINET defines 42 document types spanning corporate disclosure, capital markets 
 | 100 | Issuance Supplementary | Supplementary shelf registration drawdown documents |
 | 110 | Issuance Withdrawal | Withdrawal of issuance registration |
 
-Amendments route to the same parser as their base type. Amendment attributes vary by report: for example, extraordinary reports (180/190) expose `amendment_flag` and `report_amendment_flag`, not `is_amendment`. Use the document type and the report's actual fields.
+</details>
 
-```python
-from edinet_tools import supported_doc_types, doc_type
-
-supported_doc_types()  # All 42 codes with typed parsers
-
-dt = doc_type("235")
-print(dt.name_en)  # "Internal Control Report"
-print(dt.name_jp)  # "内部統制報告書"
-```
-
-## Usage
-
-### Entity Lookup
-
-```python
-import edinet_tools
-
-toyota = edinet_tools.entity("7203")      # By ticker (digit or alphanumeric)
-toyota = edinet_tools.entity("Toyota")    # By name search
-toyota = edinet_tools.entity("E02144")    # By EDINET code
-print(toyota.name, toyota.edinet_code)    # TOYOTA MOTOR CORPORATION E02144
-
-# Look up by Japan Corporate Number (法人番号)
-toyota = edinet_tools.entity_by_corporate_number("1180301018771")
-
-# Name search handles full-width/half-width, gaiji (㈱), and middle-dot variants
-mufg = edinet_tools.search("三菱UFJ銀行")  # matches the catalog's ＵＦＪ form too
-
-banks = edinet_tools.search("bank", limit=5)
-```
-
-Entity data comes from FSA registry snapshots bundled with the package, so lookup and search work offline. This release includes the October 5, 2026 snapshots. Loading one older than a year raises `StaleDataWarning`, and `EntityClassifier` accepts paths to newer CSVs if you download your own.
-
-### Fetching Documents
-
-```python
-# All filings for a date (requires EDINET_API_KEY)
-docs = edinet_tools.documents("2026-01-20")
-
-# Filter by company and type
-earnings = toyota.documents(doc_type="120", days=365)
-```
-
-### Parsing
-
-The annual-report block continues from the fetching example above (`earnings`). The 5% and tender-offer blocks each fetch one real filing by its document id. All need `EDINET_API_KEY`.
-
-**Annual securities report** (doc type 120):
-
-```python
-doc = earnings[0]   # Toyota's annual report, from the example above
-report = doc.parse()
-
-# Consolidated financials (J-GAAP, IFRS, US-GAAP)
-report.net_sales
-report.operating_cash_flow
-report.roe
-report.accounting_standard  # "Japan GAAP", "IFRS", or "US GAAP"
-report.segments             # list[SegmentRow] — per-segment metrics
-
-# Figures that depend on ownership basis come as explicit pairs (0.8.0)
-report.net_income_owners    # attributable to owners of parent
-report.net_income_total     # includes non-controlling interests
-report.net_assets_total
-report.net_assets_owners    # None for J-GAAP filers (never filed as one element)
-
-# Where a financial field came from: securities, quarterly and semi-annual
-# reports fill these; other report types leave them empty. A field missing
-# from a map means its source was not recorded, not that it has none.
-report.source_elements   # field -> XBRL element read
-report.source_contexts   # field -> context read
-report.units             # monetary / per-share field -> unit id, e.g. "JPY",
-                         # "JPYPerShares"; yen wins for the same element/context
-```
-
-**Large shareholding (5%) report** (doc type 350):
-
-```python
-# A joint report by three holders, filed 2026-07-24
-report = edinet_tools.fetch_and_parse("S100YRDM", "350")
-
-report.filer_name
-report.target_company
-report.ownership_pct        # joint filing → the co-filers' GROUP total, not
-report.is_joint_filing      #   the named filer's own stake (~half are joint)
-report.joint_holders        # each holder's name, code and reported total
-```
-
-`JointHolder.shares_held` is the holder's filed 総数, including the filing's
-deductions. It can be zero or negative, and the member totals need not sum to
-the group's total. `stock_lines_held` gives the stock lines before deductions;
-it excludes depositary receipts, trust beneficiary certificates, warrants and
-convertibles. Keep those two bases separate.
-
-**Tender offer registration** (doc type 240):
-
-```python
-# Kaga Electronics' offer for Shinko Shoji, filed 2026-05-18
-report = edinet_tools.fetch_and_parse("S100Y4NW", "240")
-
-report.acquirer_name
-report.target_name
-report.holding_ratio_after
-```
-
-**Any report:**
-
-```python
-report.fields()     # List available typed fields
-report.to_dict()    # Export as dictionary
-report.raw_fields        # All XBRL elements by element ID
-report.text_blocks       # Narrative text block content
-report.extraction_flags  # parse-time structural checks (0.8.0): impossible
-                         # values are withheld as None, never served
-```
-
-### Reading the filing's own XBRL
-
-By default `parse()` reads EDINET's CSV conversion (download type 5), as earlier versions did. Pass `source` to read the filing itself (download type 1):
-
-```python
-report = doc.parse(source="xbrl")       # the inline XBRL ("ixbrl" also accepted)
-report = doc.parse(source="instance")   # the .xbrl instance in the same package
-
-# Or from bytes you already have
-from edinet_tools import parse_xbrl
-report = parse_xbrl(zip_bytes, "350", source="xbrl", doc_id="S100Y8GB")
-```
-
-What the XBRL path gives you that the CSV does not:
-
-- **Text sections in full.** The CSV cuts every text value at 30,000 characters. A tender-offer registration's purpose section of 75,894 characters reads in full.
-- **Cell boundaries in text sections:** a tab between table cells and a newline between rows.
-
-On 5% reports, both sources now keep each joint holder's own text sections, such as each holder's 60-day trading table: `joint_holder.text_blocks` and `report.text_blocks_by_context`.
-
-The typed report carries values. For the HTML of a text section, decimals, scale and each fact's period dates, read the source rows:
-
-```python
-from edinet_tools.parsers.xbrl_rows import extract_rows_from_package
-
-files = extract_rows_from_package(zip_bytes, source="xbrl")
-for row in files[0]["data"]:
-    row["要素ID"], row["値"], row["html"], row["decimals"]
-    row["period_start"], row["period_end"]   # a fact over a period
-    row["instant"]                           # a fact at a point in time
-```
-
-Source comparisons cover long-text cuts, whitespace, text the CSV drops around angle brackets and other documented differences. Multi-series fund file ordering can also change typed numeric values; see [Limitations](#limitations) before switching sources. The reader uses only the standard library. It refuses what it does not implement with a named error (`UnsupportedInlineXBRL`) rather than guessing.
-
-### Download Formats
-
-```python
-from edinet_tools.api import fetch_document
-
-doc_id = "S100Y8NY"                           # Toyota's annual report, filed 2026-06-10
-csv_zip = fetch_document(doc_id)              # XBRL CSV (default)
-pdf = fetch_document(doc_id, type=2)          # PDF
-filing_zip = fetch_document(doc_id, type=1)   # the filing: inline XBRL, HTML and the .xbrl instance
-```
-
-## Configuration
-
-Get a free API key from [EDINET](https://disclosure2.edinet-fsa.go.jp/) ([video walkthrough](https://youtu.be/2ao-CZS-BtQ?t=63)):
-
-```bash
-export EDINET_API_KEY=your_key_here
-```
-
-Or set it in code with `edinet_tools.configure(api_key="...")`. Entity lookup and parsing work without an API key (document fetching requires one).
-
-## Limitations
+<details>
+<summary>Detailed extraction and source limits</summary>
 
 - EDINET stops serving a filing once its public-inspection period ends, so an expired document can no longer be downloaded. Keep the packages you need.
 - Some filers' inline files are HTML 4 rather than XHTML. The inline reader refuses them, and `source="instance"` reads them.
@@ -275,25 +230,24 @@ Or set it in code with `edinet_tools.configure(api_key="...")`. Entity lookup an
 - Some legacy typed strings and top-level text sections represent a nil fact as `－`. Do not globally convert filed dashes to missing values: use the native fact's `nil` metadata when the distinction matters. `raw_facts` in a typed report is a CSV-shaped view, not a substitute for that native metadata.
 - `joint_holder_count` counts parsed holder sections, including departing holders; it can differ from the cover's current-group count. Group denominator/date fields require group evidence on a joint report and may be `None` even when member rows agree.
 
-The full list is under "Known limits" in the [CHANGELOG](CHANGELOG.md).
+</details>
 
-## Testing
+See the [CHANGELOG](https://github.com/matthelmer/edinet-tools/blob/main/CHANGELOG.md) for the full known limits and
+[MIGRATING.md](https://github.com/matthelmer/edinet-tools/blob/main/MIGRATING.md) for changes to stored-data semantics.
+
+## Development
 
 ```bash
-pytest tests/ -q  # 3,000+ tests, including real EDINET filings as fixtures
+git clone https://github.com/matthelmer/edinet-tools.git
+cd edinet-tools
+python -m pip install -e ".[dev]"
+python -m pytest tests/ -q
 ```
 
-## Links
-
-- [Changelog](CHANGELOG.md)
-- [PyPI](https://pypi.org/project/edinet-tools/)
-- [GitHub](https://github.com/matthelmer/edinet-tools)
-- [EDINET](https://disclosure2.edinet-fsa.go.jp/)
+Tests cover real filings, accounting standards, context and currency
+selection, numeric precision, API errors and native-reader refusals.
 
 ## License
 
-MIT
-
----
-
-*Independent project. Not affiliated with Japan's Financial Services Agency. Verify data independently before making financial decisions.*
+MIT. Independent project, not affiliated with Japan's Financial Services
+Agency. Verify data independently before making financial decisions.
