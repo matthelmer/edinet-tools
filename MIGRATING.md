@@ -76,14 +76,6 @@ path; installing 0.9.0 does not leave previously parsed values unchanged.
   can change which sub-fund supplies a typed value; inspect the source
   rows rather than assuming every field belongs to one series.
 
-## Upgrading from before 0.8.0
-
-0.8.0 removes several fields and a few long-deprecated shims. Every removal
-raises immediately and by name — an `AttributeError` naming the replacement,
-or (for the dataclass fields) a `TypeError` on construction — so nothing
-breaks silently. This page is the fix-it checklist; see
-[CHANGELOG.md](CHANGELOG.md) for the full reasoning behind each change.
-
 ## 0.8.4 — behaviour changes to know about
 
 Patch release, no removals from the parsed-report dataclasses. The things a
@@ -121,6 +113,14 @@ caller can observe; each is a defect fixed rather than a redesign, and the
   the codes, not the names. `DocType.name_jp` now carries the FSA's own
   docTypeCode names verbatim (21 entries changed), and 070 / 080 / 370 / 380
   name the documents they actually are.
+
+## Upgrading from before 0.8.0
+
+0.8.0 removes several fields and a few long-deprecated shims. Every removal
+raises immediately and by name — an `AttributeError` naming the replacement,
+or (for the dataclass fields) a `TypeError` on construction — so nothing
+breaks silently. This page is the fix-it checklist; see
+[CHANGELOG.md](CHANGELOG.md) for the full reasoning behind each change.
 
 ## `SecuritiesReport`: ownership-basis field split
 
