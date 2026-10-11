@@ -191,6 +191,12 @@ class LargeHoldingReport(ParsedReport):
     # are not included.
     shares_held: int | None = None
     ownership_pct: Decimal | None = None
+    # Where ownership_pct was read (0.9.1): 'group_total' (the filed 合計 row),
+    # 'sole_filer' (a one-holder filing's own row), 'all_holders_zero' (a joint
+    # exit with no total row, every holder at 0), 'lead_filer' (a joint filing
+    # with no total row: the lead filer's own figure, not a group total), or
+    # 'positional' (a legacy filing with no holder axis). None with no figure.
+    ownership_basis: str | None = None
     prior_ownership_pct: Decimal | None = None
     ownership_change: Decimal | None = None
     shares_outstanding: int | None = None
@@ -355,7 +361,8 @@ def _all_holders_zero(csv_files: list, element_id: str) -> str | None:
         return None
 
 
-def _group_value(csv_files: list, key: str, element_id: str | None = None) -> str | None:
+def _group_value(csv_files: list, key: str, element_id: str | None = None,
+                 lead_fallback: bool = False) -> str | None:
     """A holding figure for the whole group.
 
     Tier 1: the un-dimensioned (total) row. Tier 2, single-filer filings only:
@@ -368,6 +375,14 @@ def _group_value(csv_files: list, key: str, element_id: str | None = None) -> st
     has a ROW wins, even when that row is blank; a filed-but-empty total is
     an empty total, not a licence to report one holder's stake as the group's.
 
+    0.9.1, `lead_fallback=True`, set for ownership_pct, prior_ownership_pct and
+    shares_held together only when the filing has no total ratio row and its
+    holders' ratios are not all zero: each reads the lead filer's own row
+    instead of None, and the report's `ownership_basis` is 'lead_filer'. A
+    filing with a total ratio row keeps None for any other figure it did not
+    total, as before. Nine filings in 46,467
+    joint 5% reports, every one a group dissolving (S100WT5L, S100KL73, ...).
+
     Before 0.8.4 `ownership_pct`/`shares_held` took the LAST match and
     `prior_ownership_pct` the FIRST — group total vs holder 1's prior on every
     joint filing (375 of 400 sampled filings since 2024 disagreed with the
@@ -379,7 +394,16 @@ def _group_value(csv_files: list, key: str, element_id: str | None = None) -> st
         return v
     holders = _holder_keys(csv_files)
     if len(holders) > 1:
-        return _all_holders_zero(csv_files, element_id)
+        zero = _all_holders_zero(csv_files, element_id)
+        if zero is not None or not lead_fallback:
+            return zero
+        # 0.9.1: a group that files no total (a 変更報告書 removing its co-holders
+        # states each member's figure and no 合計 row) reads the lead filer's own
+        # figure: the filer's position once the group is gone, and the prior the
+        # next report states. `ownership_basis` says so.
+        primary = min(holders)
+        v = _first_value(csv_files, element_id, lambda ctx: _holder_key(ctx) == primary)
+        return None if v is _ABSENT else v
     if holders:
         (axis, n), = holders
         suffix = f'FilerLargeVolumeHolder{n}Member' if axis == 0 else f'JointHolder{n}Member'
@@ -387,6 +411,17 @@ def _group_value(csv_files: list, key: str, element_id: str | None = None) -> st
         if v is not _ABSENT:
             return v
     return extract_value(csv_files, element_id)
+
+
+def _ownership_basis(csv_files: list) -> str:
+    """Which of `_group_value`'s tiers gave ownership_pct (see its docstring)."""
+    element_id = ELEMENT_MAP['ownership_pct']
+    if _first_value(csv_files, element_id, _is_total_context) is not _ABSENT:
+        return 'group_total'
+    holders = _holder_keys(csv_files)
+    if len(holders) > 1:
+        return 'all_holders_zero' if _all_holders_zero(csv_files, element_id) is not None else 'lead_filer'
+    return 'sole_filer' if holders else 'positional'
 
 
 def _group_metadata_value(csv_files: list, key: str) -> str | None:
@@ -723,8 +758,14 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
     # Holding figures for the whole group: explicit total-context selection (0.8.4).
     # On a joint filing these are the 合計 row; on a single-filer filing the
     # primary holder's row. Per-holder figures stay on joint_holders.
-    ownership_pct = parse_percentage(_group_value(csv_files, 'ownership_pct'))
-    prior_ownership_pct = parse_percentage(_group_value(csv_files, 'prior_ownership_pct'))
+    # The lead filer stands in only when the filing states no group stake at all
+    # (no total row, holders not all zero): then every holding figure is the lead's,
+    # so a group stake is never set against one holder's prior or share count.
+    lead = _ownership_basis(csv_files) == 'lead_filer'
+    ownership_pct = parse_percentage(_group_value(csv_files, 'ownership_pct', lead_fallback=lead))
+    prior_ownership_pct = parse_percentage(
+        _group_value(csv_files, 'prior_ownership_pct', lead_fallback=lead))
+    ownership_basis = _ownership_basis(csv_files) if ownership_pct is not None else None
 
     # Calculate ownership change
     ownership_change = None
@@ -776,9 +817,10 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
         listed_or_otc=get('listed_or_otc'),
 
         # Ownership
-        shares_held=parse_int(_group_value(csv_files, 'shares_held')),
+        shares_held=parse_int(_group_value(csv_files, 'shares_held', lead_fallback=lead)),
         stock_lines_held=_group_stock_lines(csv_files),
         ownership_pct=ownership_pct,
+        ownership_basis=ownership_basis,
         prior_ownership_pct=prior_ownership_pct,
         ownership_change=ownership_change,
         shares_outstanding=parse_int(_group_metadata_value(csv_files, 'shares_outstanding')),
