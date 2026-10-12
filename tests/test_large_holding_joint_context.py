@@ -186,6 +186,19 @@ class TestJointFilingWithoutTotalRow:
         assert r.shares_held == 600
         assert r.ownership_change == Decimal('0.0100')
 
+    def test_a_filed_dissolution_reads_the_lead_filers_own_figures(self):
+        """S100WT5L (BlackRock Japan on Technopro 6028), as filed: eight holders, no
+        合計 row; holders 2-8 are noted みなし共同保有者から除外. The lead's own row is
+        the group that remains: 0.36% of 372,700 shares, against its own 2.24% prior."""
+        files = load_fixture('large_holding', 's100wt5l_group_dissolves_no_total')
+        r = parse_large_holding(csv_files=files, doc_id='S100WT5L', doc_type_code='350')
+        assert r.is_joint_filing is True and r.joint_holder_count == 8
+        assert r.ownership_basis == 'lead_filer'
+        assert r.ownership_pct == Decimal('0.0036')
+        assert r.prior_ownership_pct == Decimal('0.0224')
+        assert r.ownership_change == Decimal('-0.0188')
+        assert r.shares_held == 372700
+
     def test_the_lead_filer_is_the_lowest_holder_whatever_the_row_order(self):
         r = _parse([(RATIO, H2, '0.0000'), (RATIO, H1, '0.0036')])
         assert r.ownership_pct == Decimal('0.0036') and r.ownership_basis == 'lead_filer'
