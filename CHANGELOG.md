@@ -1,5 +1,43 @@
 # Changelog
 
+## v0.9.1 — <date>
+
+A 5% report that dissolves a joint group now has a stake.
+
+### Changed
+
+- **A joint 5% report with no group total reads the lead filer's own figures.**
+  A change report that removes the co-holders can state each holder's figures
+  and no group total. 0.9.0 returned no stake for these reports, so a consumer
+  that requires one dropped the exit. `ownership_pct`, `prior_ownership_pct`
+  and `shares_held` now read the lead filer's own row: the filer's position
+  once the group is gone. A report that states a group stake is unchanged, and
+  any figure the group did not total stays `None`.
+- **A figure filed in two currencies is read in the currency of the filing's
+  statements.** MODEC presents its statements in US dollars and adds a yen
+  convenience translation to its highlights table. 0.9.0 read the yen where
+  both were filed and dollars elsewhere, so the half-year report S100YUQZ
+  paired revenue of ¥397,376 million with operating profit of US$293 million.
+  Every field of that report now reads dollars: revenue US$2,447 million, EPS
+  US$3.28 rather than ¥532.37. The annual EPS reads US$5.28 rather than
+  ¥826.25. Yen filers are unchanged, and so is a filer whose statements carry
+  both currencies (Beat Holdings reads yen). `units` names the currency read.
+
+### Added
+
+- `LargeHoldingReport.ownership_basis` says where `ownership_pct` came from:
+  `group_total`, `sole_filer`, `all_holders_zero`, `lead_filer` or
+  `positional`.
+
+### Fixed
+
+- **Contractors' revenue.** A contractor whose only line is 完成工事高 tags it
+  as `NetSalesOfCompletedConstructionContractsCNS`, with no general sales
+  element, and its annual and semi-annual `net_sales` was `None`. Nippon
+  Densetsu Kogyo's half-year report S100UN70 now reads ¥75,625 million and its
+  annual report S100YGLL ¥229,207 million. A contractor that tags a sales
+  total keeps reading the total.
+
 ## v0.9.0 — 2026-10-06
 
 Read a filing from its own XBRL as well as EDINET's CSV conversion. The new
