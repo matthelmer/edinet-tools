@@ -10,24 +10,24 @@ whose only sales line is 完成工事高 now have revenue.
 
 - **A joint 5% report with no group total reads the lead filer's own figures.**
   A change report that removes the co-holders can state each holder's figures
-  and no group total. 0.9.0 returned no stake for these reports, so a consumer
+  and no group total. Since 0.8.4 these reports had no stake, so a consumer
   that requires one dropped the exit. `ownership_pct`, `prior_ownership_pct`
-  and `shares_held` now read the lead filer's own row: the filer's position
-  once the group is gone. The prior and the change on such a row are the lead
-  filer's own, not the group's: BlackRock Japan on Technopro (S100WT5L) reads
-  0.36% against its own prior of 2.24%, while the group's last report stated
-  7.26%. The group's fall is read from its previous report. A report that
+  and `shares_held` now read the lead filer's own row. All three are the
+  lead's own figures, not the group's: BlackRock Japan on TechnoPro (S100WT5L)
+  reads 0.36% against its own prior of 2.24%, while the group's last report
+  stated 7.26%; the group's fall is read from that report. A report that
   states a group stake is unchanged, and any figure the group did not total
   stays `None`.
 - **A figure filed in two currencies is read in the currency of the filing's
-  statements.** MODEC presents its statements in US dollars and adds a yen
-  convenience translation to its highlights table. 0.9.0 read the yen where
-  both were filed and dollars elsewhere, so the half-year report S100YUQZ
-  paired revenue of ¥397,376 million with operating profit of US$293 million.
-  Every field of that report now reads dollars: revenue US$2,447 million, EPS
-  US$3.28 rather than ¥532.37. The annual EPS reads US$5.28 rather than
-  ¥826.25. Yen filers are unchanged, and so is a filer whose statements carry
-  both currencies (Beat Holdings reads yen). `units` names the currency read.
+  statements**, replacing 0.9.0's yen-first rule. MODEC presents its
+  statements in US dollars and adds a yen convenience translation to its
+  highlights table. 0.9.0 read the yen where both were filed and dollars
+  elsewhere, so the half-year report S100YUQZ paired revenue of ¥397,376
+  million with operating profit of US$293 million. Every field of that report
+  now reads dollars: revenue US$2,447 million, EPS US$3.28 rather than
+  ¥532.37. The annual EPS reads US$5.28 rather than ¥826.25. Yen filers are
+  unchanged, and so is a filer whose statements carry both currencies (Beat
+  Holdings reads yen). `units` names the currency read.
 
 ### Added
 
