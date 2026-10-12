@@ -3,13 +3,14 @@
 Some filers tag their figures in a foreign currency: beside the yen figures (Beat Holdings,
 semi-annual S100YW89, every statement fact twice, USD and JPY, at the same context) or as
 their reporting currency (MODEC, semi-annual S100YUQZ: the statements in USD only, the
-highlights table in USD and JPY). The rule for every monetary field of the securities,
-quarterly and semi-annual reports:
+highlights table in USD and in a yen convenience translation at one period-end rate). The
+rule for every monetary field of the securities, quarterly and semi-annual reports:
 
-    when a JPY fact and a fact in another unit exist for the same element and context, the
-    JPY fact is read; when only another unit exists, it is read, and `units` records its unit
-    id (field -> unit id, beside source_elements / source_contexts) for every monetary field
-    that holds a value.
+    when facts in two units exist for the same element and context, the fact in the
+    filing's presentation currency is read: the one currency of its statements when that is
+    not yen (MODEC: USD), else yen (Beat: its statements carry both); when only one unit
+    exists, it is read, and `units` records its unit id (field -> unit id, beside
+    source_elements / source_contexts) for every monetary field that holds a value.
 
 Expected values are read out of the fixtures by element, context and unit: no hand-copied
 numbers.
@@ -22,7 +23,7 @@ from pathlib import Path
 import pytest
 
 from edinet_tools.parsers import parse_xbrl
-from edinet_tools.parsers.extraction import Tier, resolve_tiers
+from edinet_tools.parsers.extraction import Tier, presentation_currency, resolve_tiers
 from edinet_tools.parsers.quarterly import parse_quarterly_report
 from edinet_tools.parsers.securities import parse_securities_report
 from edinet_tools.parsers.semi_annual import parse_semi_annual_report
@@ -106,12 +107,35 @@ def test_beat_profit_is_the_yen_figure():
     assert int(at["USD"]) == -2111000
 
 
-def test_modec_highlights_filed_in_both_units_read_the_yen_figure():
+def test_modec_highlights_filed_in_both_units_read_the_dollar_figure():
+    # The yen figure is a convenience translation of the dollar one; MODEC's statements
+    # are in dollars, so the dollar figure is read and the report stays in one currency.
     cf, r = _modec()
     at = _units_at(cf, r.source_elements["net_sales"], r.source_contexts["net_sales"])
     assert set(at) == {"JPY", "USD"}
-    assert r.net_sales == int(at["JPY"])
-    assert r.units["net_sales"] == "JPY"
+    assert r.net_sales == int(at["USD"]) == 2447050000
+    assert int(at["JPY"]) == 397376000000
+    assert r.units["net_sales"] == "USD"
+
+
+@pytest.mark.parametrize("load", [lambda: _modec(), lambda: _modec_annual()],
+                         ids=["S100YUQZ", "S100XU6C"])
+def test_a_dollar_presenting_filing_reads_every_field_in_dollars(load):
+    _cf, r = load()
+    assert r.units
+    assert set(r.units.values()) <= {"USD", "USDPerShares"}
+
+
+@pytest.mark.parametrize("subdir,name,currency", [
+    ("semi_annual", "modec_s100yuqz_usd", "USD"),
+    # the group's statements in dollars; the parent-only statements in yen
+    ("securities", "modec_s100xu6c_usd", "USD"),
+    # every statement fact in both currencies: yen
+    ("semi_annual", "beat_s100yw89_jpy_and_usd", "JPY"),
+    ("semi_annual", "kokuyo_s100yucy_jgaap", "JPY"),
+])
+def test_presentation_currency(subdir, name, currency):
+    assert presentation_currency(_load(subdir, name)) == currency
 
 
 # ---------------------------------------------------------------------------
@@ -134,7 +158,7 @@ def test_every_monetary_value_carries_the_unit_it_was_read_in():
     for name, value in fields.items():
         at = _units_at(cf, r.source_elements[name], r.source_contexts[name])
         assert value == int(at[r.units[name]]), name
-        assert r.units[name] == ("JPY" if "JPY" in at else "USD"), name
+        assert r.units[name] == "USD", name
 
 
 def _in_dollars(csv_files):
@@ -227,23 +251,23 @@ def _modec_annual():
     return cf, parse_securities_report(csv_files=cf, doc_id="S100XU6C", doc_type_code="120")
 
 
-def test_modec_annual_eps_and_bps_read_the_yen_figure():
+def test_modec_annual_eps_and_bps_read_the_dollar_figure():
     cf, r = _modec_annual()
     for name in PER_SHARE - {"eps_basic_ytd"}:
         at = _units_at(cf, r.source_elements[name], r.source_contexts[name])
         assert set(at) == {"JPYPerShares", "USDPerShares"}, name
-        assert getattr(r, name) == Decimal(at["JPYPerShares"]), name
-        assert r.units[name] == "JPYPerShares", name
-    assert r.earnings_per_share == Decimal("826.25")
+        assert getattr(r, name) == Decimal(at["USDPerShares"]), name
+        assert r.units[name] == "USDPerShares", name
+    assert r.earnings_per_share == Decimal("5.28")
 
 
-def test_modec_half_year_eps_reads_the_yen_figure():
+def test_modec_half_year_eps_reads_the_dollar_figure():
     cf, r = _modec()
     at = _units_at(
         cf, r.source_elements["earnings_per_share"], r.source_contexts["earnings_per_share"]
     )
-    assert r.earnings_per_share == Decimal(at["JPYPerShares"]) == Decimal("532.37")
-    assert r.units["earnings_per_share"] == "JPYPerShares"
+    assert r.earnings_per_share == Decimal(at["USDPerShares"]) == Decimal("3.28")
+    assert r.units["earnings_per_share"] == "USDPerShares"
 
 
 def test_a_dollar_only_per_share_figure_is_read_and_marked():
@@ -392,17 +416,31 @@ def test_string_mode_prefers_the_unit_asked_for():
 
 
 def test_an_identity_across_currencies_is_skipped_and_flagged():
-    """MODEC's annual report: total_assets is read from the highlights table in yen,
-    net_assets_total from the statements in dollars. net_assets<=total_assets is not
-    compared; a 'skipped' flag says why."""
-    _cf, r = _modec_annual()
-    assert (r.units["net_assets_total"], r.units["total_assets"]) == ("USD", "JPY")
-    flags = [f for f in r.extraction_flags if f.rule.endswith("identity:net_assets<=total_assets")]
-    assert len(flags) == 1
-    flag = flags[0]
+    """Operands read in two currencies are not compared; a 'skipped' flag says why."""
+    from edinet_tools.parsers.validation import Identity, apply_identities
+
+    class R:
+        accounting_standard = "IFRS"
+        net_assets_total = 10
+        total_assets = 5
+        units = {"net_assets_total": "USD", "total_assets": "JPY"}
+
+    ident = Identity(
+        name="identity:net_assets<=total_assets",
+        operands=("net_assets_total", "total_assets"),
+        check=lambda na, ta: na <= ta,
+    )
+    (flag,) = apply_identities(R(), [ident])
     assert flag.severity == "skipped"
     assert flag.rule == "units_differ:identity:net_assets<=total_assets"
     assert flag.operands == {"net_assets_total": "USD", "total_assets": "JPY"}
+    assert flag.value == "net_assets_total=10 USD, total_assets=5 JPY"
+
+
+def test_modec_annual_identities_compare_in_one_currency():
+    _cf, r = _modec_annual()
+    assert (r.units["net_assets_total"], r.units["total_assets"]) == ("USD", "USD")
+    assert not [f for f in r.extraction_flags if f.rule.startswith("units_differ:")]
 
 
 def test_an_identity_in_one_currency_is_still_checked():

@@ -532,8 +532,7 @@ def test_profit_before_tax_and_income_before_taxes(name):
         csv_files=load_securities_fixture(name), doc_id=name, doc_type_code="120"
     )
     src = r.source_elements
-    # Two amounts compare only in one currency: MODEC's highlights table states
-    # profit before tax in yen and dollars, its statements in dollars only.
+    # Two amounts compare only in one currency.
     same_unit = r.units.get("profit_before_tax") == r.units.get("income_before_taxes")
     if (
         "income_before_taxes" in src

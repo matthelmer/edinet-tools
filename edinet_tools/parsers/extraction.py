@@ -587,19 +587,54 @@ class TierHit(NamedTuple):
 
 
 # Monetary facts ('financial' mode): when a filer tags one element at one
-# context in yen and in another currency (Beat Holdings files every statement
-# fact in USD and JPY), the yen fact is read. A fact filed only in another
-# currency is read as filed, and TierHit.unit_id says which.
+# context in yen and in another currency, the fact in the filing's
+# presentation currency is read (presentation_currency): yen, unless the
+# statements are filed in one other currency only. Beat Holdings files every
+# statement fact in USD and JPY, and is read in yen; MODEC files its
+# statements in USD only and translates its highlights table into yen for
+# convenience, and is read in dollars. A fact filed only in another currency
+# is read as filed, and TierHit.unit_id says which.
 PREFERRED_UNIT = 'JPY'
 # The same rule for per-share figures ('string' mode, asked for by the
-# caller): the yen-per-share fact before one in another currency per share.
+# caller): the presentation currency per share before another currency per share.
 PREFERRED_PER_SHARE_UNIT = 'JPYPerShares'
 _NO_UNIT = ('', '－')
+_CURRENCY = re.compile(r'[A-Z]{3}')
+_STATEMENT_PREFIXES = ('jppfs_cor:', 'jpigp_cor:')
 
 
 def _unit_of(row) -> Optional[str]:
     unit = row.get('ユニットID')
     return None if unit in _NO_UNIT else unit
+
+
+def presentation_currency(csv_files) -> str:
+    """The currency the filing presents its financial statements in.
+
+    Read from the units of the statement facts (jppfs_cor / jpigp_cor), at the
+    consolidated contexts when there are any (a filer presenting its group in
+    dollars may file its parent-only statements in yen): the one currency they
+    use when it is not yen, else 'JPY' (yen statements, statements filed in two
+    currencies, or none filed)."""
+    group, parent = set(), set()
+    for csv_file in csv_files:
+        for row in csv_file.get('data', []):
+            element = row.get('要素ID') or ''
+            unit = row.get('ユニットID') or ''
+            if element.startswith(_STATEMENT_PREFIXES) and _CURRENCY.fullmatch(unit):
+                context = row.get('コンテキストID') or ''
+                (parent if 'NonConsolidatedMember' in context else group).add(unit)
+    currencies = group or parent
+    return currencies.pop() if len(currencies) == 1 else PREFERRED_UNIT
+
+
+def _presentation_unit(csv_files, unit):
+    """`unit` (PREFERRED_UNIT or PREFERRED_PER_SHARE_UNIT) in the filing's
+    presentation currency; any other unit unchanged."""
+    if unit not in (PREFERRED_UNIT, PREFERRED_PER_SHARE_UNIT):
+        return unit
+    currency = presentation_currency(csv_files)
+    return unit.replace(PREFERRED_UNIT, currency, 1)
 
 
 def _prefer_unit(rows, unit):
@@ -614,8 +649,9 @@ def _prefer_unit(rows, unit):
 def _value_at(csv_files, element_id, pattern, prefer_unit=None):
     """extract_value for ONE context pattern (or context-blind when None),
     returning (value, context_id, unit_id) — the same first-row-wins scan.
-    With `prefer_unit`, a row in that unit wins over an earlier row of the
-    same element and context in another unit."""
+    With `prefer_unit`, a row in that unit (in the filing's presentation
+    currency) wins over an earlier row of the same element and context in
+    another unit."""
     if pattern is None:
         # context-blind: the first row of the element, and the rows sharing its context
         # (a row without a コンテキストID key reads as it always did: its value, context None)
@@ -632,7 +668,10 @@ def _value_at(csv_files, element_id, pattern, prefer_unit=None):
     ]
     if not rows:
         return None, None, None
-    row = _prefer_unit(rows, prefer_unit) if prefer_unit else rows[0]
+    row = rows[0]
+    # The presentation currency is looked up only where units compete.
+    if prefer_unit and len({r.get('ユニットID') for r in rows}) > 1:
+        row = _prefer_unit(rows, _presentation_unit(csv_files, prefer_unit))
     return unescape_entities(row.get('値')), pattern, _unit_of(row)
 
 
@@ -652,10 +691,11 @@ def _resolve_suffix_tier(csv_files, tier, period, prefer_unit=None):
     for canonical in tier.elements:
         rows = [r for r in match_element_by_suffix(csv_files, canonical)
                 if (r.get('コンテキストID', '') or '') == period]
-        if prefer_unit:
-            preferred = {r.get('要素ID') for r in rows if r.get('ユニットID') == prefer_unit}
+        if prefer_unit and len({r.get('ユニットID') for r in rows}) > 1:
+            unit = _presentation_unit(csv_files, prefer_unit)
+            preferred = {r.get('要素ID') for r in rows if r.get('ユニットID') == unit}
             rows = [r for r in rows
-                    if r.get('要素ID') not in preferred or r.get('ユニットID') == prefer_unit]
+                    if r.get('要素ID') not in preferred or r.get('ユニットID') == unit]
         for row in rows:
             v = coerce_numeric_value(row.get('値', ''))
             if v:
@@ -666,7 +706,8 @@ def _resolve_suffix_tier(csv_files, tier, period, prefer_unit=None):
 def _resolve_financial_tier(csv_files, tier, patterns):
     """extract_financial's within-call semantics: context level outer,
     element chain inner, first coerce-truthy string commits the tier. The
-    yen fact of an element and context is read before one in another unit."""
+    fact of an element and context in the presentation currency is read
+    before one in another unit."""
     for pattern in patterns:
         for elem in tier.elements:
             raw, context, unit = _value_at(csv_files, elem, pattern, PREFERRED_UNIT)
@@ -697,8 +738,9 @@ def resolve_tiers(
       tier; a coerce-truthy string that fails parse_int commits the tier
       but advances the WATERFALL (matching a get_fin returning None into
       _coalesce). `coerce` is ignored (always on — extract_financial's
-      contract). Where an element is filed at one context in JPY and in
-      another unit, the JPY fact is read; the hit's unit_id is the unit read.
+      contract). Where an element is filed at one context in two units, the
+      fact in the filing's presentation currency is read
+      (presentation_currency); the hit's unit_id is the unit read.
     - 'string' (raw value strings; caller parses): the per-share/ratio
       idioms. Per tier: ONE extract_value call per element over the FULL
       pattern list (extract_value short-circuits on the first pattern with
@@ -708,7 +750,8 @@ def resolve_tiers(
       equity-ratio/roe first-non-empty-raw-string-stops behavior (the
       caller's parse_percentage turns markers into None). `prefer_unit`
       (per-share fields: PREFERRED_PER_SHARE_UNIT) reads an element's fact in
-      that unit before one in another unit at the same context.
+      that unit, in the presentation currency, before one in another unit at
+      the same context.
 
     period=None resolves context-blind (extract_value with no context
     patterns — first match in file order), preserving the semi-annual
