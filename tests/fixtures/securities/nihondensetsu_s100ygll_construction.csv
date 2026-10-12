@@ -1,0 +1,42 @@
+要素ID	項目名	コンテキストID	相対年度	連結・個別	期間・時点	ユニットID	単位	値
+jpdei_cor:NumberOfSubmissionDEI	提出回数、DEI	FilingDateInstant	提出日時点	その他	時点	pure		1
+jpcrp030000-asr_E00115-000:NetSalesOfCompletedConstructionContractsSummaryOfBusinessResults		Prior4YearDuration	四期前	その他	期間	JPY	円	173569000000
+jpcrp030000-asr_E00115-000:NetSalesOfCompletedConstructionContractsSummaryOfBusinessResults		Prior3YearDuration	三期前	その他	期間	JPY	円	172100000000
+jpcrp030000-asr_E00115-000:NetSalesOfCompletedConstructionContractsSummaryOfBusinessResults		Prior2YearDuration	前々期	その他	期間	JPY	円	194031000000
+jpcrp030000-asr_E00115-000:NetSalesOfCompletedConstructionContractsSummaryOfBusinessResults		Prior1YearDuration	前期	その他	期間	JPY	円	216922000000
+jpcrp030000-asr_E00115-000:NetSalesOfCompletedConstructionContractsSummaryOfBusinessResults		CurrentYearDuration	当期	その他	期間	JPY	円	229207000000
+jpcrp030000-asr_E00115-000:NetSalesOfCompletedConstructionContractsSummaryOfBusinessResults		Prior4YearDuration_NonConsolidatedMember	四期前	その他	期間	JPY	円	138990000000
+jpcrp030000-asr_E00115-000:NetSalesOfCompletedConstructionContractsSummaryOfBusinessResults		Prior3YearDuration_NonConsolidatedMember	三期前	その他	期間	JPY	円	135762000000
+jpcrp030000-asr_E00115-000:NetSalesOfCompletedConstructionContractsSummaryOfBusinessResults		Prior2YearDuration_NonConsolidatedMember	前々期	その他	期間	JPY	円	155773000000
+jpcrp030000-asr_E00115-000:NetSalesOfCompletedConstructionContractsSummaryOfBusinessResults		Prior1YearDuration_NonConsolidatedMember	前期	その他	期間	JPY	円	174075000000
+jpcrp030000-asr_E00115-000:NetSalesOfCompletedConstructionContractsSummaryOfBusinessResults		CurrentYearDuration_NonConsolidatedMember	当期	その他	期間	JPY	円	183669000000
+jppfs_cor:NetSalesOfCompletedConstructionContractsCNS	完成工事高、建設業	Prior1YearDuration	前期	連結	期間	JPY	円	216922000000
+jppfs_cor:NetSalesOfCompletedConstructionContractsCNS	完成工事高、建設業	CurrentYearDuration	当期	連結	期間	JPY	円	229207000000
+jppfs_cor:NetSalesOfCompletedConstructionContractsCNS	完成工事高、建設業	Prior1YearDuration_NonConsolidatedMember	前期	個別	期間	JPY	円	174075000000
+jppfs_cor:NetSalesOfCompletedConstructionContractsCNS	完成工事高、建設業	CurrentYearDuration_NonConsolidatedMember	当期	個別	期間	JPY	円	183669000000
+jpdei_cor:EDINETCodeDEI	EDINETコード、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	E00115
+jpdei_cor:FundCodeDEI	ファンドコード、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:SecurityCodeDEI	証券コード、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	19500
+jpdei_cor:FilerNameInJapaneseDEI	提出者名（日本語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	日本電設工業株式会社
+jpdei_cor:FilerNameInEnglishDEI	提出者名（英語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	NIPPON DENSETSU KOGYO CO., LTD.
+jpdei_cor:FundNameInJapaneseDEI	ファンド名称（日本語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:FundNameInEnglishDEI	ファンド名称（英語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:CabinetOfficeOrdinanceDEI	府令、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	企業内容等の開示に関する内閣府令
+jpdei_cor:DocumentTypeDEI	様式、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	第三号様式
+jpdei_cor:AccountingStandardsDEI	会計基準、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	Japan GAAP
+jpdei_cor:WhetherConsolidatedFinancialStatementsArePreparedDEI	連結決算の有無、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	true
+jpdei_cor:IndustryCodeWhenConsolidatedFinancialStatementsArePreparedInAccordanceWithIndustrySpecificRegulationsDEI	別記事業（連結）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	cns
+jpdei_cor:IndustryCodeWhenFinancialStatementsArePreparedInAccordanceWithIndustrySpecificRegulationsDEI	別記事業（個別）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	cns
+jpdei_cor:CurrentFiscalYearStartDateDEI	当事業年度開始日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2025-04-01
+jpdei_cor:CurrentPeriodEndDateDEI	当会計期間終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2026-03-31
+jpdei_cor:TypeOfCurrentPeriodDEI	当会計期間の種類、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	FY
+jpdei_cor:CurrentFiscalYearEndDateDEI	当事業年度終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2026-03-31
+jpdei_cor:PreviousFiscalYearStartDateDEI	前事業年度開始日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2024-04-01
+jpdei_cor:ComparativePeriodEndDateDEI	比較対象会計期間終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2025-03-31
+jpdei_cor:PreviousFiscalYearEndDateDEI	前事業年度終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2025-03-31
+jpdei_cor:NextFiscalYearStartDateDEI	次の事業年度開始日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:EndDateOfQuarterlyOrSemiAnnualPeriodOfNextFiscalYearDEI	次の中間期の会計期間終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:AmendmentFlagDEI	訂正の有無、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	false
+jpdei_cor:IdentificationOfDocumentSubjectToAmendmentDEI	訂正対象書類の書類管理番号、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:ReportAmendmentFlagDEI	記載事項訂正のフラグ、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	false
+jpdei_cor:XBRLAmendmentFlagDEI	XBRL訂正のフラグ、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	false

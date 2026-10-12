@@ -656,7 +656,8 @@ _PROFIT_BEFORE_TAX_LEGACY = (
 _DURATION_LEGACY = {
     # Revenue: J-GAAP summary -> IFRS summary -> US-GAAP summary -> bank/
     # insurer 経常収益 -> broker 営業収益 (summary then FS) -> custom-namespace
-    # IFRS suffix hatch -> securities-firm FS -> FS NetSales (+ IFRS chain).
+    # IFRS suffix hatch -> securities-firm FS -> FS NetSales (+ IFRS chain)
+    # -> contractors' FS 完成工事高.
     'net_sales': (
         Tier(_chain('net_sales_summary')),
         Tier(_chain('net_sales_ifrs_summary')),
@@ -675,6 +676,9 @@ _DURATION_LEGACY = {
               'RevenueIFRSSummaryOfBusinessResults'), suffix_match=True),
         Tier(_chain('operating_revenue_fs')),
         Tier(_chain('net_sales_fs')),
+        # Contractors' 完成工事高, for a contractor whose only line it is: one
+        # with side businesses tags its 売上高合計 (jppfs_cor:NetSales) above.
+        Tier('jppfs_cor:NetSalesOfCompletedConstructionContractsCNS'),
     ),
     # IFRS/US-GAAP filers NEVER fall back to the parent J-GAAP
     # jppfs_cor:OperatingIncome (the 0.7.1 leak class) — the last tier's
