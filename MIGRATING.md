@@ -2,6 +2,8 @@
 
 ## 0.9.1 — stored values that change
 
+- **Python 3.10 is no longer supported.** `requires-python` is `>=3.11`, so a
+  3.10 environment keeps 0.9.0 and sees none of the changes below.
 - **Re-check foreign-currency filers.** Where a figure is filed in yen and in
   another currency at the same element and context, 0.9.1 reads the currency
   the filing's statements are presented in. A dollar-presenting filer such as

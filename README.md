@@ -10,7 +10,7 @@ reports, 5% shareholding disclosures, tender offers and more.
 Each filing can be read from EDINET's CSV conversion, from the filing's own
 inline XBRL, or from its XBRL instance.
 
-Python 3.10+. No runtime dependencies. Company lookup works offline;
+Python 3.11+. No runtime dependencies. Company lookup works offline;
 fetching filings requires a free EDINET API key.
 
 ## Install and configure
