@@ -1,12 +1,28 @@
 # Changelog
 
+## Versioning and support
+
+The version is `0.MINOR.PATCH` while the library is in initial development.
+A minor release may change the API; a patch release may change a value a
+parser returns. From 0.9.1 each release sorts its entries into **Breaking**
+and **Non-breaking**. Breaking covers a changed or removed name or signature,
+a value that changes for a filing already parsed (including to or from
+`None`), and the removal of a Python version. Non-breaking covers added
+fields and functions, added Python versions and packaging. Re-check stored
+values after any release with a Breaking section; [MIGRATING.md](MIGRATING.md)
+lists them.
+
+A Python version is supported from the release that adds it until CPython
+retires it. Its removal is listed as Breaking in the release that removes
+it, with notice in an earlier release where one is planned.
+
 ## v0.9.1 — <date>
 
 Three corrections: a 5% report that dissolves a joint group now has a stake,
 a filer that reports in dollars reads in dollars throughout, and contractors
 whose only sales line is 完成工事高 now have revenue.
 
-### Changed
+### Breaking
 
 - **A joint 5% report with no group total reads the lead filer's own figures.**
   A change report that removes the co-holders can state each holder's figures
@@ -28,26 +44,24 @@ whose only sales line is 完成工事高 now have revenue.
   ¥532.37. The annual EPS reads US$5.28 rather than ¥826.25. Yen filers are
   unchanged, and so is a filer whose statements carry both currencies (Beat
   Holdings reads yen). `units` names the currency read.
-- **Python 3.11 or newer is required.** Python 3.10 reached end of life with
-  the release of 3.15 and is no longer tested; `pip` keeps a 3.10
-  interpreter on 0.9.0.
-
-### Added
-
-- `LargeHoldingReport.ownership_basis` says where `ownership_pct` came from:
-  `group_total`, `sole_filer`, `all_holders_zero`, `lead_filer` or
-  `positional`.
-- The package ships its type hints (`py.typed`). Python 3.13, 3.14 and 3.15
-  are tested and supported.
-
-### Fixed
-
 - **Contractors' revenue.** A contractor whose only line is 完成工事高 tags it
   as `NetSalesOfCompletedConstructionContractsCNS`, with no general sales
   element, and its annual and semi-annual `net_sales` and quarterly
   `revenue_ytd` were `None`. Nippon Densetsu Kogyo's half-year report
   S100UN70 now reads ¥75,625 million and its annual report S100YGLL ¥229,207
   million. A contractor that tags a sales total keeps reading the total.
+- **Python 3.11 or newer is required.** Python 3.10 reached end of life with
+  the release of 3.15 and is no longer tested; `pip` keeps a 3.10
+  interpreter on 0.9.0. Python 3.11 reaches end of life in October 2027 and
+  may be removed in a release after that date.
+
+### Non-breaking
+
+- `LargeHoldingReport.ownership_basis` says where `ownership_pct` came from:
+  `group_total`, `sole_filer`, `all_holders_zero`, `lead_filer` or
+  `positional`.
+- The package ships its type hints (`py.typed`). Python 3.13, 3.14 and 3.15
+  are tested and supported.
 
 ## v0.9.0 — 2026-10-06
 
