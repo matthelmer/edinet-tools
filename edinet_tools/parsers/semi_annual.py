@@ -239,8 +239,11 @@ _DURATION_LEGACY = {
     # Additional J-GAAP half-year highlights spelling (営業収入). Keep the
     # existing revenue choices ahead of it; no fund/REIT headline policy
     # or annual revenue-tier change is implied by this missing-fact repair.
-    'net_sales': _securities._DURATION_LEGACY['net_sales'] + (
-        _own(_C + 'OperatingRevenue2' + _SB, _JG),),
+    # Contractors' 完成工事高 stays last, behind 営業収入 as well.
+    'net_sales': tuple(t for t in _securities._DURATION_LEGACY['net_sales']
+                       if t is not _securities._CONTRACTOR_SALES) + (
+        _own(_C + 'OperatingRevenue2' + _SB, _JG),
+        _securities._CONTRACTOR_SALES),
     'operating_income': (
         Tier(_chain('operating_income')),
         _own(_C + 'OperatingProfitLossIFRS' + _SB, _IFRS),

@@ -103,11 +103,16 @@ class TestGroupTotalSelection:
         assert r.ownership_pct == Decimal('0.0512')
         assert r.prior_ownership_pct == Decimal('0.0498')
         assert r.shares_held == 512
+        assert r.ownership_basis == 'sole_filer'
 
     def test_legacy_filing_with_neither_axis_nor_total_reads_first_match(self):
         r = _parse([(RATIO, 'SomeOtherContext', '0.0700'), (PRIOR, 'SomeOtherContext', '0.0600')])
         assert r.ownership_pct == Decimal('0.0700')
         assert r.prior_ownership_pct == Decimal('0.0600')
+
+    def test_a_member_context_with_no_holder_axis_reads_positionally(self):
+        r = _parse([(RATIO, 'FilingDateInstant_OtherMember', '0.0700')])
+        assert r.ownership_pct == Decimal('0.0700') and r.ownership_basis == 'positional'
 
 
 class TestCoReporterAxes:

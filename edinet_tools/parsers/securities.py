@@ -653,6 +653,9 @@ _PROFIT_BEFORE_TAX_LEGACY = (
 )
 # Duration-context fields. The same tables serve the current-year and
 # prior-year reads (the period is a resolve_tiers argument).
+# Contractors' 完成工事高: the last revenue tier of the annual and semi-annual tables.
+_CONTRACTOR_SALES = Tier('jppfs_cor:NetSalesOfCompletedConstructionContractsCNS')
+
 _DURATION_LEGACY = {
     # Revenue: J-GAAP summary -> IFRS summary -> US-GAAP summary -> bank/
     # insurer 経常収益 -> broker 営業収益 (summary then FS) -> custom-namespace
@@ -678,7 +681,7 @@ _DURATION_LEGACY = {
         Tier(_chain('net_sales_fs')),
         # Contractors' 完成工事高, for a contractor whose only line it is: one
         # with side businesses tags its 売上高合計 (jppfs_cor:NetSales) above.
-        Tier('jppfs_cor:NetSalesOfCompletedConstructionContractsCNS'),
+        _CONTRACTOR_SALES,
     ),
     # IFRS/US-GAAP filers NEVER fall back to the parent J-GAAP
     # jppfs_cor:OperatingIncome (the 0.7.1 leak class) — the last tier's

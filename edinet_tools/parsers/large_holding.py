@@ -761,11 +761,12 @@ def parse_large_holding(document=None, *, csv_files=None, doc_id=None, doc_type_
     # The lead filer stands in only when the filing states no group stake at all
     # (no total row, holders not all zero): then every holding figure is the lead's,
     # so a group stake is never set against one holder's prior or share count.
-    lead = _ownership_basis(csv_files) == 'lead_filer'
+    basis = _ownership_basis(csv_files)
+    lead = basis == 'lead_filer'
     ownership_pct = parse_percentage(_group_value(csv_files, 'ownership_pct', lead_fallback=lead))
     prior_ownership_pct = parse_percentage(
         _group_value(csv_files, 'prior_ownership_pct', lead_fallback=lead))
-    ownership_basis = _ownership_basis(csv_files) if ownership_pct is not None else None
+    ownership_basis = basis if ownership_pct is not None else None
 
     # Calculate ownership change
     ownership_change = None
