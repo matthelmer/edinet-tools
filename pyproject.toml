@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edinet-tools"
-version = "0.9.0"
+dynamic = ["version"]
 authors = [
     {name = "Matt Helmer"},
 ]
@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Office/Business :: Financial",
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
@@ -46,13 +47,16 @@ dev = [
 "Changelog" = "https://github.com/matthelmer/edinet-tools/blob/main/CHANGELOG.md"
 
 
+[tool.setuptools.dynamic]
+version = {attr = "edinet_tools.__version__"}
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["edinet_tools*"]
 exclude = ["tests*"]
 
 [tool.setuptools.package-data]
-edinet_tools = ["*.json", "*.csv", "data/*"]
+edinet_tools = ["py.typed", "*.json", "*.csv", "data/*"]
 
 [tool.black]
 line-length = 100
@@ -74,13 +78,17 @@ extend-exclude = '''
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q --strict-markers"
+addopts = "-v --tb=short --strict-markers"
 testpaths = [
     "tests",
 ]
 python_files = [
     "test_*.py",
-    "*_test.py",
+]
+
+markers = [
+    "integration: Integration tests that test multiple components together",
+    "slow: Tests that take a long time to run",
 ]
 
 [tool.mypy]
