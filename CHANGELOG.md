@@ -13,8 +13,12 @@ whose only sales line is 完成工事高 now have revenue.
   and no group total. 0.9.0 returned no stake for these reports, so a consumer
   that requires one dropped the exit. `ownership_pct`, `prior_ownership_pct`
   and `shares_held` now read the lead filer's own row: the filer's position
-  once the group is gone. A report that states a group stake is unchanged, and
-  any figure the group did not total stays `None`.
+  once the group is gone. The prior and the change on such a row are the lead
+  filer's own, not the group's: BlackRock Japan on Technopro (S100WT5L) reads
+  0.36% against its own prior of 2.24%, while the group's last report stated
+  7.26%. The group's fall is read from its previous report. A report that
+  states a group stake is unchanged, and any figure the group did not total
+  stays `None`.
 - **A figure filed in two currencies is read in the currency of the filing's
   statements.** MODEC presents its statements in US dollars and adds a yen
   convenience translation to its highlights table. 0.9.0 read the yen where

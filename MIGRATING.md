@@ -14,7 +14,10 @@
   完成工事高. An updater that skips `None` picks it up.
 - **Joint 5% reports with no group total** gain `ownership_pct`,
   `prior_ownership_pct` and `shares_held` from the lead filer's own row; read
-  `ownership_basis` before treating the figure as a group stake.
+  `ownership_basis` before treating the figure as a group stake. The prior is
+  the lead's own, so a series built from these rows shows the group's last
+  total followed by the lead's remaining stake, with a stated change smaller
+  than the drop between them.
 
 ## 0.9.0 — values, provenance and native XBRL
 
