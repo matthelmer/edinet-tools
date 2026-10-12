@@ -2,7 +2,9 @@
 
 ## v0.9.1 — <date>
 
-A 5% report that dissolves a joint group now has a stake.
+Three corrections: a 5% report that dissolves a joint group now has a stake,
+a filer that reports in dollars reads in dollars throughout, and contractors
+whose only sales line is 完成工事高 now have revenue.
 
 ### Changed
 
@@ -28,15 +30,17 @@ A 5% report that dissolves a joint group now has a stake.
 - `LargeHoldingReport.ownership_basis` says where `ownership_pct` came from:
   `group_total`, `sole_filer`, `all_holders_zero`, `lead_filer` or
   `positional`.
+- The package ships its type hints (`py.typed`), and Python 3.13 is tested
+  and supported.
 
 ### Fixed
 
 - **Contractors' revenue.** A contractor whose only line is 完成工事高 tags it
   as `NetSalesOfCompletedConstructionContractsCNS`, with no general sales
-  element, and its annual and semi-annual `net_sales` was `None`. Nippon
-  Densetsu Kogyo's half-year report S100UN70 now reads ¥75,625 million and its
-  annual report S100YGLL ¥229,207 million. A contractor that tags a sales
-  total keeps reading the total.
+  element, and its annual and semi-annual `net_sales` and quarterly
+  `revenue_ytd` were `None`. Nippon Densetsu Kogyo's half-year report
+  S100UN70 now reads ¥75,625 million and its annual report S100YGLL ¥229,207
+  million. A contractor that tags a sales total keeps reading the total.
 
 ## v0.9.0 — 2026-10-06
 

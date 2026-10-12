@@ -9,8 +9,9 @@
   profit before tax, owners' profit, cash flows, EPS, BPS); replace the value
   and its `units` entry together. Yen filers and filers whose statements carry
   both currencies are unchanged.
-- **Contractors' `net_sales` goes from `None` to a value** where the filing
-  tags only 完成工事高. An updater that skips `None` picks it up.
+- **Contractors' annual and semi-annual `net_sales` and quarterly
+  `revenue_ytd` go from `None` to a value** where the filing tags only
+  完成工事高. An updater that skips `None` picks it up.
 - **Joint 5% reports with no group total** gain `ownership_pct`,
   `prior_ownership_pct` and `shares_held` from the lead filer's own row; read
   `ownership_basis` before treating the figure as a group stake.
