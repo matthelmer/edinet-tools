@@ -16,7 +16,7 @@ A Python version is supported from the release that adds it until CPython
 retires it. Its removal is listed as Breaking in the release that removes
 it, with notice in an earlier release where one is planned.
 
-## v0.9.1 — <date>
+## v0.9.1 — 2026-10-13
 
 Three corrections: a 5% report that dissolves a joint group now has a stake,
 a filer that reports in dollars reads in dollars throughout, and contractors
