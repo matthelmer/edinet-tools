@@ -32,6 +32,7 @@ from .extraction import (
     extract_csv_from_zip,
     extract_value,
     categorize_elements,
+    coerce_numeric_value,
     parse_percentage,
     parse_decimal,
     parse_date,
@@ -148,6 +149,27 @@ def _cash_flow_legacy(key, kind):
     )
 
 
+_CNS = 'jppfs_cor:NetSalesOfCompletedConstructionContractsCNS'
+# Top lines the annual table reads before 完成工事高 and this table does not: a
+# broker with a construction sideline (Traders Holdings, S100NH1S) tags its
+# 営業収益 here, and its 完成工事高 is a component.
+_OTHER_TOP_LINES = (
+    'jppfs_cor:OperatingRevenue1',
+    'jppfs_cor:OperatingRevenueSEC',
+    _C + 'OperatingRevenue1' + _SB,
+    _C + 'OrdinaryIncome' + _SB,
+)
+
+
+def _other_top_line(csv_files, context):
+    """Whether the filing states one of _OTHER_TOP_LINES at `context`."""
+    return any(
+        row.get('要素ID') in _OTHER_TOP_LINES and row.get('コンテキストID') == context
+        and coerce_numeric_value(row.get('値'))
+        for csv_file in csv_files for row in csv_file.get('data', [])
+    )
+
+
 _YTD_LEGACY = {
     'revenue_ytd': (
         Tier(_chain('net_sales')),
@@ -155,6 +177,9 @@ _YTD_LEGACY = {
         _own(_C + 'RevenuesUSGAAP' + _SB, _US),
         _own((_G + 'Revenue2IFRS', _G + 'NetSalesIFRS'), _IFRS),
         _REVENUE_SUFFIX,
+        # Contractors' 完成工事高, as in the annual table: last, after any sales
+        # total, and withheld beside an operating-revenue line (_other_top_line).
+        Tier(_CNS),
     ),
     'operating_profit_ytd': (
         Tier(_chain('operating_income')),
@@ -452,6 +477,8 @@ def parse_quarterly_report(document=None, *, csv_files=None, doc_id=None, doc_ty
         hit = resolve_tiers(csv_files, tiers, standard=accounting_standard, period=period,
                             is_consolidated=is_consolidated)
         if hit is None:
+            return None
+        if hit.element_id == _CNS and _other_top_line(csv_files, hit.context_id):
             return None
         sources[name], contexts[name] = hit.element_id, hit.context_id
         units[name] = hit.unit_id

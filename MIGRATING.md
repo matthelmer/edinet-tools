@@ -1,5 +1,26 @@
 # Migrating edinet-tools
 
+## 0.9.1 — stored values that change
+
+- **Python 3.10 is no longer supported.** `requires-python` is `>=3.11`, so a
+  3.10 environment keeps 0.9.0 and sees none of the changes below.
+- **Re-check foreign-currency filers.** Where a figure is filed in yen and in
+  another currency at the same element and context, 0.9.1 reads the currency
+  the filing's statements are presented in. A dollar-presenting filer such as
+  MODEC moves from yen to dollars on the highlights-table fields (revenue,
+  profit before tax, owners' profit, cash flows, EPS, BPS); replace the value
+  and its `units` entry together. Yen filers and filers whose statements carry
+  both currencies are unchanged.
+- **Contractors' annual and semi-annual `net_sales` and quarterly
+  `revenue_ytd` go from `None` to a value** where the filing tags only
+  完成工事高. An updater that skips `None` picks it up.
+- **Joint 5% reports with no group total** gain `ownership_pct`,
+  `prior_ownership_pct` and `shares_held` from the lead filer's own row; read
+  `ownership_basis` before treating the figure as a group stake. The prior is
+  the lead's own, so a series built from these rows shows the group's last
+  total followed by the lead's remaining stake, with a change that is the
+  lead's own rather than the drop between them.
+
 ## 0.9.0 — values, provenance and native XBRL
 
 The default source is still EDINET's CSV. These changes also affect that

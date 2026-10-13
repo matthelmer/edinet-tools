@@ -103,11 +103,16 @@ class TestGroupTotalSelection:
         assert r.ownership_pct == Decimal('0.0512')
         assert r.prior_ownership_pct == Decimal('0.0498')
         assert r.shares_held == 512
+        assert r.ownership_basis == 'sole_filer'
 
     def test_legacy_filing_with_neither_axis_nor_total_reads_first_match(self):
         r = _parse([(RATIO, 'SomeOtherContext', '0.0700'), (PRIOR, 'SomeOtherContext', '0.0600')])
         assert r.ownership_pct == Decimal('0.0700')
         assert r.prior_ownership_pct == Decimal('0.0600')
+
+    def test_a_member_context_with_no_holder_axis_reads_positionally(self):
+        r = _parse([(RATIO, 'FilingDateInstant_OtherMember', '0.0700')])
+        assert r.ownership_pct == Decimal('0.0700') and r.ownership_basis == 'positional'
 
 
 class TestCoReporterAxes:
@@ -166,16 +171,49 @@ class TestPurposeIsThePrimaryFilers:
 
 
 class TestJointFilingWithoutTotalRow:
-    def test_joint_filing_without_total_row_reports_no_group_figure(self):
-        """Two co-reporters and no un-dimensioned row: there is no group total
-        in the filing. Holder 1's own stake is not the group's; honest None."""
+    def test_joint_filing_without_total_row_reads_the_lead_filer_and_says_so(self):
+        """0.9.1 (ruling 2026-10-11): two co-reporters and no un-dimensioned row is a
+        group dissolving (S100WT5L, S100KL73: the report removes its co-holders and
+        files no 合計). The row reads the lead filer's own figures, the filer's
+        position once the group is gone, and `ownership_basis` says it is not a
+        group total. Before 0.9.1 this was None and consumers dropped the exit."""
         r = _parse([(RATIO, H1, '0.0600'), (PRIOR, H1, '0.0500'), (SHARES, H1, '600'),
                     (RATIO, H2, '0.0500'), (PRIOR, H2, '0.0400'), (SHARES, H2, '500')])
         assert r.is_joint_filing is True
-        assert r.ownership_pct is None
-        assert r.prior_ownership_pct is None
-        assert r.shares_held is None
-        assert r.ownership_change is None
+        assert r.ownership_pct == Decimal('0.0600')
+        assert r.ownership_basis == 'lead_filer'
+        assert r.prior_ownership_pct == Decimal('0.0500')
+        assert r.shares_held == 600
+        assert r.ownership_change == Decimal('0.0100')
+
+    def test_a_filed_dissolution_reads_the_lead_filers_own_figures(self):
+        """S100WT5L (BlackRock Japan on Technopro 6028), as filed: eight holders, no
+        合計 row; holders 2-8 are noted みなし共同保有者から除外. The lead's own row is
+        the group that remains: 0.36% of 372,700 shares, against its own 2.24% prior."""
+        files = load_fixture('large_holding', 's100wt5l_group_dissolves_no_total')
+        r = parse_large_holding(csv_files=files, doc_id='S100WT5L', doc_type_code='350')
+        assert r.is_joint_filing is True and r.joint_holder_count == 8
+        assert r.ownership_basis == 'lead_filer'
+        assert r.ownership_pct == Decimal('0.0036')
+        assert r.prior_ownership_pct == Decimal('0.0224')
+        assert r.ownership_change == Decimal('-0.0188')
+        assert r.shares_held == 372700
+
+    def test_the_lead_filer_is_the_lowest_holder_whatever_the_row_order(self):
+        r = _parse([(RATIO, H2, '0.0000'), (RATIO, H1, '0.0036')])
+        assert r.ownership_pct == Decimal('0.0036') and r.ownership_basis == 'lead_filer'
+
+    def test_a_total_ratio_row_never_lets_the_lead_fill_the_prior_or_shares(self):
+        """The group stake is totalled and the prior is not: the prior stays None, so
+        no change is computed from a group stake and one holder's prior."""
+        r = _parse([(RATIO, 'FilingDateInstant', '0.0700'),
+                    (PRIOR, H1, '0.0500'), (PRIOR, H2, '0.0100'), (SHARES, H1, '5'), (SHARES, H2, '1')])
+        assert r.ownership_basis == 'group_total'
+        assert r.prior_ownership_pct is None and r.shares_held is None and r.ownership_change is None
+
+    def test_a_filed_total_row_is_the_group_total(self):
+        r = _parse([(RATIO, 'FilingDateInstant', '0.0700'), (RATIO, H1, '0.0600'), (RATIO, H2, '0.0100')])
+        assert r.ownership_pct == Decimal('0.0700') and r.ownership_basis == 'group_total'
 
     def test_single_holder_on_the_jointholder_axis_without_total_row_reads_that_holder(self):
         """One holder, tagged on the second axis only: the only row is the group."""
@@ -196,6 +234,8 @@ class TestJointFilingWithoutTotalRow:
                     (RATIO, H2, '0.00'), (PRIOR, H2, '0.0382'), (SHARES, H2, '100')])
         assert r.is_joint_filing is True
         assert r.ownership_pct == Decimal('0')
+        assert r.ownership_basis == 'all_holders_zero'
+        # The priors differ and no group prior was filed: None, as before 0.9.1.
         assert r.prior_ownership_pct is None
         assert r.ownership_change is None
         r = _parse([(SHARES, H1, '0'), (SHARES, H2, '0'), (SHARES, H3, '0')])
@@ -203,7 +243,7 @@ class TestJointFilingWithoutTotalRow:
 
     def test_joint_without_total_row_and_a_malformed_holder_value_is_none(self):
         r = _parse([(RATIO, H1, 'abc'), (RATIO, H2, '0')])
-        assert r.ownership_pct is None
+        assert r.ownership_pct is None and r.ownership_basis is None
 
     def test_a_co_reporters_differently_spelled_nothing_does_not_replace_holder_1s_dash(self):
         """A/B on 4,000 stored filings (2026-09-09): 該当事項無し / 当該事項なし on a

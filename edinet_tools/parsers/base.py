@@ -29,8 +29,10 @@ class ParsedReport:
         source_contexts: Field name -> the context that element was read at
         units: Monetary or per-share field name -> the unit id of the fact
             read ('JPY' / 'JPYPerShares', or the foreign currency a filer
-            tagged it in, e.g. 'USD' / 'USDPerShares'). A fact filed in yen and
-            another currency at one context is read in yen. A value read from a
+            tagged it in, e.g. 'USD' / 'USDPerShares'). A fact filed in two
+            currencies at one context is read in the filing's presentation
+            currency: the one currency of its statements when that is not
+            yen, else yen (extraction.presentation_currency). A value read from a
             row without a unit id has no entry: the map never holds None.
 
     The provenance maps are filled by the parsers that record them (the

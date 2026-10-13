@@ -140,9 +140,9 @@ def apply_identities(report, identities) -> list:
     appends them to report.extraction_flags.
 
     Amounts are never compared across currencies: when the operands that
-    carry a unit in report.units name more than one unit (MODEC's yen
-    total_assets beside its dollar net_assets_total), the identity is not
-    checked and a 'skipped' flag records the units."""
+    carry a unit in report.units name more than one unit (a yen total_assets
+    beside a dollar net_assets_total), the identity is not checked and a
+    'skipped' flag records the units."""
     standard = getattr(report, 'accounting_standard', None)
     units = getattr(report, 'units', None) or {}
     flags = []

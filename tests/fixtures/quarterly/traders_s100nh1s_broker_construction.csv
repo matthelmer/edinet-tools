@@ -1,0 +1,54 @@
+要素ID	項目名	コンテキストID	相対年度	連結・個別	期間・時点	ユニットID	単位	値
+jpdei_cor:NumberOfSubmissionDEI	提出回数、DEI	FilingDateInstant	提出日時点	その他	時点	pure		1
+jpcrp_cor:OperatingRevenue1SummaryOfBusinessResults	営業収益、経営指標等	Prior1YTDDuration	前年度同四半期累計期間	その他	期間	JPY	円	4621000000
+jpcrp_cor:OperatingRevenue1SummaryOfBusinessResults	営業収益、経営指標等	CurrentYTDDuration	当四半期累計期間	その他	期間	JPY	円	5016000000
+jpcrp_cor:OperatingRevenue1SummaryOfBusinessResults	営業収益、経営指標等	Prior1YearDuration	前期	その他	期間	JPY	円	6856000000
+jpcrp040300-q3r_E03819-000:NetOperatingRevenueSummaryOfBusinessResults		Prior1YTDDuration	前年度同四半期累計期間	その他	期間	JPY	円	4297000000
+jpcrp040300-q3r_E03819-000:NetOperatingRevenueSummaryOfBusinessResults		CurrentYTDDuration	当四半期累計期間	その他	期間	JPY	円	4669000000
+jpcrp040300-q3r_E03819-000:NetOperatingRevenueSummaryOfBusinessResults		Prior1YearDuration	前期	その他	期間	JPY	円	6431000000
+jppfs_cor:NetSalesOfCompletedConstructionContractsCNS	完成工事高、建設業	Prior1YTDDuration	前年度同四半期累計期間	連結	期間	JPY	円	0
+jppfs_cor:NetSalesOfCompletedConstructionContractsCNS	完成工事高、建設業	CurrentYTDDuration	当四半期累計期間	連結	期間	JPY	円	－
+jppfs_cor:OperatingRevenueSEC	営業収益、第一種金融商品取引業	Prior1YTDDuration	前年度同四半期累計期間	連結	期間	JPY	円	4621000000
+jppfs_cor:OperatingRevenueSEC	営業収益、第一種金融商品取引業	CurrentYTDDuration	当四半期累計期間	連結	期間	JPY	円	5016000000
+jppfs_cor:NetOperatingRevenueSEC	純営業収益、第一種金融商品取引業	Prior1YTDDuration	前年度同四半期累計期間	連結	期間	JPY	円	4297000000
+jppfs_cor:NetOperatingRevenueSEC	純営業収益、第一種金融商品取引業	CurrentYTDDuration	当四半期累計期間	連結	期間	JPY	円	4669000000
+jppfs_cor:OperatingRevenue1	営業収益	Prior1YTDDuration_jpcrp040300-q3r_E03819-000ElementReportableSegmentsMember	前年度同四半期累計期間	連結	期間	JPY	円	4238000000
+jppfs_cor:OperatingRevenue1	営業収益	Prior1YTDDuration_jpcrp040300-q3r_E03819-000SystemDevelopingAndSystemConsultingReportableSegmentsMember	前年度同四半期累計期間	連結	期間	JPY	円	1270000000
+jppfs_cor:OperatingRevenue1	営業収益	Prior1YTDDuration_ReportableSegmentsMember	前年度同四半期累計期間	連結	期間	JPY	円	5508000000
+jppfs_cor:OperatingRevenue1	営業収益	Prior1YTDDuration_OperatingSegmentsNotIncludedInReportableSegmentsAndOtherRevenueGeneratingBusinessActivitiesMember	前年度同四半期累計期間	連結	期間	JPY	円	37000000
+jppfs_cor:OperatingRevenue1	営業収益	Prior1YTDDuration_TotalOfReportableSegmentsAndOthersMember	前年度同四半期累計期間	連結	期間	JPY	円	5546000000
+jppfs_cor:OperatingRevenue1	営業収益	Prior1YTDDuration_ReconcilingItemsMember	前年度同四半期累計期間	連結	期間	JPY	円	-925000000
+jppfs_cor:OperatingRevenue1	営業収益	Prior1YTDDuration	前年度同四半期累計期間	連結	期間	JPY	円	4621000000
+jppfs_cor:OperatingRevenue1	営業収益	CurrentYTDDuration_jpcrp040300-q3r_E03819-000ElementReportableSegmentsMember	当四半期累計期間	連結	期間	JPY	円	4723000000
+jppfs_cor:OperatingRevenue1	営業収益	CurrentYTDDuration_jpcrp040300-q3r_E03819-000SystemDevelopingAndSystemConsultingReportableSegmentsMember	当四半期累計期間	連結	期間	JPY	円	1542000000
+jppfs_cor:OperatingRevenue1	営業収益	CurrentYTDDuration_ReportableSegmentsMember	当四半期累計期間	連結	期間	JPY	円	6266000000
+jppfs_cor:OperatingRevenue1	営業収益	CurrentYTDDuration_OperatingSegmentsNotIncludedInReportableSegmentsAndOtherRevenueGeneratingBusinessActivitiesMember	当四半期累計期間	連結	期間	JPY	円	9000000
+jppfs_cor:OperatingRevenue1	営業収益	CurrentYTDDuration_TotalOfReportableSegmentsAndOthersMember	当四半期累計期間	連結	期間	JPY	円	6276000000
+jppfs_cor:OperatingRevenue1	営業収益	CurrentYTDDuration_ReconcilingItemsMember	当四半期累計期間	連結	期間	JPY	円	-1259000000
+jppfs_cor:OperatingRevenue1	営業収益	CurrentYTDDuration	当四半期累計期間	連結	期間	JPY	円	5016000000
+jpdei_cor:EDINETCodeDEI	EDINETコード、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	E03819
+jpdei_cor:FundCodeDEI	ファンドコード、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:SecurityCodeDEI	証券コード、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	87040
+jpdei_cor:FilerNameInJapaneseDEI	提出者名（日本語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	トレイダーズホールディングス株式会社
+jpdei_cor:FilerNameInEnglishDEI	提出者名（英語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	TRADERS HOLDINGS CO.,LTD.
+jpdei_cor:FundNameInJapaneseDEI	ファンド名称（日本語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:FundNameInEnglishDEI	ファンド名称（英語表記）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:CabinetOfficeOrdinanceDEI	府令、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	企業内容等の開示に関する内閣府令
+jpdei_cor:DocumentTypeDEI	様式、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	第四号の三様式
+jpdei_cor:AccountingStandardsDEI	会計基準、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	Japan GAAP
+jpdei_cor:WhetherConsolidatedFinancialStatementsArePreparedDEI	連結決算の有無、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	true
+jpdei_cor:IndustryCodeWhenConsolidatedFinancialStatementsArePreparedInAccordanceWithIndustrySpecificRegulationsDEI	別記事業（連結）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	SEC
+jpdei_cor:IndustryCodeWhenFinancialStatementsArePreparedInAccordanceWithIndustrySpecificRegulationsDEI	別記事業（個別）、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:CurrentFiscalYearStartDateDEI	当事業年度開始日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2021-04-01
+jpdei_cor:CurrentPeriodEndDateDEI	当会計期間終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2021-12-31
+jpdei_cor:TypeOfCurrentPeriodDEI	当会計期間の種類、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	Q3
+jpdei_cor:CurrentFiscalYearEndDateDEI	当事業年度終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2022-03-31
+jpdei_cor:PreviousFiscalYearStartDateDEI	前事業年度開始日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2020-04-01
+jpdei_cor:ComparativePeriodEndDateDEI	比較対象会計期間終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2020-12-31
+jpdei_cor:PreviousFiscalYearEndDateDEI	前事業年度終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	2021-03-31
+jpdei_cor:NextFiscalYearStartDateDEI	次の事業年度開始日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:EndDateOfQuarterlyOrSemiAnnualPeriodOfNextFiscalYearDEI	次の四半期又は中間期の会計期間終了日、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:AmendmentFlagDEI	訂正の有無、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	false
+jpdei_cor:IdentificationOfDocumentSubjectToAmendmentDEI	訂正対象書類の書類管理番号、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	－
+jpdei_cor:ReportAmendmentFlagDEI	記載事項訂正のフラグ、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	false
+jpdei_cor:XBRLAmendmentFlagDEI	XBRL訂正のフラグ、DEI	FilingDateInstant	提出日時点	その他	時点	－	－	false
